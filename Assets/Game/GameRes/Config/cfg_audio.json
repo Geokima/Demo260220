@@ -1,0 +1,62 @@
+[
+  {
+    "Id": 101,
+    "AssetFullPath": "Assets/Game/Sounds/UI/ButtonClick.mp3",
+    "Volume": 0.8,
+    "Priority": 100
+  },
+  {
+    "Id": 102,
+    "AssetFullPath": "Assets/Game/Sounds/UI/MenuOpen.wav",
+    "Volume": 0.7,
+    "Priority": 90
+  },
+  {
+    "Id": 201,
+    "AssetFullPath": "Assets/Game/Sounds/Effects/Explosion.mp3",
+    "Volume": 1.0,
+    "Priority": 128
+  },
+  {
+    "Id": 202,
+    "AssetFullPath": "Assets/Game/Sounds/Effects/LaserShot.wav",
+    "Volume": 0.9,
+    "Priority": 110
+  },
+  {
+    "Id": 301,
+    "AssetFullPath": "Assets/Game/Sounds/Music/MainTheme.mp3",
+    "Volume": 0.6,
+    "Priority": 50
+  },
+  {
+    "Id": 302,
+    "AssetFullPath": "Assets/Game/Sounds/Music/BattleTheme.ogg",
+    "Volume": 0.65,
+    "Priority": 60
+  },
+  {
+    "Id": 401,
+    "AssetFullPath": "Assets/Game/Sounds/Ambient/RainLoop.mp3",
+    "Volume": 0.4,
+    "Priority": 30
+  },
+  {
+    "Id": 402,
+    "AssetFullPath": "Assets/Game/Sounds/Ambient/WindHowl.wav",
+    "Volume": 0.35,
+    "Priority": 25
+  },
+  {
+    "Id": 501,
+    "AssetFullPath": "Assets/Game/Sounds/Voices/PlayerJump.mp3",
+    "Volume": 0.75,
+    "Priority": 80
+  },
+  {
+    "Id": 502,
+    "AssetFullPath": "Assets/Game/Sounds/Voices/EnemyDeath.ogg",
+    "Volume": 0.85,
+    "Priority": 95
+  }
+]

@@ -1,0 +1,129 @@
+{
+  "accounts": [
+    {
+      "username": "test",
+      "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "userId": 10001,
+      "diamond": 200,
+      "gold": 1000,
+      "inventory": {
+        "items": [
+          {
+            "uid": "item_001",
+            "itemId": 1001,
+            "count": 10,
+            "bind": false
+          },
+          {
+            "uid": "item_002",
+            "itemId": 1002,
+            "count": 3,
+            "bind": false
+          },
+          {
+            "uid": "item_1771803965020_2",
+            "itemId": 1001,
+            "count": 10,
+            "bind": false
+          },
+          {
+            "uid": "item_1771803979136_3",
+            "itemId": 1001,
+            "count": 10,
+            "bind": false
+          },
+          {
+            "uid": "item_1771804051253_4",
+            "itemId": 1001,
+            "count": 5,
+            "bind": false
+          }
+        ],
+        "maxSlots": 9
+      }
+    },
+    {
+      "username": "admin",
+      "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "userId": 10002,
+      "diamond": 9999,
+      "gold": 99999,
+      "inventory": {
+        "items": [
+          {
+            "uid": "item_001",
+            "itemId": 1001,
+            "count": 10,
+            "bind": false
+          },
+          {
+            "uid": "item_002",
+            "itemId": 1002,
+            "count": 10,
+            "bind": false
+          },
+          {
+            "uid": "item_003",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804076869_3",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804082469_4",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804082669_5",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804082868_6",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804100720_7",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          },
+          {
+            "uid": "item_1771804102002_8",
+            "itemId": 1003,
+            "count": 10,
+            "bind": true
+          }
+        ],
+        "maxSlots": 9
+      }
+    }
+  ],
+  "itemConfig": {
+    "1001": {
+      "name": "生命药水",
+      "type": "consumable",
+      "maxStack": 10
+    },
+    "1002": {
+      "name": "魔法药水",
+      "type": "consumable",
+      "maxStack": 10
+    },
+    "1003": {
+      "name": "强化石",
+      "type": "material",
+      "maxStack": 10
+    }
+  }
+}
