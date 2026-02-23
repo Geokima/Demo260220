@@ -18,6 +18,17 @@ namespace Framework.Modules.Res
             return request.asset as T;
         }
 
+        public bool Exists(string path)
+        {
+            var asset = Resources.Load(path);
+            if (asset != null)
+            {
+                Resources.UnloadAsset(asset);
+                return true;
+            }
+            return false;
+        }
+
         public void UnloadUnusedAssets()
         {
             Resources.UnloadUnusedAssets();

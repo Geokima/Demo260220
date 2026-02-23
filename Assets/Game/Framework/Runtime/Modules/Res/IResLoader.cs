@@ -7,6 +7,7 @@ namespace Framework.Modules.Res
     {
         T Load<T>(string path) where T : UnityEngine.Object;
         UniTask<T> LoadAsync<T>(string path) where T : UnityEngine.Object;
+        bool Exists(string path);
         void UnloadUnusedAssets();
     }
 }

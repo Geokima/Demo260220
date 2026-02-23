@@ -37,8 +37,20 @@ namespace Framework.Modules.Config
                 foreach (var type in configRowTypes)
                 {
                     var fileName = GetConfigFileName(type);
-                    var asset = await loader.LoadAsync<TextAsset>($"{folder}/{fileName}");
-                    if (asset == null) continue;
+                    var path = $"{folder}/{fileName}";
+                    
+                    if (!loader.Exists(path))
+                    {
+                        Debug.LogWarning($"[Config] Config file not found: {path}");
+                        continue;
+                    }
+                    
+                    var asset = await loader.LoadAsync<TextAsset>(path);
+                    if (asset == null)
+                    {
+                        Debug.LogError($"[Config] Failed to load config: {path}");
+                        continue;
+                    }
 
                     ParseAndRegister(asset.text, type);
                 }
@@ -70,6 +82,12 @@ namespace Framework.Modules.Config
 
         private void ParseAndRegister(string json, Type rowType)
         {
+            if (!IsValidJson(json))
+            {
+                Debug.LogError($"[Config] Invalid JSON format for type: {rowType.Name}");
+                return;
+            }
+
             var parseMethod = GetType().GetMethod("ParseJson", BindingFlags.NonPublic | BindingFlags.Instance);
             var generic = parseMethod.MakeGenericMethod(rowType);
             var configs = generic.Invoke(this, new[] { json }) as System.Collections.IList;
@@ -81,6 +99,30 @@ namespace Framework.Modules.Config
             genericRegister.Invoke(this, new[] { configs });
         }
 
+        private bool IsValidJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return false;
+
+            json = json.Trim();
+            if ((json.StartsWith("[") && json.EndsWith("]")) ||
+                (json.StartsWith("{") && json.EndsWith("}")))
+            {
+                try
+                {
+                    var testWrapper = $"{{\"array\":{json}}}";
+                    JsonUtility.FromJson<JsonArrayWrapper<object>>(testWrapper);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // 注意：此方法通过反射在 ParseAndRegister 中调用
         private List<T> ParseJson<T>(string json) where T : IConfigRow
         {
             var wrapped = $"{{\"array\":{json}}}";
@@ -88,6 +130,7 @@ namespace Framework.Modules.Config
             return wrapper?.array?.ToList() ?? new List<T>();
         }
 
+        // 注意：此方法通过反射在 ParseAndRegister 中调用
         private void RegisterConfigs<T>(System.Collections.IList configs) where T : IConfigRow
         {
             var dict = new Dictionary<int, T>();

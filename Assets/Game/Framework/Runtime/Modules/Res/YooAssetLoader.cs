@@ -76,6 +76,16 @@ namespace Framework.Modules.Res
             }
         }
 
+        public bool Exists(string path)
+        {
+            if (_package == null)
+            {
+                Debug.LogError("[Res] YooAsset package not initialized");
+                return false;
+            }
+            return _package.CheckLocationValid(path);
+        }
+
         public void UnloadUnusedAssets()
         {
             if (_package != null)
