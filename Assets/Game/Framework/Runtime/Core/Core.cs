@@ -53,8 +53,9 @@ namespace Framework
         void SendCommand(ICommand command);
         TResult SendCommand<TResult>(ICommand<TResult> command);
         TResult SendQuery<TResult>(IQuery<TResult> query);
-        void SendEvent<T>(T e);
-        IUnRegister RegisterEvent<T>(Action<T> onEvent);
+        void SendEvent<T>(object sender, T e);
+        void SendEvent<T>(object sender) where T : new();
+        IUnRegister RegisterEvent<T>(Action<T> onEvent) where T : new();
         void Shutdown();
     }
 
@@ -171,8 +172,11 @@ namespace Framework
             return query.Do();
         }
 
-        public void SendEvent<TEvent>(TEvent e) => _eventSystem.Send(e);
-        public IUnRegister RegisterEvent<TEvent>(Action<TEvent> onEvent) => _eventSystem.Register(onEvent);
+        public void SendEvent<TEvent>(object sender, TEvent e) => _eventSystem.Send(sender, e);
+
+        public void SendEvent<TEvent>(object sender) where TEvent : new() => _eventSystem.Send<TEvent>(sender);
+
+        public IUnRegister RegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.Register(onEvent);
     }
 
     #endregion
@@ -225,12 +229,15 @@ namespace Framework
 
     public static class IEventSenderExtensions
     {
-        public static void SendEvent<T>(this IEventSender self, T e) => self.Architecture.SendEvent(e);
+        public static void SendEvent<T>(this IEventSender self, T e)
+        {
+            self.Architecture.SendEvent(self, e);
+        }
     }
 
     public static class IEventReceiverExtensions
     {
-        public static void RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) =>
+        public static void RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
             self.Architecture.RegisterEvent(onEvent);
     }
 
@@ -343,7 +350,7 @@ namespace Framework
 
     public class Event : IEvent
     {
-        private Action _onEvent = () => { };
+        private Action _onEvent;
 
         public void Trigger()
         {
@@ -364,7 +371,7 @@ namespace Framework
 
     public class Event<T> : IEvent
     {
-        private Action<T> _onEvent = _ => { };
+        private Action<T> _onEvent;
 
         public void Trigger(T e)
         {
@@ -385,7 +392,7 @@ namespace Framework
 
     public class Event<T1, T2> : IEvent
     {
-        private Action<T1, T2> _onEvent = (_, _) => { };
+        private Action<T1, T2> _onEvent;
 
         public void Trigger(T1 arg1, T2 arg2)
         {
@@ -406,7 +413,7 @@ namespace Framework
 
     public class Event<T1, T2, T3> : IEvent
     {
-        private Action<T1, T2, T3> _onEvent = (_, _, _) => { };
+        private Action<T1, T2, T3> _onEvent;
 
         public void Trigger(T1 arg1, T2 arg2, T3 arg3)
         {
@@ -431,28 +438,41 @@ namespace Framework
 
         public static readonly EventSystem Global = new EventSystem();
 
+        // 全局事件发送回调: (senderType, eventData)
+        public static event Action<Type, object> OnEventSent;
+
         public void Clear() => _typeEvents.Clear();
 
-        public void Send<T>() where T : new() => GetEvent<Event<T>>()?.Trigger(new T());
-
-        public void Send<T>(T e) => GetEvent<Event<T>>()?.Trigger(e);
-
-        public IUnRegister Register<T>(Action<T> onEvent) => GetOrAddEvent<Event<T>>().Register(onEvent);
-
-        public void UnRegister<T>(Action<T> onEvent) => GetEvent<Event<T>>()?.UnRegister(onEvent);
-
-        private T GetEvent<T>() where T : IEvent
+        public void Send<T>(object sender) where T : new()
         {
-            return _typeEvents.TryGetValue(typeof(T), out var e) ? (T)e : default;
+            var e = new T();
+            GetEvent<T>()?.Trigger(e);
+            OnEventSent?.Invoke(sender.GetType(), e);
         }
 
-        private T GetOrAddEvent<T>() where T : IEvent, new()
+        public void Send<T>(object sender, T e)
+        {
+            var evt = GetEvent<T>();
+            evt?.Trigger(e);
+            OnEventSent?.Invoke(sender.GetType(), e);
+        }
+
+        public IUnRegister Register<T>(Action<T> onEvent) where T : new() => (GetOrAddEvent<T>() as Event<T>)?.Register(onEvent);
+
+        public void UnRegister<T>(Action<T> onEvent) => (GetEvent<T>() as Event<T>)?.UnRegister(onEvent);
+
+        private Event<T> GetEvent<T>()
+        {      
+            return _typeEvents.TryGetValue(typeof(T), out var e) ? e as Event<T> : default;
+        }
+
+        private IEvent GetOrAddEvent<T>() where T : new()
         {
             var eType = typeof(T);
             if (_typeEvents.TryGetValue(eType, out var e))
-                return (T)e;
+                return e;
 
-            var t = new T();
+            var t = new Event<T>();
             _typeEvents.Add(eType, t);
             return t;
         }

@@ -12,11 +12,6 @@ namespace Game
 {
     public class GameArchitecture : Architecture<GameArchitecture>
     {
-        public GameArchitecture()
-        {
-            Debug.Log("[GameArchitecture] Launch");
-        }
-
         protected override void RegisterModule()
         {
             RegisterSystem(new ConfigSystem());

@@ -164,7 +164,7 @@ namespace Tests.EditMode
                 Assert.AreEqual("Test Message", e.Message);
             });
             
-            _architecture.SendEvent(new TestEvent { Message = "Test Message" });
+            _architecture.SendEvent(this, new TestEvent { Message = "Test Message" });
             
             Assert.IsTrue(eventReceived, "Should receive event");
         }
