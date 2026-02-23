@@ -7,7 +7,7 @@ import os
 ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'account.json')
 
 def load_accounts():
-    with open(ACCOUNT_FILE, 'r') as f:
+    with open(ACCOUNT_FILE, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def save_accounts(data):
