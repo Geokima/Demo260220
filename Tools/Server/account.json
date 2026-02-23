@@ -4,39 +4,27 @@
       "username": "test",
       "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
       "userId": 10001,
-      "diamond": 200,
+      "diamond": 450,
       "gold": 1000,
       "inventory": {
         "items": [
           {
-            "uid": "item_001",
-            "itemId": 1001,
-            "count": 10,
-            "bind": false
-          },
-          {
-            "uid": "item_002",
-            "itemId": 1002,
+            "uid": "item_1771857842273_0_6",
+            "itemId": 1003,
             "count": 3,
-            "bind": false
+            "bind": true
           },
           {
-            "uid": "item_1771803965020_2",
-            "itemId": 1001,
+            "uid": "item_1771857842544_0_7",
+            "itemId": 1003,
             "count": 10,
-            "bind": false
+            "bind": true
           },
           {
-            "uid": "item_1771803979136_3",
-            "itemId": 1001,
+            "uid": "item_1771857842690_0_8",
+            "itemId": 1003,
             "count": 10,
-            "bind": false
-          },
-          {
-            "uid": "item_1771804051253_4",
-            "itemId": 1001,
-            "count": 5,
-            "bind": false
+            "bind": true
           }
         ],
         "maxSlots": 9
@@ -51,15 +39,9 @@
       "inventory": {
         "items": [
           {
-            "uid": "item_001",
-            "itemId": 1001,
-            "count": 10,
-            "bind": false
-          },
-          {
             "uid": "item_002",
             "itemId": 1002,
-            "count": 10,
+            "count": 2,
             "bind": false
           },
           {

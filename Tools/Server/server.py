@@ -11,7 +11,7 @@ def load_accounts():
         return json.load(f)
 
 def save_accounts(data):
-    with open(ACCOUNT_FILE, 'w') as f:
+    with open(ACCOUNT_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 # 加载账号数据
