@@ -44,14 +44,6 @@ namespace Game.Services
                     var loginSystem = this.GetSystem<LoginSystem>();
                     loginSystem.SetLoginInfo(loginResponse.token, loginResponse.userId);
 
-                    var resources = await this.GetSystem<ResourceService>().GetResourcesAsync();
-                    if (resources.success)
-                    {
-                        var resourcesModel = this.GetModel<PlayerModel>();
-                        resourcesModel.Diamond.Value = resources.diamond;
-                        resourcesModel.Gold.Value = resources.gold;
-                    }
-
                     this.SendEvent(new LoginSuccessEvent { Token = loginResponse.token, UserId = loginResponse.userId });
                 }
                 else
@@ -103,16 +95,5 @@ namespace Game.Services
             public long diamond;
             public long gold;
         }
-    }
-
-    public struct LoginSuccessEvent
-    {
-        public string Token;
-        public int UserId;
-    }
-
-    public struct LoginFailedEvent
-    {
-        public string Error;
     }
 }
