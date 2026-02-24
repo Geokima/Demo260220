@@ -28,14 +28,18 @@
           }
         ],
         "maxSlots": 9
-      }
+      },
+      "exp": 1400,
+      "level": 5,
+      "energy": 140,
+      "lastEnergyTime": 1771944527
     },
     {
       "username": "admin",
       "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
       "userId": 10002,
-      "diamond": 9999,
-      "gold": 99999,
+      "diamond": 10099,
+      "gold": 100099,
       "inventory": {
         "items": [
           {
@@ -88,7 +92,11 @@
           }
         ],
         "maxSlots": 9
-      }
+      },
+      "exp": 600,
+      "level": 4,
+      "energy": 130,
+      "lastEnergyTime": 1771939810
     }
   ],
   "itemConfig": {

@@ -7,27 +7,34 @@ import os
 ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'account.json')
 
 def load_accounts():
+    """从文件加载账号数据"""
     with open(ACCOUNT_FILE, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def save_accounts(data):
+    """保存账号数据到文件"""
     with open(ACCOUNT_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-# 加载账号数据
-account_data = load_accounts()
-accounts_by_name = {acc['username']: acc for acc in account_data['accounts']}
-accounts_by_id = {acc['userId']: acc for acc in account_data['accounts']}
+def get_account_data():
+    """获取最新账号数据（每次都重新加载文件）"""
+    data = load_accounts()
+    accounts_by_name = {acc['username']: acc for acc in data['accounts']}
+    accounts_by_id = {acc['userId']: acc for acc in data['accounts']}
+    return data, accounts_by_name, accounts_by_id
 
-print(f"[Server] Loaded {len(accounts_by_name)} accounts")
-for acc in account_data['accounts']:
-    print(f"[Server]   - {acc['username']} (ID: {acc['userId']})")
+def hash_password(password):
+    """对密码进行SHA256哈希"""
+    return hashlib.sha256(password.encode()).hexdigest()
 
 # 在线玩家映射: token -> userId
 online_tokens = {}
 
 class LoginHandler(BaseHTTPRequestHandler):
     def do_POST(self):
+        # 每次请求重新加载最新数据（支持GM工具实时修改）
+        account_data, accounts_by_name, accounts_by_id = get_account_data()
+        
         # 模拟超时
         if self.path == '/login/timeout':
             time.sleep(10)
@@ -66,7 +73,8 @@ class LoginHandler(BaseHTTPRequestHandler):
                 
                 account = accounts_by_name.get(username)
                 if account:
-                    if account['password'] == password:
+                    hashed_password = hash_password(password)
+                    if account['password'] == hashed_password:
                         user_id = account['userId']
                         token = f'token_{user_id}_{int(time.time())}'
                         online_tokens[token] = user_id
@@ -81,6 +89,51 @@ class LoginHandler(BaseHTTPRequestHandler):
             else:
                 print(f"[Server] Login failed: empty request body")
                 response = {'code': 1, 'msg': '请求体为空'}
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(response, ensure_ascii=False).encode())
+            return
+        
+        # 注册接口
+        if self.path == '/register':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data)
+                
+                username = data.get('username', '')
+                password = data.get('password', '')
+                
+                print(f"[Server] Register attempt: username={username}")
+                
+                if not username or not password:
+                    response = {'code': 1, 'msg': '账号密码不能为空', 'userId': 0}
+                elif username in accounts_by_name:
+                    response = {'code': 1, 'msg': '账号已存在', 'userId': 0}
+                else:
+                    # 创建新账号
+                    new_id = max([a['userId'] for a in account_data['accounts']], default=1000) + 1
+                    new_account = {
+                        'userId': new_id,
+                        'username': username,
+                        'password': hash_password(password),
+                        'diamond': 0,
+                        'gold': 0,
+                        'exp': 0,
+                        'energy': 100,
+                        'inventory': {'items': [], 'maxSlots': 9}
+                    }
+                    account_data['accounts'].append(new_account)
+                    accounts_by_id[new_id] = new_account
+                    accounts_by_name[username] = new_account
+                    save_accounts(account_data)
+                    print(f"[Server] Register success: userId={new_id}")
+                    response = {'code': 0, 'msg': '注册成功', 'userId': new_id}
+            else:
+                response = {'code': 1, 'msg': '请求体为空', 'userId': 0}
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -199,11 +252,38 @@ class LoginHandler(BaseHTTPRequestHandler):
                 print(f"[Server] Get resources: found userId={user_id}")
                 account = accounts_by_id.get(user_id)
                 if account:
+                    # 计算离线体力恢复（服务器端计算，安全）
+                    current_time = int(time.time())
+                    current_energy = account.get('energy', 100)
+                    last_energy_time = account.get('lastEnergyTime', current_time)
+                    level = account.get('level', 1)
+                    max_energy = 100 + (level - 1) * 10
+                    
+                    # 计算体力恢复
+                    if current_energy < max_energy:
+                        energy_recover_interval = 10  # 10秒恢复1点
+                        elapsed = current_time - last_energy_time
+                        if elapsed > 0:
+                            recover_points = elapsed // energy_recover_interval
+                            if recover_points > 0:
+                                new_energy = min(current_energy + recover_points, max_energy)
+                                account['energy'] = new_energy
+                                print(f"[Server] 离线体力恢复: {current_energy} -> {new_energy} (离线{elapsed}秒)")
+                                current_energy = new_energy
+                    
+                    # 每次获取资源都更新 lastEnergyTime，避免重复计算
+                    account['lastEnergyTime'] = current_time
+                    save_accounts(account_data)
+                    
                     response = {
                         'code': 0,
                         'msg': '成功',
-                        'diamond': account['diamond'],
-                        'gold': account['gold']
+                        'diamond': account.get('diamond', 0),
+                        'gold': account.get('gold', 0),
+                        'exp': account.get('exp', 0),
+                        'level': level,
+                        'energy': current_energy,
+                        'lastEnergyTime': account.get('lastEnergyTime', current_time)
                     }
                 else:
                     print(f"[Server] Get resources failed: account not found for userId={user_id}")
@@ -453,10 +533,127 @@ class LoginHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response, ensure_ascii=False).encode())
             return
         
+        # 经验变更接口
+        if self.path == '/resource/exp':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data)
+                
+                token = data.get('token', '')
+                amount = data.get('amount', 0)
+                reason = data.get('reason', '')
+                
+                print(f"[Server] Exp change request: token={token[:20]}..., amount={amount}, reason={reason}")
+                
+                user_id = online_tokens.get(token)
+                if not user_id:
+                    print(f"[Server] Exp change failed: invalid token")
+                    response = {'code': 1, 'msg': '未登录或token无效', 'currentExp': 0, 'currentLevel': 1}
+                else:
+                    print(f"[Server] Exp change: found userId={user_id}")
+                    account = accounts_by_id.get(user_id)
+                    if not account:
+                        print(f"[Server] Exp change failed: account not found for userId={user_id}")
+                        response = {'code': 1, 'msg': '玩家不存在', 'currentExp': 0, 'currentLevel': 1}
+                    else:
+                        current = account.get('exp', 0)
+                        new_amount = current + amount
+                        
+                        if amount < 0 and new_amount < 0:
+                            print(f"[Server] Exp change failed: insufficient exp (current={current}, need={-amount})")
+                            response = {'code': 1, 'msg': '经验不足', 'currentExp': current, 'currentLevel': account.get('level', 1)}
+                        else:
+                            account['exp'] = new_amount
+                            # 计算等级
+                            level = self.calculate_level(new_amount)
+                            account['level'] = level
+                            save_accounts(account_data)
+                            print(f"[Server] Exp change success: {current} -> {new_amount}, level={level}")
+                            response = {'code': 0, 'msg': '成功', 'currentExp': new_amount, 'currentLevel': level}
+            else:
+                print(f"[Server] Exp change failed: empty request body")
+                response = {'code': 1, 'msg': '请求体为空', 'currentExp': 0, 'currentLevel': 1}
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(response, ensure_ascii=False).encode())
+            return
+        
+        # 体力变更接口
+        if self.path == '/resource/energy':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data)
+                
+                token = data.get('token', '')
+                amount = data.get('amount', 0)
+                reason = data.get('reason', '')
+                
+                print(f"[Server] Energy change request: token={token[:20]}..., amount={amount}, reason={reason}")
+                
+                user_id = online_tokens.get(token)
+                if not user_id:
+                    print(f"[Server] Energy change failed: invalid token")
+                    response = {'code': 1, 'msg': '未登录或token无效', 'currentEnergy': 0, 'maxEnergy': 100}
+                else:
+                    print(f"[Server] Energy change: found userId={user_id}")
+                    account = accounts_by_id.get(user_id)
+                    if not account:
+                        print(f"[Server] Energy change failed: account not found for userId={user_id}")
+                        response = {'code': 1, 'msg': '玩家不存在', 'currentEnergy': 0, 'maxEnergy': 100}
+                    else:
+                        current = account.get('energy', 100)
+                        level = account.get('level', 1)
+                        max_energy = 100 + (level - 1) * 10  # 随等级提升
+                        new_amount = current + amount
+                        
+                        if amount < 0 and new_amount < 0:
+                            print(f"[Server] Energy change failed: insufficient energy (current={current}, need={-amount})")
+                            response = {'code': 1, 'msg': '体力不足', 'currentEnergy': current, 'maxEnergy': max_energy}
+                        else:
+                            # 检查是否允许超出上限（服务器端判断，安全）
+                            # 只有特定原因才允许溢出，如使用道具
+                            reason = data.get('reason', '')
+                            overflow_reasons = ['使用体力药水', '使用道具', '系统补偿', 'GM命令']
+                            allow_overflow = reason in overflow_reasons
+                            
+                            if allow_overflow:
+                                # 道具/奖励可以超出上限
+                                account['energy'] = new_amount
+                            else:
+                                # 自然恢复或普通操作不能超过上限
+                                account['energy'] = min(new_amount, max_energy)
+                            account['lastEnergyTime'] = int(time.time())
+                            save_accounts(account_data)
+                            print(f"[Server] Energy change success: {current} -> {account['energy']} (reason={reason}, overflow={allow_overflow})")
+                            response = {'code': 0, 'msg': '成功', 'currentEnergy': account['energy'], 'maxEnergy': max_energy}
+            else:
+                print(f"[Server] Energy change failed: empty request body")
+                response = {'code': 1, 'msg': '请求体为空', 'currentEnergy': 0, 'maxEnergy': 100}
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(response, ensure_ascii=False).encode())
+            return
+        
         # 404
         print(f"[Server] 404: path={self.path}")
         self.send_response(404)
         self.end_headers()
+    
+    def calculate_level(self, exp):
+        """根据经验计算等级"""
+        exp_table = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500]
+        for i in range(len(exp_table) - 1, -1, -1):
+            if exp >= exp_table[i]:
+                return i + 1
+        return 1
     
     def do_OPTIONS(self):
         self.send_response(200)
