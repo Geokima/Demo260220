@@ -7,14 +7,14 @@ namespace Framework.Modules.Procedure
 {
     public class ProcedureSystem : AbstractSystem
     {
-        private FSM<ProcedureType> _fsm;
+        private FSM<Type> _fsm;
         private bool _isStarted;
         private readonly List<IProcedure> _procedures = new List<IProcedure>();
 
-        public ProcedureType CurrentProcedure => _fsm?.CurrentState ?? ProcedureType.None;
-        public bool IsInProcedure(ProcedureType procedure) => _fsm?.IsInState(procedure) ?? false;
+        public Type CurrentProcedure => _fsm?.CurrentState;
+        public bool IsInProcedure<T>() where T : IProcedure => _fsm?.IsInState(typeof(T)) ?? false;
 
-        public event Action<ProcedureType, ProcedureType> OnProcedureChanged
+        public event Action<Type, Type> OnProcedureChanged
         {
             add { if (_fsm != null) _fsm.OnStateChanged += value; }
             remove { if (_fsm != null) _fsm.OnStateChanged -= value; }
@@ -22,10 +22,10 @@ namespace Framework.Modules.Procedure
 
         public override void Init()
         {
-            _fsm = new FSM<ProcedureType>();
+            _fsm = new FSM<Type>();
             _fsm.OnStateChanged += (from, to) =>
             {
-                Debug.Log($"[Procedure] Transition: {from} -> {to}");
+                Debug.Log($"[Procedure] Transition: {from?.Name} -> {to?.Name}");
             };
         }
 
@@ -33,24 +33,26 @@ namespace Framework.Modules.Procedure
         {
             procedure.Architecture = Architecture;
             procedure.OnInit();
-            _fsm.RegisterState(procedure.Type, procedure);
+            _fsm.RegisterState(procedure.GetType(), procedure);
             _procedures.Add(procedure);
         }
 
-        public void RegisterTransitionCondition(ProcedureType from, ProcedureType to, ITransitionCondition<ProcedureType> condition)
+        public void RegisterTransitionCondition<TFrom, TTo>(ITransitionCondition<Type> condition) 
+            where TFrom : IProcedure 
+            where TTo : IProcedure
         {
-            _fsm.RegisterTransitionCondition(from, to, condition);
+            _fsm.RegisterTransitionCondition(typeof(TFrom), typeof(TTo), condition);
         }
 
-        public void Start(ProcedureType initialProcedure)
+        public void Start<T>() where T : IProcedure
         {
             if (_isStarted) return;
-            _fsm.ChangeState(initialProcedure);
+            _fsm.ChangeState(typeof(T));
             _isStarted = true;
         }
 
-        public void ChangeProcedure(ProcedureType procedure) => _fsm.ChangeState(procedure);
-        public bool TryChangeProcedure(ProcedureType procedure) => _fsm.TryChangeState(procedure);
+        public void ChangeProcedure<T>() where T : IProcedure => _fsm.ChangeState(typeof(T));
+        public bool TryChangeProcedure<T>() where T : IProcedure => _fsm.TryChangeState(typeof(T));
 
         public void Update() => _fsm.Update();
         public void FixedUpdate() => _fsm.FixedUpdate();
