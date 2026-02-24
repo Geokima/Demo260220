@@ -72,9 +72,9 @@ namespace Framework.Modules.Config
         private string GetConfigFileName(Type configRowType)
         {
             var typeName = configRowType.Name;
-            if (typeName.EndsWith("ConfigRow"))
+            if (typeName.EndsWith("Config"))
             {
-                var baseName = typeName.Substring(0, typeName.Length - "ConfigRow".Length);
+                var baseName = typeName.Substring(0, typeName.Length - "Config".Length);
                 return $"cfg_{baseName.ToLower()}";
             }
             return $"cfg_{typeName.ToLower()}";

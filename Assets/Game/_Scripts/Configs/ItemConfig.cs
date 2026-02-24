@@ -1,41 +1,25 @@
-using Framework;
 using Framework.Modules.Config;
 
 namespace Game.Configs
 {
     /// <summary>
-    /// 物品配置查询工具
+    /// 物品配置
     /// </summary>
-    public static class ItemConfig
+    public class ItemConfig : IConfigRow
     {
-        public static ItemConfigRow Get(int itemId)
-        {
-            return GameArchitecture.Instance.GetSystem<ConfigSystem>().Get<ItemConfigRow>(itemId);
-        }
-
-        public static string GetName(int itemId)
-        {
-            return Get(itemId)?.Name ?? $"未知物品({itemId})";
-        }
-
-        public static string GetIcon(int itemId)
-        {
-            return Get(itemId)?.Icon;
-        }
-
-        public static string GetDesc(int itemId)
-        {
-            return Get(itemId)?.Description;
-        }
-
-        public static int GetMaxStack(int itemId)
-        {
-            return Get(itemId)?.MaxStack ?? 99;
-        }
-
-        public static bool IsConsumable(int itemId)
-        {
-            return Get(itemId)?.Type == "Consumable";
-        }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public string Description { get; set; }
+        public string Icon { get; set; }
+        public int MaxStack { get; set; }
+        public int Value { get; set; }
+        public string UseEffect { get; set; }
+        public int Attack { get; set; }
+        public int Defense { get; set; }
+        public int Durability { get; set; }
+        public string Rarity { get; set; }
+        public int QuestId { get; set; }
+        public bool IsKeyItem { get; set; }
     }
 }
