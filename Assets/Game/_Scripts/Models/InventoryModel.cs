@@ -1,4 +1,5 @@
 using Framework;
+using Game.Data;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -57,6 +58,15 @@ namespace Game.Models
         }
 
         public override void Deinit()
+        {
+            Items.Clear();
+            MaxSlots.Value = 9;
+        }
+
+        /// <summary>
+        /// 清除所有数据（退出登录时调用）
+        /// </summary>
+        public void Clear()
         {
             Items.Clear();
             MaxSlots.Value = 9;

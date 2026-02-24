@@ -8,7 +8,6 @@ namespace Game.Procedures
     /// </summary>
     public class MainProcedure : ProcedureBase
     {
-        public override ProcedureType Type => ProcedureType.Main;
 
         public override void OnEnter()
         {

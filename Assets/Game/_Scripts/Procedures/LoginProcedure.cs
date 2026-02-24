@@ -8,7 +8,6 @@ namespace Game.Procedures
     /// </summary>
     public class LoginProcedure : ProcedureBase
     {
-        public override ProcedureType Type => ProcedureType.Login;
 
         public override void OnEnter()
         {
@@ -17,7 +16,6 @@ namespace Game.Procedures
 
         public override void OnExit()
         {
-            Debug.Log("[LoginProcedure] OnExit");
         }
     }
 }

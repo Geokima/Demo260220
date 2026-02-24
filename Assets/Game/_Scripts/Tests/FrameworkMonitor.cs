@@ -371,13 +371,14 @@ namespace Game.Tests
             if (_eventRecords.Count == 0)
             {
                 GUILayout.Label("暂无事件记录", _flatLabelStyle);
-                return;
             }
-
-            for (int i = _eventRecords.Count - 1; i >= 0; i--)
+            else
             {
-                DrawEventRecord(i);
-                GUILayout.Space(2);
+                for (int i = _eventRecords.Count - 1; i >= 0; i--)
+                {
+                    DrawEventRecord(i);
+                    GUILayout.Space(2);
+                }
             }
         }
 

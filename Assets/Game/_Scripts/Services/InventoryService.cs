@@ -1,8 +1,8 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Http;
+using Game.Data;
 using Game.Models;
-using Game.Systems;
 using UnityEngine;
 
 namespace Game.Services
@@ -23,14 +23,14 @@ namespace Game.Services
 
         private async UniTaskVoid GetInventoryAsync()
         {
-            var loginSystem = this.GetSystem<LoginSystem>();
-            if (string.IsNullOrEmpty(loginSystem.Token))
+            var accountModel = this.GetModel<AccountModel>();
+            if (string.IsNullOrEmpty(accountModel.Token.Value))
             {
                 Debug.LogError("[InventoryService] Not logged in");
                 return;
             }
 
-            var json = $"{{\"token\":\"{loginSystem.Token}\"}}";
+            var json = $"{{\"token\":\"{accountModel.Token.Value}\"}}";
             var response = await _httpSystem.PostAsync("/inventory/get", json);
 
             if (string.IsNullOrEmpty(response))
@@ -59,14 +59,14 @@ namespace Game.Services
 
         private async UniTaskVoid AddItemAsync(int itemId, int amount, bool bind)
         {
-            var loginSystem = this.GetSystem<LoginSystem>();
-            if (string.IsNullOrEmpty(loginSystem.Token))
+            var accountModel = this.GetModel<AccountModel>();
+            if (string.IsNullOrEmpty(accountModel.Token.Value))
             {
                 Debug.LogError("[InventoryService] Not logged in");
                 return;
             }
 
-            var json = $"{{\"token\":\"{loginSystem.Token}\",\"itemId\":{itemId},\"amount\":{amount},\"bind\":{bind.ToString().ToLower()}}}";
+            var json = $"{{\"token\":\"{accountModel.Token.Value}\",\"itemId\":{itemId},\"amount\":{amount},\"bind\":{bind.ToString().ToLower()}}}";
             var response = await _httpSystem.PostAsync("/inventory/add", json);
 
             if (string.IsNullOrEmpty(response))
@@ -96,14 +96,14 @@ namespace Game.Services
 
         private async UniTaskVoid RemoveItemAsync(string uid, int amount)
         {
-            var loginSystem = this.GetSystem<LoginSystem>();
-            if (string.IsNullOrEmpty(loginSystem.Token))
+            var accountModel = this.GetModel<AccountModel>();
+            if (string.IsNullOrEmpty(accountModel.Token.Value))
             {
                 Debug.LogError("[InventoryService] Not logged in");
                 return;
             }
 
-            var json = $"{{\"token\":\"{loginSystem.Token}\",\"uid\":\"{uid}\",\"amount\":{amount}}}";
+            var json = $"{{\"token\":\"{accountModel.Token.Value}\",\"uid\":\"{uid}\",\"amount\":{amount}}}";
             var response = await _httpSystem.PostAsync("/inventory/remove", json);
 
             if (string.IsNullOrEmpty(response))
@@ -133,14 +133,14 @@ namespace Game.Services
 
         private async UniTaskVoid UseItemAsync(string uid, int amount)
         {
-            var loginSystem = this.GetSystem<LoginSystem>();
-            if (string.IsNullOrEmpty(loginSystem.Token))
+            var accountModel = this.GetModel<AccountModel>();
+            if (string.IsNullOrEmpty(accountModel.Token.Value))
             {
                 Debug.LogError("[InventoryService] Not logged in");
                 return;
             }
 
-            var json = $"{{\"token\":\"{loginSystem.Token}\",\"uid\":\"{uid}\",\"amount\":{amount}}}";
+            var json = $"{{\"token\":\"{accountModel.Token.Value}\",\"uid\":\"{uid}\",\"amount\":{amount}}}";
             var response = await _httpSystem.PostAsync("/inventory/use", json);
 
             if (string.IsNullOrEmpty(response))

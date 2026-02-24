@@ -1,5 +1,5 @@
 using Framework;
-using Game.Models;
+using Game.Data;
 
 namespace Game
 {

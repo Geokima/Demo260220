@@ -10,7 +10,7 @@ namespace Game.Commands
 
         public override void Execute()
         {
-            this.GetSystem<LoginService>().RequestLogin(Username, Password);
+            this.GetSystem<AuthService>().LoginAsync(Username, Password).Forget();
         }
     }
 }

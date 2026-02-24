@@ -11,11 +11,9 @@ namespace Game.Procedures
     /// </summary>
     public class PreloadProcedure : ProcedureBase
     {
-        public override ProcedureType Type => ProcedureType.Preload;
 
         public override void OnEnter()
         {
-            Debug.Log("[PreloadProcedure] OnEnter");
             LoadAll().Forget();
         }
 
@@ -26,12 +24,12 @@ namespace Game.Procedures
             await configSystem.LoadConfigsFrom(resSystem.AssetLoader, "Config");
             Debug.Log("[PreloadProcedure] Configs loaded");
 
-            ChangeProcedure(ProcedureType.Login);
+            // 预加载完成后进入登录流程
+            ChangeProcedure<LoginProcedure>();
         }
 
         public override void OnExit()
         {
-            Debug.Log("[PreloadProcedure] OnExit");
         }
     }
 }
