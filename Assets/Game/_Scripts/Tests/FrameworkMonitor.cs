@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using Framework;
+using Framework.Modules.Http;
 
 namespace Game.Tests
 {
@@ -27,7 +28,8 @@ namespace Game.Tests
         private Vector2 _scrollPosition;
         private Rect _windowRect;
         private bool _isMinimized = false;
-        private const float _minimizedHeight = 30f;
+        private float _maximizedHeight = 400;
+        private float _maximizedWidth = 400;
         private bool _isResizing = false;
         private Vector2 _resizeStartMouse;
         private Vector2 _resizeStartSize;
@@ -43,23 +45,46 @@ namespace Game.Tests
         private List<string> _cachedModels = new List<string>();
         private List<EventInfo> _cachedEventInfos = new List<EventInfo>();
         private float _lastRefreshTime;
-        
+        private string _expandedRegisteredEventType = null;  // 已注册事件展开的类型名
+
         private class EventInfo
         {
             public string EventType;
             public List<string> HandlerNames = new List<string>();
         }
-        
+
         #endregion
 
         #region Private Fields - Event History Page
         
         private int _currentPage = 0;
-        private readonly string[] _pageNames = { "容器", "事件记录" };
+        private readonly string[] _pageNames = { "容器", "事件记录", "HTTP监听" };
         private List<EventRecord> _eventRecords = new List<EventRecord>();
         private int _maxEventRecords = 100;
         private int _expandedEventIndex = -1;
         private Dictionary<string, List<string>> _eventDataCache = new Dictionary<string, List<string>>();
+        
+        #endregion
+
+        #region Private Fields - HTTP Page
+        
+        private List<HttpRequestRecord> _httpRecords = new List<HttpRequestRecord>();
+        private int _maxHttpRecords = 50;
+        private int _expandedHttpIndex = -1;
+        private bool _showHttpSuccess = true;
+        private bool _showHttpError = true;
+        
+        private class HttpRequestRecord
+        {
+            public DateTime RealTime;
+            public string Method;
+            public string Url;
+            public string RequestBody;
+            public string ResponseBody;
+            public long DurationMs;
+            public bool IsSuccess;
+            public int StatusCode;
+        }
         
         private class EventRecord
         {
@@ -87,11 +112,31 @@ namespace Game.Tests
             _windowRect = new Rect(Screen.width - 410, 10, 400, 400);
             RefreshData();
             EventSystem.OnEventSent += OnEventSent;
+            HttpSystem.OnRequestSent += OnHttpRequest;
         }
         
         private void OnDestroy()
         {
             EventSystem.OnEventSent -= OnEventSent;
+            HttpSystem.OnRequestSent -= OnHttpRequest;
+        }
+        
+        private void OnHttpRequest(string method, string url, string requestBody, string responseBody, long durationMs, bool isSuccess, int statusCode)
+        {
+            _httpRecords.Add(new HttpRequestRecord
+            {
+                RealTime = DateTime.Now,
+                Method = method,
+                Url = url,
+                RequestBody = requestBody,
+                ResponseBody = responseBody,
+                DurationMs = durationMs,
+                IsSuccess = isSuccess,
+                StatusCode = statusCode
+            });
+            
+            if (_httpRecords.Count > _maxHttpRecords)
+                _httpRecords.RemoveAt(0);
         }
         
         private void Update()
@@ -129,9 +174,16 @@ namespace Game.Tests
             _flatButtonStyle.normal.background = MakeTexture(2, 2, new Color(0.2f, 0.2f, 0.2f, 1f));
             _flatButtonStyle.hover.background = MakeTexture(2, 2, new Color(0.3f, 0.3f, 0.3f, 1f));
             _flatButtonStyle.active.background = MakeTexture(2, 2, new Color(0.15f, 0.15f, 0.15f, 1f));
+            // Toggle选中状态样式 - 使用正常颜色
+            _flatButtonStyle.onNormal.background = MakeTexture(2, 2, new Color(0.25f, 0.25f, 0.25f, 1f));
+            _flatButtonStyle.onHover.background = MakeTexture(2, 2, new Color(0.35f, 0.35f, 0.35f, 1f));
+            _flatButtonStyle.onActive.background = MakeTexture(2, 2, new Color(0.2f, 0.2f, 0.2f, 1f));
             _flatButtonStyle.normal.textColor = Color.white;
             _flatButtonStyle.hover.textColor = Color.white;
             _flatButtonStyle.active.textColor = Color.white;
+            _flatButtonStyle.onNormal.textColor = Color.white;
+            _flatButtonStyle.onHover.textColor = Color.white;
+            _flatButtonStyle.onActive.textColor = Color.white;
             _flatButtonStyle.border = new RectOffset(0, 0, 0, 0);
             _flatButtonStyle.margin = new RectOffset(2, 2, 2, 2);
             _flatButtonStyle.padding = new RectOffset(8, 8, 4, 4);
@@ -158,18 +210,17 @@ namespace Game.Tests
             texture.Apply();
             return texture;
         }
-        
+
         #endregion
 
         #region Window Drawing
-        
+
         private void DrawMinimized()
         {
-            var minimizedRect = new Rect(_windowRect.x, _windowRect.y, _windowRect.width, _minimizedHeight);
-            minimizedRect = GUILayout.Window(0, minimizedRect, DrawMinimizedWindow, "FrameworkMonitor", GUILayout.ExpandWidth(true));
-            _windowRect.x = minimizedRect.x;
-            _windowRect.y = minimizedRect.y;
+            var minimizedRect = new Rect(_windowRect.x, _windowRect.y, 150f, 55f);
+            _windowRect = GUILayout.Window(0, minimizedRect, DrawMinimizedWindow, "FrameworkMonitor");
             _windowRect.width = minimizedRect.width;
+            _windowRect.height = minimizedRect.height;
         }
 
         private void DrawMaximized()
@@ -183,7 +234,11 @@ namespace Game.Tests
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{Mathf.RoundToInt(1f / Time.deltaTime)} FPS", _flatLabelStyle, GUILayout.ExpandWidth(true));
             if (GUILayout.Button("+", _flatButtonStyle, GUILayout.Width(25)))
+            {
+                _windowRect.width = _maximizedWidth;    // 恢复保存的宽度
+                _windowRect.height = _maximizedHeight;  // 恢复保存的高度
                 _isMinimized = false;
+            }
             GUILayout.EndHorizontal();
             GUI.DragWindow();
         }
@@ -206,7 +261,11 @@ namespace Game.Tests
             GUILayout.Label($"{Mathf.RoundToInt(1f / Time.deltaTime)} FPS", _flatLabelStyle, GUILayout.Width(60));
             GUILayout.Label($"Time: {Time.time:F2}s", _flatLabelStyle, GUILayout.ExpandWidth(true));
             if (GUILayout.Button("-", _flatButtonStyle, GUILayout.Width(25)))
+            {
+                _maximizedWidth = _windowRect.width;    // 保存当前宽度
+                _maximizedHeight = _windowRect.height;  // 保存当前高度
                 _isMinimized = true;
+            }
             GUILayout.EndHorizontal();
             GUILayout.Space(5);
         }
@@ -218,7 +277,7 @@ namespace Game.Tests
             {
                 var isActive = i == _currentPage;
                 var btnStyle = isActive ? _flatButtonStyle : _flatBoxStyle;
-                if (GUILayout.Button(_pageNames[i], btnStyle, GUILayout.Width(80)))
+                if (GUILayout.Button(_pageNames[i], btnStyle, GUILayout.ExpandWidth(true)))
                     _currentPage = i;
             }
             GUILayout.EndHorizontal();
@@ -236,6 +295,9 @@ namespace Game.Tests
                     break;
                 case 1:
                     DrawEventHistoryPage();
+                    break;
+                case 2:
+                    DrawHttpPage();
                     break;
             }
 
@@ -340,18 +402,28 @@ namespace Game.Tests
 
             foreach (var eventInfo in _cachedEventInfos)
             {
+                var isExpanded = _expandedRegisteredEventType == eventInfo.EventType;
+                var eventIcon = isExpanded ? "●" : "○";
+                btnStyle.alignment = TextAnchor.MiddleLeft;
+                
                 GUILayout.BeginHorizontal();
                 GUILayout.Space(20);
-                GUILayout.Label($"- {eventInfo.EventType}", _flatLabelStyle, GUILayout.Width(150));
-                
-                GUILayout.BeginVertical();
-                foreach (var handlerName in eventInfo.HandlerNames)
-                {
-                    GUILayout.Label($"- {handlerName}", _flatLabelStyle);
-                }
-                GUILayout.EndVertical();
-                
+                if (GUILayout.Button($"{eventIcon} {eventInfo.EventType} ({eventInfo.HandlerNames.Count})", btnStyle))
+                    _expandedRegisteredEventType = isExpanded ? null : eventInfo.EventType;
                 GUILayout.EndHorizontal();
+                
+                if (isExpanded)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(40);
+                    GUILayout.BeginVertical();
+                    foreach (var handlerName in eventInfo.HandlerNames)
+                    {
+                        GUILayout.Label($"- {handlerName}", _flatLabelStyle);
+                    }
+                    GUILayout.EndVertical();
+                    GUILayout.EndHorizontal();
+                }
             }
         }
         
@@ -397,16 +469,42 @@ namespace Game.Tests
             if (isExpanded)
             {
                 GUILayout.BeginVertical(_flatBoxStyle);
+                
+                // 显示谁能收到这个事件
+                DrawEventHandlers(record.EventType);
+                
+                GUILayout.Space(5);
                 DrawEventData(record.EventData, record.EventType);
                 GUILayout.EndVertical();
             }
         }
 
+        private void DrawEventHandlers(string eventType)
+        {
+            GUILayout.Label("<color=yellow>监听器:</color>", _flatLabelStyle);
+            
+            // 从缓存中查找该事件类型的监听器
+            var eventInfo = _cachedEventInfos.Find(e => e.EventType == eventType);
+            if (eventInfo != null && eventInfo.HandlerNames.Count > 0)
+            {
+                foreach (var handlerName in eventInfo.HandlerNames)
+                {
+                    GUILayout.Label($"  - {handlerName}", _flatLabelStyle);
+                }
+            }
+            else
+            {
+                GUILayout.Label("  (无监听器)", _flatLabelStyle);
+            }
+        }
+
         private void DrawEventData(object eventData, string eventType)
         {
+            GUILayout.Label("<color=yellow>事件数据:</color>", _flatLabelStyle);
+            
             if (eventData == null)
             {
-                GUILayout.Label("null", _flatLabelStyle);
+                GUILayout.Label("  null", _flatLabelStyle);
                 return;
             }
 
@@ -446,6 +544,84 @@ namespace Game.Tests
             var field = type.GetField(name);
             var prop = type.GetProperty(name);
             return field?.GetValue(obj) ?? prop?.GetValue(obj);
+        }
+        
+        #endregion
+
+        #region HTTP Page
+        
+        private void DrawHttpPage()
+        {
+            // 筛选选项
+            GUILayout.BeginHorizontal();
+            _showHttpSuccess = GUILayout.Toggle(_showHttpSuccess, "显示成功", _flatButtonStyle);
+            _showHttpError = GUILayout.Toggle(_showHttpError, "显示错误", _flatButtonStyle);
+            GUILayout.Label($"记录数: {_httpRecords.Count}/{_maxHttpRecords}", _flatLabelStyle, GUILayout.ExpandWidth(true));
+            if (GUILayout.Button("清空", _flatButtonStyle, GUILayout.Width(50)))
+                _httpRecords.Clear();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(5);
+
+            if (_httpRecords.Count == 0)
+            {
+                GUILayout.Label("暂无HTTP请求记录", _flatLabelStyle);
+            }
+            else
+            {
+                for (int i = _httpRecords.Count - 1; i >= 0; i--)
+                {
+                    var record = _httpRecords[i];
+                    // 根据筛选条件显示
+                    if ((record.IsSuccess && !_showHttpSuccess) || (!record.IsSuccess && !_showHttpError))
+                        continue;
+                    
+                    DrawHttpRecord(i);
+                    GUILayout.Space(2);
+                }
+            }
+        }
+
+        private void DrawHttpRecord(int index)
+        {
+            var record = _httpRecords[index];
+            var isExpanded = _expandedHttpIndex == index;
+            
+            var btnStyle = new GUIStyle(_flatButtonStyle);
+            btnStyle.alignment = TextAnchor.MiddleLeft;
+            
+            var color = record.IsSuccess ? "<color=green>" : "<color=red>";
+            var colorEnd = "</color>";
+            var shortUrl = record.Url.Length > 40 ? record.Url.Substring(0, 40) + "..." : record.Url;
+
+            if (GUILayout.Button($"[{record.RealTime:HH:mm:ss}] {color}{record.Method}{colorEnd} {shortUrl} ({record.DurationMs}ms)", btnStyle))
+            {
+                _expandedHttpIndex = isExpanded ? -1 : index;
+            }
+            
+            if (isExpanded)
+            {
+                GUILayout.BeginVertical(_flatBoxStyle);
+                GUILayout.Label($"<color=white>URL:</color> {record.Url}", _flatLabelStyle);
+                GUILayout.Label($"<color=white>状态:</color> {(record.IsSuccess ? "成功" : "失败")} (HTTP {record.StatusCode})", _flatLabelStyle);
+                GUILayout.Label($"<color=white>耗时:</color> {record.DurationMs}ms", _flatLabelStyle);
+                
+                if (!string.IsNullOrEmpty(record.RequestBody))
+                {
+                    GUILayout.Label("<color=white>请求体:</color>", _flatLabelStyle);
+                    GUILayout.TextArea(record.RequestBody, GUILayout.Height(60));
+                }
+                
+                if (!string.IsNullOrEmpty(record.ResponseBody))
+                {
+                    GUILayout.Label("<color=white>响应体:</color>", _flatLabelStyle);
+                    var response = record.ResponseBody.Length > 500 
+                        ? record.ResponseBody.Substring(0, 500) + "..." 
+                        : record.ResponseBody;
+                    GUILayout.TextArea(response, GUILayout.Height(80));
+                }
+                
+                GUILayout.EndVertical();
+            }
         }
         
         #endregion
@@ -572,7 +748,11 @@ namespace Game.Tests
                         if (onEvent != null)
                         {
                             foreach (var handler in onEvent.GetInvocationList())
-                                eventInfo.HandlerNames.Add(handler.Method.Name);
+                            {
+                                var declaringType = handler.Method.DeclaringType?.Name ?? "Unknown";
+                                var methodName = handler.Method.Name;
+                                eventInfo.HandlerNames.Add($"{declaringType}.{methodName}");
+                            }
                         }
                     }
                     result.Add(eventInfo);

@@ -5,9 +5,9 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "UniTask",
+        "YooAsset",
         "Framework",
-        "Game",
-        "YooAsset"
+        "Hotfix"
     ],
     "includePlatforms": [
         "Editor"

@@ -15,12 +15,12 @@ namespace Game.Services
             _httpSystem = this.GetSystem<HttpSystem>();
         }
 
-        public void RequestChangeDiamond(long amount, string reason)
+        public void RequestChangeDiamond(int amount, string reason)
         {
             ChangeDiamondAsync(amount, reason).Forget();
         }
 
-        private async UniTaskVoid ChangeDiamondAsync(long amount, string reason)
+        private async UniTaskVoid ChangeDiamondAsync(int amount, string reason)
         {
             var resourcesModel = this.GetModel<PlayerModel>();
 
@@ -43,7 +43,7 @@ namespace Game.Services
             }
         }
 
-        private async UniTask<(bool success, long currentAmount)> RequestChangeDiamondAsync(long amount, string reason)
+        private async UniTask<(bool success, int currentAmount)> RequestChangeDiamondAsync(int amount, string reason)
         {
             if (_httpSystem == null)
             {
@@ -71,12 +71,12 @@ namespace Game.Services
             return (result.code == 0, result.currentAmount);
         }
 
-        public void RequestChangeGold(long amount, string reason)
+        public void RequestChangeGold(int amount, string reason)
         {
             ChangeGoldAsync(amount, reason).Forget();
         }
 
-        private async UniTaskVoid ChangeGoldAsync(long amount, string reason)
+        private async UniTaskVoid ChangeGoldAsync(int amount, string reason)
         {
             var resourcesModel = this.GetModel<PlayerModel>();
 
@@ -99,7 +99,7 @@ namespace Game.Services
             }
         }
 
-        private async UniTask<(bool success, long currentAmount)> RequestChangeGoldAsync(long amount, string reason)
+        private async UniTask<(bool success, int currentAmount)> RequestChangeGoldAsync(int amount, string reason)
         {
             if (_httpSystem == null)
             {
@@ -127,7 +127,7 @@ namespace Game.Services
             return (result.code == 0, result.currentAmount);
         }
 
-        public async UniTask<(bool success, long diamond, long gold)> GetResourcesAsync()
+        public async UniTask<(bool success, int diamond, int gold)> GetResourcesAsync()
         {
             if (_httpSystem == null)
             {
@@ -155,12 +155,12 @@ namespace Game.Services
             return (result.code == 0, result.diamond, result.gold);
         }
 
-        public void RequestChangeExp(long amount, string reason)
+        public void RequestChangeExp(int amount, string reason)
         {
             ChangeExpAsync(amount, reason).Forget();
         }
 
-        private async UniTaskVoid ChangeExpAsync(long amount, string reason)
+        private async UniTaskVoid ChangeExpAsync(int amount, string reason)
         {
             var playerModel = this.GetModel<PlayerModel>();
 
@@ -190,7 +190,7 @@ namespace Game.Services
             }
         }
 
-        private async UniTask<(bool success, long currentExp, int currentLevel)> RequestChangeExpAsync(long amount, string reason)
+        private async UniTask<(bool success, int currentExp, int currentLevel)> RequestChangeExpAsync(int amount, string reason)
         {
             if (_httpSystem == null)
             {
@@ -222,12 +222,12 @@ namespace Game.Services
         /// 请求变更体力
         /// 注意：是否可超出上限由服务器根据reason判断
         /// </summary>
-        public void RequestChangeEnergy(long amount, string reason)
+        public void RequestChangeEnergy(int amount, string reason)
         {
             ChangeEnergyAsync(amount, reason).Forget();
         }
 
-        private async UniTaskVoid ChangeEnergyAsync(long amount, string reason)
+        private async UniTaskVoid ChangeEnergyAsync(int amount, string reason)
         {
             var playerModel = this.GetModel<PlayerModel>();
 
@@ -243,11 +243,12 @@ namespace Game.Services
                 return;
             }
 
-            var (success, currentEnergy, maxEnergy) = await RequestChangeEnergyAsync(amount, reason);
+            var (success, currentEnergy) = await RequestChangeEnergyAsync(amount, reason);
 
             if (success)
             {
                 playerModel.Energy.Value = currentEnergy;
+                var maxEnergy = playerModel.GetMaxEnergy();
                 this.SendEvent(new EnergyChangedEvent { Amount = amount, Current = currentEnergy, Max = maxEnergy });
             }
             else
@@ -256,19 +257,19 @@ namespace Game.Services
             }
         }
 
-        private async UniTask<(bool success, long currentEnergy, long maxEnergy)> RequestChangeEnergyAsync(long amount, string reason)
+        private async UniTask<(bool success, int currentEnergy)> RequestChangeEnergyAsync(int amount, string reason)
         {
             if (_httpSystem == null)
             {
                 Debug.LogError("[ResourceService] HttpSystem is null");
-                return (false, 0, 100);
+                return (false, 0);
             }
 
             var accountModel = this.GetModel<AccountModel>();
             if (string.IsNullOrEmpty(accountModel.Token.Value))
             {
                 Debug.LogError("[ResourceService] Not logged in");
-                return (false, 0, 100);
+                return (false, 0);
             }
 
             var json = $"{{\"token\":\"{accountModel.Token.Value}\",\"amount\":{amount},\"reason\":\"{reason}\"}}";
@@ -277,11 +278,11 @@ namespace Game.Services
             if (string.IsNullOrEmpty(response))
             {
                 Debug.LogError("[ResourceService] Request energy failed");
-                return (false, 0, 100);
+                return (false, 0);
             }
 
             var result = JsonUtility.FromJson<EnergyResponse>(response);
-            return (result.code == 0, result.currentEnergy, result.maxEnergy);
+            return (result.code == 0, result.currentEnergy);
         }
 
         [System.Serializable]
@@ -289,7 +290,7 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long currentAmount;
+            public int currentAmount;
         }
 
         [System.Serializable]
@@ -297,7 +298,7 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long currentAmount;
+            public int currentAmount;
         }
 
         [System.Serializable]
@@ -305,8 +306,12 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long diamond;
-            public long gold;
+            public int diamond;
+            public int gold;
+            public int exp;
+            public int level;
+            public int energy;
+            public long lastEnergyTime;
         }
 
         [System.Serializable]
@@ -314,7 +319,7 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long currentExp;
+            public int currentExp;
             public int currentLevel;
         }
 
@@ -323,8 +328,78 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long currentEnergy;
-            public long maxEnergy;
+            public int currentEnergy;
+        }
+
+        [System.Serializable]
+        private class ExchangeResponse
+        {
+            public int code;
+            public string msg;
+            public int currentDiamond;
+            public int currentGold;
+        }
+
+        /// <summary>
+        /// 请求钻石兑换金币
+        /// </summary>
+        public void RequestExchangeDiamondForGold(int diamondAmount, int goldAmount)
+        {
+            ExchangeDiamondForGoldAsync(diamondAmount, goldAmount).Forget();
+        }
+
+        private async UniTaskVoid ExchangeDiamondForGoldAsync(int diamondAmount, int goldAmount)
+        {
+            var playerModel = this.GetModel<PlayerModel>();
+
+            // 客户端预检查
+            if (!playerModel.HasEnough(PlayerModel.ResourceType.Diamond, diamondAmount))
+            {
+                this.SendEvent(new DiamondChangeFailedEvent { Reason = "钻石不足" });
+                return;
+            }
+
+            var (success, currentDiamond, currentGold) = await RequestExchangeDiamondForGoldAsync(diamondAmount, goldAmount);
+
+            if (success)
+            {
+                playerModel.Diamond.Value = currentDiamond;
+                playerModel.Gold.Value = currentGold;
+                this.SendEvent(new DiamondChangedEvent { Amount = -diamondAmount, Current = currentDiamond });
+                this.SendEvent(new GoldChangedEvent { Amount = goldAmount, Current = currentGold });
+            }
+            else
+            {
+                this.SendEvent(new DiamondChangeFailedEvent { Reason = "兑换失败" });
+            }
+        }
+
+        private async UniTask<(bool success, int currentDiamond, int currentGold)> RequestExchangeDiamondForGoldAsync(int diamondAmount, int goldAmount)
+        {
+            if (_httpSystem == null)
+            {
+                Debug.LogError("[ResourceService] HttpSystem is null");
+                return (false, 0, 0);
+            }
+
+            var accountModel = this.GetModel<AccountModel>();
+            if (string.IsNullOrEmpty(accountModel.Token.Value))
+            {
+                Debug.LogError("[ResourceService] Not logged in");
+                return (false, 0, 0);
+            }
+
+            var json = $"{{\"token\":\"{accountModel.Token.Value}\",\"diamondAmount\":{diamondAmount},\"goldAmount\":{goldAmount}}}";
+            var response = await _httpSystem.PostAsync("/exchange/diamond_to_gold", json);
+
+            if (string.IsNullOrEmpty(response))
+            {
+                Debug.LogError("[ResourceService] Exchange request failed");
+                return (false, 0, 0);
+            }
+
+            var result = JsonUtility.FromJson<ExchangeResponse>(response);
+            return (result.code == 0, result.currentDiamond, result.currentGold);
         }
     }
 

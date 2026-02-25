@@ -12,7 +12,10 @@ namespace Game.Models
         
         /// <summary>用户ID</summary>
         public BindableProperty<int> UserId { get; } = new BindableProperty<int>(0);
-        
+
+        /// <summary>用户名</summary>
+        public BindableProperty<string> Username { get; } = new BindableProperty<string>("");
+
         /// <summary>是否已登录</summary>
         public bool IsLoggedIn => !string.IsNullOrEmpty(Token.Value);
 
@@ -23,6 +26,7 @@ namespace Game.Models
         {
             Token.Value = "";
             UserId.Value = 0;
+            Username.Value = "";
         }
     }
 }

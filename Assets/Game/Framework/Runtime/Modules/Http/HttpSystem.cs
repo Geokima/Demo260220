@@ -12,6 +12,8 @@ namespace Framework.Modules.Http
 {
     public class HttpSystem : AbstractSystem
     {
+        public static event Action<string, string, string, string, long, bool, int> OnRequestSent;
+        
         public string ProdUrl { get; set; }
         public string TestUrl { get; set; }
         public bool IsTest { get; set; }
@@ -99,6 +101,9 @@ namespace Framework.Modules.Http
 
             // 发送开始事件，外部可监听此事件处理Loading UI
             this.SendEvent(new HttpStateEvent { Url = url, IsLoading = true });
+            
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            string fullUrl = url.StartsWith("http") ? url : $"{BaseUrl?.TrimEnd('/')}/{url?.TrimStart('/')}";
 
             int currentRetry = 0;
             while (true)
@@ -108,8 +113,16 @@ namespace Framework.Modules.Http
                 {
                     request = CreateRequest(url, method, json);
                     await request.SendWebRequest().WithCancellation(linkedCts.Token);
+                    stopwatch.Stop();
+                    
+                    bool isSuccess = request.result == UnityWebRequest.Result.Success;
+                    int statusCode = (int)request.responseCode;
+                    string responseBody = request.downloadHandler?.text;
+                    
+                    // 触发HTTP请求记录事件
+                    OnRequestSent?.Invoke(method, fullUrl, json, responseBody, stopwatch.ElapsedMilliseconds, isSuccess, statusCode);
 
-                    if (request.result == UnityWebRequest.Result.Success)
+                    if (isSuccess)
                     {
                         this.SendEvent(new HttpStateEvent { Url = url, IsLoading = false });
                         return request;
@@ -131,7 +144,12 @@ namespace Framework.Modules.Http
                 }
                 catch (Exception ex)
                 {
+                    stopwatch.Stop();
                     request?.Dispose();
+                    
+                    // 触发HTTP请求记录事件（异常）
+                    OnRequestSent?.Invoke(method, fullUrl, json, ex.Message, stopwatch.ElapsedMilliseconds, false, 0);
+                    
                     if (currentRetry < MaxRetry && !linkedCts.IsCancellationRequested)
                     {
                         currentRetry++;

@@ -150,11 +150,11 @@ namespace Game.Services
         {
             public int code;
             public string msg;
-            public long diamond;
-            public long gold;
-            public long exp;
+            public int diamond;
+            public int gold;
+            public int exp;
             public int level;
-            public long energy;
+            public int energy;
             public long lastEnergyTime;
         }
 

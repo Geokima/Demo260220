@@ -57,7 +57,8 @@ namespace Game.Services
                     // 写入新账号数据
                     accountModel.Token.Value = response.token;
                     accountModel.UserId.Value = response.userId;
-                    
+                    accountModel.Username.Value = response.username;
+
                     // 发送登录成功事件（PlayerService会监听并同步数据）
                     this.SendEvent(new LoginSuccessEvent { Token = response.token, UserId = response.userId });
                 }
@@ -157,6 +158,7 @@ namespace Game.Services
             public string msg;
             public string token;
             public int userId;
+            public string username;
         }
 
         [System.Serializable]

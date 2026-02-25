@@ -59,8 +59,8 @@ namespace Game.Tests
                         long elapsed = currentTime - _lastLocalRecoverTime;
                         if (elapsed >= PlayerModel.EnergyRecoverInterval)
                         {
-                            long recoverPoints = elapsed / PlayerModel.EnergyRecoverInterval;
-                            long newEnergy = System.Math.Min(playerModel.Energy.Value + recoverPoints, maxEnergy);
+                            int recoverPoints = (int)(elapsed / PlayerModel.EnergyRecoverInterval);
+                            int newEnergy = System.Math.Min(playerModel.Energy.Value + recoverPoints, (int)maxEnergy);
                             playerModel.Energy.Value = newEnergy;
                             _lastLocalRecoverTime = currentTime;
                             Debug.Log($"[TestController] 本地体力恢复: +{recoverPoints} → {newEnergy}/{maxEnergy}");
@@ -534,14 +534,14 @@ namespace Game.Tests
 
         private bool _showPanel = true;
         private bool _isDirty = true;
-        private Rect _panelRect = new Rect(10, 10, 320, 300);
+        private Rect _panelRect = new Rect(Screen.width - 330, Screen.height - 310, 320, 300);
         private Vector2 _scrollPosition;
 
         private int _cachedLevel;
-        private long _cachedExp;
-        private long _cachedEnergy;
-        private long _cachedDiamond;
-        private long _cachedGold;
+        private int _cachedExp;
+        private int _cachedEnergy;
+        private int _cachedDiamond;
+        private int _cachedGold;
         private int _cachedItemCount;
 
         private bool _isDataPanelBound = false;
@@ -576,10 +576,10 @@ namespace Game.Tests
             if (_panelStyle == null)
                 InitGUIStyles();
 
-            // 显示按钮（当面板关闭时）
+            // 显示按钮（当面板关闭时，显示在右下角）
             if (!_showPanel)
             {
-                if (GUI.Button(new Rect(Screen.width - 120, 10, 110, 30), "显示数据面板"))
+                if (GUI.Button(new Rect(Screen.width - 120, Screen.height - 40, 110, 30), "显示数据面板", _flatBtnStyle))
                     _showPanel = true;
             }
 
@@ -589,10 +589,11 @@ namespace Game.Tests
 
             var accountModel = this.GetModel<AccountModel>();
 
-            // 未登录显示登录面板
+            // 未登录显示登录面板（居中，不可拖动）
             if (accountModel!=null&&!accountModel.IsLoggedIn)
             {
-                _panelRect = GUI.Window(1, _panelRect, DrawLoginWindow, "", _panelStyle);
+                var loginRect = new Rect((Screen.width - 320) / 2, (Screen.height - 300) / 2, 320, 300);
+                GUI.Window(1, loginRect, DrawLoginWindow, "", _panelStyle);
                 return;
             }
 
@@ -677,7 +678,7 @@ namespace Game.Tests
                 _isRegisterMode = !_isRegisterMode;
                 _loginError = "";
             }
-            GUI.DragWindow(new Rect(0, 0, _panelRect.width, 30));
+            // 登录窗口不可拖动
         }
 
         private void DrawPanelWindow(int windowId)
@@ -759,11 +760,18 @@ namespace Game.Tests
             }
             y += btnHeight2 + 8;
 
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "添加药水", _flatBtnStyle))
+            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "1钻石→100金币", _flatBtnStyle))
+            {
+                // 使用ExchangeDiamondForGoldCommand进行原子兑换
+                this.SendCommand(new ExchangeDiamondForGoldCommand { DiamondAmount = 1, GoldAmount = 100 });
+            }
+            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "添加药水", _flatBtnStyle))
             {
                 this.SendCommand(new AddItemCommand { ItemId = 1001, Amount = 1, Bind = false });
             }
-            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "查询背包", _flatBtnStyle))
+            y += btnHeight2 + 8;
+
+            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "查询背包", _flatBtnStyle))
             {
                 this.SendCommand(new GetInventoryCommand());
             }

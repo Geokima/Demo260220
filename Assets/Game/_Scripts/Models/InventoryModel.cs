@@ -15,10 +15,6 @@ namespace Game.Models
         /// <summary>最大格子数</summary>
         public BindableProperty<int> MaxSlots = new BindableProperty<int>(9);
 
-        public override void Init()
-        {
-        }
-
         /// <summary>
         /// 设置背包数据
         /// </summary>
