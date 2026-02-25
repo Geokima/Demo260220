@@ -50,9 +50,9 @@ namespace Framework
         void RegisterModel<T>(T model) where T : IModel;
         T GetSystem<T>() where T : class, ISystem;
         T GetModel<T>() where T : class, IModel;
-        void SendCommand(ICommand command);
-        TResult SendCommand<TResult>(ICommand<TResult> command);
-        TResult SendQuery<TResult>(IQuery<TResult> query);
+        void SendCommand(object sender, ICommand command);
+        TResult SendCommand<TResult>(object sender, ICommand<TResult> command);
+        TResult SendQuery<TResult>(object sender, IQuery<TResult> query);
         void SendEvent<T>(object sender, T e);
         void SendEvent<T>(object sender) where T : new();
         IUnRegister RegisterEvent<T>(Action<T> onEvent) where T : new();
@@ -154,22 +154,22 @@ namespace Framework
             return _container.Get<TModel>();
         }
 
-        public void SendCommand(ICommand command)
+        public void SendCommand(object sender, ICommand command)
         {
             command.Architecture = this;
-            command.Execute();
+            command.Execute(sender);
         }
 
-        public TResult SendCommand<TResult>(ICommand<TResult> command)
+        public TResult SendCommand<TResult>(object sender, ICommand<TResult> command)
         {
             command.Architecture = this;
-            return command.Execute();
+            return command.Execute(sender);
         }
 
-        public TResult SendQuery<TResult>(IQuery<TResult> query)
+        public TResult SendQuery<TResult>(object sender, IQuery<TResult> query)
         {
             query.Architecture = this;
-            return query.Do();
+            return query.Do(sender);
         }
 
         public void SendEvent<TEvent>(object sender, TEvent e) => _eventSystem.Send(sender, e);
@@ -215,16 +215,16 @@ namespace Framework
     public static class ICommandSenderExtensions
     {
         public static void SendCommand(this ICommandSender self, ICommand command) =>
-            self.Architecture.SendCommand(command);
+            self.Architecture.SendCommand(self, command);
 
         public static TResult SendCommand<TResult>(this ICommandSender self, ICommand<TResult> command) =>
-            self.Architecture.SendCommand<TResult>(command);
+            self.Architecture.SendCommand<TResult>(self, command);
     }
 
     public static class IQuerySenderExtensions
     {
         public static TResult SendQuery<TResult>(this IQuerySender self, IQuery<TResult> query) =>
-            self.Architecture.SendQuery(query);
+            self.Architecture.SendQuery(self, query);
     }
 
     public static class IEventSenderExtensions
@@ -274,17 +274,17 @@ namespace Framework
 
     public interface ICommand : ISystemAware, IModelAware, ICommandSender, IQuerySender, IEventSender
     {
-        void Execute();
+        void Execute(object sender);
     }
 
     public interface ICommand<TResult> : ISystemAware, IModelAware, ICommandSender, IQuerySender, IEventSender
     {
-        TResult Execute();
+        TResult Execute(object sender);
     }
 
     public interface IQuery<TResult> : ISystemAware, IModelAware, IQuerySender
     {
-        TResult Do();
+        TResult Do(object sender);
     }
 
     public abstract class AbstractModel : IModel
@@ -304,19 +304,19 @@ namespace Framework
     public abstract class AbstractCommand : ICommand
     {
         public IArchitecture Architecture { get; set; }
-        public abstract void Execute();
+        public abstract void Execute(object sender);
     }
 
     public abstract class AbstractCommand<TResult> : ICommand<TResult>
     {
         public IArchitecture Architecture { get; set; }
-        public abstract TResult Execute();
+        public abstract TResult Execute(object sender);
     }
 
     public abstract class AbstractQuery<TResult> : IQuery<TResult>
     {
         public IArchitecture Architecture { get; set; }
-        public abstract TResult Do();
+        public abstract TResult Do(object sender);
     }
 
     #endregion

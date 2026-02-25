@@ -8,9 +8,9 @@ namespace Game
     public struct DiamondChangedEvent : IEvent
     {
         /// <summary>变更数量（正数为增加，负数为减少）</summary>
-        public long Amount;
+        public int Amount;
         /// <summary>当前数量</summary>
-        public long Current;
+        public int Current;
     }
 
     /// <summary>
@@ -28,9 +28,9 @@ namespace Game
     public struct GoldChangedEvent : IEvent
     {
         /// <summary>变更数量（正数为增加，负数为减少）</summary>
-        public long Amount;
+        public int Amount;
         /// <summary>当前数量</summary>
-        public long Current;
+        public int Current;
     }
 
     /// <summary>
@@ -48,9 +48,9 @@ namespace Game
     public struct ExpChangedEvent : IEvent
     {
         /// <summary>变更数量</summary>
-        public long Amount;
+        public int Amount;
         /// <summary>当前经验</summary>
-        public long Current;
+        public int Current;
         /// <summary>当前等级</summary>
         public int Level;
     }
@@ -81,11 +81,11 @@ namespace Game
     public struct EnergyChangedEvent : IEvent
     {
         /// <summary>变更数量</summary>
-        public long Amount;
+        public int Amount;
         /// <summary>当前体力</summary>
-        public long Current;
+        public int Current;
         /// <summary>最大体力</summary>
-        public long Max;
+        public int Max;
     }
 
     /// <summary>

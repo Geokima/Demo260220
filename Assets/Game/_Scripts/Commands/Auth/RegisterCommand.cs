@@ -13,7 +13,7 @@ namespace Game.Commands
         /// <summary>密码</summary>
         public string Password;
 
-        public override void Execute()
+        public override void Execute(object sender)
         {
             this.GetSystem<AuthService>().RegisterAsync(Username, Password).Forget();
         }

@@ -8,7 +8,7 @@ namespace Game.Commands
     /// </summary>
     public class LogoutCommand : AbstractCommand
     {
-        public override void Execute()
+        public override void Execute(object sender)
         {
             this.GetSystem<AuthService>().Logout();
         }
