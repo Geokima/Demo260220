@@ -64,6 +64,39 @@
 }
 ```
 
+### POST /logout
+
+登出账号，清除token，同时断开WebSocket连接。
+
+**请求参数:**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| token | string | 是 | 登录令牌 |
+
+**请求示例:**
+```json
+{
+    "token": "xxx..."
+}
+```
+
+**成功响应:**
+```json
+{
+    "code": 0,
+    "msg": "登出成功"
+}
+```
+
+**失败响应:**
+```json
+{
+    "code": 1,
+    "msg": "token无效或已过期"
+}
+```
+
 ---
 
 ## 2. 资源接口
@@ -365,6 +398,107 @@
 {
     "code": 0,
     "msg": "公告发送成功"
+}
+```
+
+---
+
+## 6. WebSocket 接口
+
+WebSocket 用于实时通信（聊天、公告、数据同步等）。
+
+### 连接流程
+
+1. 先通过 HTTP `/login` 登录获取 token
+2. WebSocket 连接后发送 `bind_token` 消息绑定 token
+3. 绑定成功后即可接收实时消息
+
+### 消息类型
+
+#### 客户端 → 服务器
+
+**bind_token - 绑定 token**
+```json
+{
+    "type": "bind_token",
+    "token": "xxx"
+}
+```
+
+**ping - 心跳检测**
+```json
+{
+    "type": "ping"
+}
+```
+
+**chat - 发送聊天消息**
+```json
+{
+    "type": "chat",
+    "content": "消息内容"
+}
+```
+
+**player_sync - 请求玩家数据同步**
+```json
+{
+    "type": "player_sync"
+}
+```
+
+#### 服务器 → 客户端
+
+**bind_token 响应**
+```json
+{
+    "type": "bind_token",
+    "code": 0,
+    "msg": "绑定成功",
+    "userId": 100001,
+    "player": {
+        "username": "test",
+        "level": 1,
+        "exp": 0,
+        "diamond": 0,
+        "gold": 0,
+        "energy": 100
+    }
+}
+```
+
+**pong - ping响应**
+```json
+{
+    "type": "pong",
+    "time": 1234567890
+}
+```
+
+**chat - 聊天消息广播**
+```json
+{
+    "type": "chat",
+    "from": 100001,
+    "content": "消息内容",
+    "timestamp": 1234567890
+}
+```
+
+**announcement - 系统公告**
+```json
+{
+    "type": "announcement",
+    "message": "公告内容",
+    "timestamp": "2024-01-01 12:00:00"
+}
+```
+
+**force_logout - 强制登出（HTTP登出时触发）**
+```json
+{
+    "type": "force_logout",
+    "msg": "账号已在其他地方登出"
 }
 ```
 

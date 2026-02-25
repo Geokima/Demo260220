@@ -5,8 +5,10 @@
 import json
 import hashlib
 import os
+import time
 
 ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'account.json')
+TOKEN_EXPIRE_TIME = 7 * 24 * 3600  # token过期时间：7天（秒）
 
 
 class AccountManager:
@@ -24,7 +26,12 @@ class AccountManager:
         if self._initialized:
             return
         self._initialized = True
-        self._online_tokens = {}  # token -> user_id
+        # token -> (user_id, expire_time)
+        self._online_tokens = {}
+        # user_id -> token (用于单点登录)
+        self._user_tokens = {}
+        # 登出回调函数列表
+        self._logout_callbacks = []
     
     @staticmethod
     def load_accounts():
@@ -51,36 +58,77 @@ class AccountManager:
         return data, accounts_by_name, accounts_by_id
     
     def validate_token(self, token):
-        """验证token是否有效"""
-        return self._online_tokens.get(token)
+        """验证token是否有效，返回user_id或None"""
+        if token not in self._online_tokens:
+            return None
+        
+        user_id, expire_time = self._online_tokens[token]
+        
+        # 检查是否过期
+        if time.time() > expire_time:
+            self.remove_token(token)
+            return None
+        
+        return user_id
     
     def add_token(self, token, user_id):
-        """添加在线token"""
-        self._online_tokens[token] = user_id
+        """添加在线token（支持单点登录，新token会踢掉旧token）"""
+        # 单点登录：如果该用户已有token，先移除旧token
+        if user_id in self._user_tokens:
+            old_token = self._user_tokens[user_id]
+            if old_token in self._online_tokens:
+                del self._online_tokens[old_token]
+                print(f"[Account] 用户 {user_id} 被挤下线，旧token失效")
+        
+        # 设置过期时间
+        expire_time = time.time() + TOKEN_EXPIRE_TIME
+        self._online_tokens[token] = (user_id, expire_time)
+        self._user_tokens[user_id] = token
     
     def remove_token(self, token):
-        """移除token"""
+        """移除token（登出）"""
         if token in self._online_tokens:
+            user_id, _ = self._online_tokens[token]
             del self._online_tokens[token]
+            # 同时清理user_tokens映射
+            if user_id in self._user_tokens and self._user_tokens[user_id] == token:
+                del self._user_tokens[user_id]
+            # 触发登出回调
+            for callback in self._logout_callbacks:
+                try:
+                    callback(user_id)
+                except Exception as e:
+                    print(f"[Account] 登出回调错误: {e}")
+    
+    def on_logout(self, callback):
+        """注册登出回调函数"""
+        self._logout_callbacks.append(callback)
     
     def calculate_level(self, exp):
-        """根据经验计算等级，最高100级"""
+        """根据经验计算等级，最高100级
+        exp_table存储的是升到该等级所需的总经验，使用二分查找
+        """
         exp_table = [
-            8, 22, 45, 76, 116, 165, 222, 288, 362, 445,
-            537, 637, 746, 864, 990, 1125, 1269, 1421, 1582, 1752,
-            1930, 2117, 2313, 2517, 2730, 2952, 3182, 3421, 3669, 3925,
-            4190, 4464, 4746, 5037, 5337, 5645, 5962, 6288, 6622, 6965,
-            7317, 7677, 8046, 8424, 8810, 9205, 9609, 10021, 10442, 10872,
-            11310, 11757, 12213, 12677, 13150, 13632, 14122, 14621, 15129, 15645,
-            16170, 16704, 17246, 17797, 18357, 18925, 19502, 20088, 20682, 21285,
-            21897, 22517, 23146, 23784, 24430, 25085, 25749, 26421, 27102, 27792,
-            28490, 29197, 29913, 30637, 31370, 32112, 32862, 33621, 34389, 35165,
-            35950, 36744, 37546, 38357, 39177, 40005, 40842, 41688, 42542, 43405
+            8, 30, 75, 151, 267, 432, 654, 942, 1304, 1749,
+            2286, 2923, 3669, 4533, 5523, 6648, 7917, 9338, 10920, 12672,
+            14602, 16719, 19032, 21549, 24279, 27231, 30413, 33834, 37503, 41428,
+            45618, 50082, 54828, 59865, 65202, 70847, 76809, 83097, 89719, 96684,
+            104001, 111678, 119724, 128148, 136958, 146163, 155772, 165793, 176235, 187107,
+            198417, 210174, 222387, 235064, 248214, 261846, 275968, 290589, 305718, 321363,
+            337533, 354237, 371483, 389280, 407637, 426562, 446064, 466152, 486834, 508119,
+            530016, 552533, 575679, 599463, 623893, 648978, 674727, 701148, 728250, 756042,
+            784532, 813729, 843642, 874279, 905649, 937761, 970623, 1004244, 1038633, 1073798,
+            1109748, 1146492, 1184038, 1222395, 1261572, 1301577, 1342419, 1384107, 1426649, 1470054
         ]
-        for i in range(len(exp_table) - 1, -1, -1):
-            if exp >= exp_table[i]:
-                return min(i + 1, 100)  # 最高100级
-        return 1
+        # 二分查找第一个大于exp的位置
+        left, right = 0, len(exp_table) - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if exp_table[mid] <= exp:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return min(left + 1, 100)  # 最高100级
     
     def get_max_energy(self, level):
         """根据等级计算最大体力"""

@@ -28,6 +28,11 @@ class HTTPHandler(BaseHTTPRequestHandler):
         if self.path == '/login':
             self._handle_login(accounts_by_name)
             return
+
+        # 登出接口
+        if self.path == '/logout':
+            self._handle_logout()
+            return
         
         # 资源接口
         if self.path == '/resource/get':
@@ -109,6 +114,29 @@ class HTTPHandler(BaseHTTPRequestHandler):
                         'userId': account['userId'],
                         'username': account['username']
                     }
+            
+            self._send_json_response(response)
+
+    def _handle_logout(self):
+        """处理登出请求"""
+        content_length = int(self.headers.get('Content-Length', 0))
+        if content_length > 0:
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
+            
+            token = data.get('token', '')
+            
+            print(f"[HTTP] 登出请求")
+            
+            if not token:
+                response = {'code': 1, 'msg': 'token不能为空'}
+            else:
+                user_id = self.account_manager.validate_token(token)
+                if user_id is None:
+                    response = {'code': 1, 'msg': 'token无效或已过期'}
+                else:
+                    self.account_manager.remove_token(token)
+                    response = {'code': 0, 'msg': '登出成功'}
             
             self._send_json_response(response)
 

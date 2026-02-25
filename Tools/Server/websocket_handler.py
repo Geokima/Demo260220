@@ -9,6 +9,8 @@ import time
 from account_manager import AccountManager
 
 
+HEARTBEAT_TIMEOUT = 120  # 心跳超时时间（秒），2分钟没收到心跳就断开
+
 class WebSocketHandler:
     """WebSocket处理器"""
     
@@ -16,6 +18,65 @@ class WebSocketHandler:
         self.account_manager = AccountManager()
         self.connected_clients = {}  # user_id -> websocket
         self.all_connections = set()  # 所有连接（包括未登录）
+        self._last_heartbeat = {}  # user_id -> 最后心跳时间
+        # 注册登出回调，HTTP 登出时断开 WebSocket
+        self.account_manager.on_logout(self._on_user_logout)
+        # 启动心跳超时检测任务
+        asyncio.create_task(self._heartbeat_checker())
+    
+    def _on_user_logout(self, user_id):
+        """用户 HTTP 登出时的回调"""
+        if user_id in self.connected_clients:
+            websocket = self.connected_clients[user_id]
+            try:
+                # 发送登出通知
+                asyncio.create_task(websocket.send(json.dumps({
+                    'type': 'force_logout',
+                    'msg': '账号已在其他地方登出'
+                }, ensure_ascii=False)))
+                # 延迟关闭连接，让客户端收到消息
+                asyncio.create_task(self._delay_close(websocket, user_id))
+            except Exception as e:
+                print(f"[WebSocket] 强制登出错误: {e}")
+    
+    async def _delay_close(self, websocket, user_id, delay=1.0):
+        """延迟关闭连接"""
+        await asyncio.sleep(delay)
+        try:
+            await websocket.close()
+        except:
+            pass
+        if user_id in self.connected_clients:
+            del self.connected_clients[user_id]
+        print(f"[WebSocket] 用户 {user_id} 因 HTTP 登出而断开连接")
+    
+    async def _heartbeat_checker(self):
+        """心跳超时检测任务"""
+        while True:
+            await asyncio.sleep(30)  # 每30秒检查一次
+            
+            now = time.time()
+            timeout_users = []
+            
+            for user_id, last_time in self._last_heartbeat.items():
+                if now - last_time > HEARTBEAT_TIMEOUT:
+                    timeout_users.append(user_id)
+            
+            for user_id in timeout_users:
+                print(f"[WebSocket] 用户 {user_id} 心跳超时，断开连接")
+                if user_id in self.connected_clients:
+                    websocket = self.connected_clients[user_id]
+                    try:
+                        await websocket.close()
+                    except:
+                        pass
+                    del self.connected_clients[user_id]
+                del self._last_heartbeat[user_id]
+    
+    def _update_heartbeat(self, user_id):
+        """更新用户心跳时间"""
+        if user_id:
+            self._last_heartbeat[user_id] = time.time()
     
     async def handle_client(self, websocket, path):
         """处理客户端连接"""
@@ -31,20 +92,24 @@ class WebSocketHandler:
                     
                     print(f"[WebSocket] 收到消息: {msg_type}")
                     
-                    if msg_type == 'login':
-                        response = await self._handle_login(data, websocket)
+                    if msg_type == 'bind_token':
+                        # WebSocket 不再处理登录，只绑定已有的 HTTP token
+                        response = await self._handle_bind_token(data, websocket)
                         if response.get('code') == 0:
                             user_id = response.get('userId')
                             self.connected_clients[user_id] = websocket
+                            self._update_heartbeat(user_id)  # 绑定成功记录心跳
                         await websocket.send(json.dumps(response, ensure_ascii=False))
                     
                     elif msg_type == 'ping':
+                        self._update_heartbeat(user_id)  # 收到ping更新心跳
                         await websocket.send(json.dumps({
                             'type': 'pong',
                             'time': time.time()
                         }, ensure_ascii=False))
                     
                     elif msg_type == 'heartbeat':
+                        self._update_heartbeat(user_id)  # 收到heartbeat更新心跳
                         await websocket.send(json.dumps({
                             'type': 'heartbeat',
                             'time': time.time()
@@ -83,38 +148,52 @@ class WebSocketHandler:
             print(f"[WebSocket] 连接关闭: {websocket.remote_address}")
         finally:
             self.all_connections.discard(websocket)
-            if user_id and user_id in self.connected_clients:
-                del self.connected_clients[user_id]
+            if user_id:
+                if user_id in self.connected_clients:
+                    del self.connected_clients[user_id]
+                if user_id in self._last_heartbeat:
+                    del self._last_heartbeat[user_id]
                 print(f"[WebSocket] 用户下线: {user_id}")
     
-    async def _handle_login(self, data, websocket):
-        """处理登录请求"""
+    async def _handle_bind_token(self, data, websocket):
+        """处理 token 绑定请求（WebSocket 只绑定 HTTP 登录的 token）"""
+        token = data.get('token', '')
+        
+        print(f"[WebSocket] Token 绑定请求")
+        
+        if not token:
+            return {'type': 'bind_token', 'code': 1, 'msg': 'token不能为空'}
+        
+        # 使用 HTTP 的 token 验证
+        user_id = self.account_manager.validate_token(token)
+        if user_id is None:
+            return {'type': 'bind_token', 'code': 1, 'msg': 'token无效或已过期'}
+        
+        # 获取玩家数据
         account_data, accounts_by_name, accounts_by_id = self.account_manager.get_account_data()
+        account = accounts_by_id.get(user_id)
+        if not account:
+            return {'type': 'bind_token', 'code': 1, 'msg': '玩家不存在'}
         
-        username = data.get('username', '')
-        password = data.get('password', '')
+        # 如果该用户已有 WebSocket 连接，先断开旧的
+        if user_id in self.connected_clients:
+            old_ws = self.connected_clients[user_id]
+            try:
+                await old_ws.close()
+            except:
+                pass
+            print(f"[WebSocket] 用户 {user_id} 旧连接被挤掉")
         
-        print(f"[WebSocket] 登录请求: {username}")
-        
-        if username not in accounts_by_name:
-            return {'type': 'login', 'code': 1, 'msg': '账号不存在'}
-        
-        account = accounts_by_name[username]
-        if self.account_manager.hash_password(password) != account['password']:
-            return {'type': 'login', 'code': 1, 'msg': '密码错误'}
-
-        token = self.account_manager.hash_password(f"{username}{time.time()}")
-        self.account_manager.add_token(token, account['userId'])
-
         # 等级根据经验实时计算
         level = self.account_manager.calculate_level(account.get('exp', 0))
-
+        
+        print(f"[WebSocket] Token 绑定成功: user_id={user_id}")
+        
         return {
-            'type': 'login',
+            'type': 'bind_token',
             'code': 0,
-            'msg': '登录成功',
-            'token': token,
-            'userId': account['userId'],
+            'msg': '绑定成功',
+            'userId': user_id,
             'player': {
                 'username': account['username'],
                 'level': level,
