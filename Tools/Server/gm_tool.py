@@ -22,6 +22,9 @@ GM 管理工具 - 用于后台管理玩家数据
   账号类:
     set_password <username> <password>    修改玩家密码
 
+  公告类:
+    announce <message>                    发送全服公告
+
 示例:
   python gm_tool.py list
   python gm_tool.py query test
@@ -33,6 +36,7 @@ GM 管理工具 - 用于后台管理玩家数据
   python gm_tool.py give_item test 1001 5 --bind
   python gm_tool.py remove_item test item_123456
   python gm_tool.py set_password test 123456
+  python gm_tool.py announce "服务器将在10分钟后维护"
 """
 
 import json
@@ -222,6 +226,34 @@ def cmd_set_password(args):
     save_accounts(data)
     print(f"成功: {args.username} 密码已修改")
 
+def cmd_announce(args):
+    """发送全服公告（通过HTTP接口）"""
+    import urllib.request
+    import urllib.error
+    
+    url = 'http://localhost:8080/admin/announce'
+    data = json.dumps({'message': args.message}, ensure_ascii=False).encode('utf-8')
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            if result.get('code') == 0:
+                print(f"成功: 公告已发送")
+                print(f"  内容: {args.message}")
+            else:
+                print(f"失败: {result.get('msg', '未知错误')}")
+    except urllib.error.URLError as e:
+        print(f"错误: 无法连接到服务器 - {e}")
+    except Exception as e:
+        print(f"错误: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description='GM 管理工具')
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
@@ -270,6 +302,10 @@ def main():
     p_pass.add_argument('username', help='玩家账号')
     p_pass.add_argument('password', help='新密码')
     
+    # announce
+    p_announce = subparsers.add_parser('announce', help='发送全服公告')
+    p_announce.add_argument('message', help='公告内容')
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -287,6 +323,7 @@ def main():
         'give_item': cmd_give_item,
         'remove_item': cmd_remove_item,
         'set_password': cmd_set_password,
+        'announce': cmd_announce,
     }
     
     func = commands.get(args.command)

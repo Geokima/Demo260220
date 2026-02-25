@@ -4,50 +4,24 @@
       "username": "test",
       "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
       "userId": 10001,
-      "diamond": 450,
-      "gold": 1000,
+      "diamond": 0,
+      "gold": 6200,
       "inventory": {
-        "items": [
-          {
-            "uid": "item_1771857842273_0_6",
-            "itemId": 1003,
-            "count": 3,
-            "bind": true
-          },
-          {
-            "uid": "item_1771857842544_0_7",
-            "itemId": 1003,
-            "count": 10,
-            "bind": true
-          },
-          {
-            "uid": "item_1771857842690_0_8",
-            "itemId": 1003,
-            "count": 10,
-            "bind": true
-          }
-        ],
+        "items": [],
         "maxSlots": 9
       },
       "exp": 1400,
-      "level": 5,
-      "energy": 140,
-      "lastEnergyTime": 1771944527
+      "energy": 260,
+      "lastEnergyTime": 1772031399
     },
     {
       "username": "admin",
       "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
       "userId": 10002,
-      "diamond": 10099,
-      "gold": 100099,
+      "diamond": 10249,
+      "gold": 100399,
       "inventory": {
         "items": [
-          {
-            "uid": "item_002",
-            "itemId": 1002,
-            "count": 2,
-            "bind": false
-          },
           {
             "uid": "item_003",
             "itemId": 1003,
@@ -89,14 +63,25 @@
             "itemId": 1003,
             "count": 10,
             "bind": true
+          },
+          {
+            "uid": "1001_1772037448847",
+            "itemId": 1001,
+            "count": 5,
+            "bind": false
+          },
+          {
+            "uid": "1002_1772037451261",
+            "itemId": 1002,
+            "count": 3,
+            "bind": false
           }
         ],
         "maxSlots": 9
       },
-      "exp": 600,
-      "level": 4,
-      "energy": 130,
-      "lastEnergyTime": 1771939810
+      "exp": 3000,
+      "energy": 340,
+      "lastEnergyTime": 1772037345
     }
   ],
   "itemConfig": {
