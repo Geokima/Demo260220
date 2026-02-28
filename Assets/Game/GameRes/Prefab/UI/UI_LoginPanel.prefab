@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2016234151889868027}
   - component: {fileID: 5859648478994674408}
   m_Layer: 0
-  m_Name: Placeholder
+  m_Name: Txt_Placeholder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -90,6 +90,8 @@ GameObject:
   - component: {fileID: 7257726445068543292}
   - component: {fileID: 1728501448876865545}
   - component: {fileID: 5109481183919073012}
+  - component: {fileID: 4880452150831456352}
+  - component: {fileID: 6625252177133504524}
   m_Layer: 0
   m_Name: UI_LoginPanel
   m_TagString: Untagged
@@ -158,6 +160,36 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!225 &4880452150831456352
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041285214183335146}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &6625252177133504524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041285214183335146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99f505c7996182949a4d6ea28f04c604, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _layer: 2000
+  _isSingleton: 1
+  _fixedOrder: 0
+  InputUserName: {fileID: 0}
+  InputPassword: {fileID: 0}
+  BtnButtonLogIn: {fileID: 0}
 --- !u!1 &3135620155931367045
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,7 +202,7 @@ GameObject:
   - component: {fileID: 7370182451622865814}
   - component: {fileID: 8818637589768752880}
   m_Layer: 0
-  m_Name: Text (Legacy)
+  m_Name: Txt_ (Legacy)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -249,7 +281,7 @@ GameObject:
   - component: {fileID: 7527021973085440841}
   - component: {fileID: 1576477258120292601}
   m_Layer: 0
-  m_Name: Text (Legacy)
+  m_Name: Txt_ (Legacy)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -407,7 +439,7 @@ GameObject:
   - component: {fileID: 6276328845599623445}
   - component: {fileID: 7238685632065108212}
   m_Layer: 0
-  m_Name: Placeholder
+  m_Name: Txt_Placeholder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -755,7 +787,7 @@ GameObject:
   - component: {fileID: 1135815989013614636}
   - component: {fileID: 2476619139557490972}
   m_Layer: 0
-  m_Name: Text (Legacy)
+  m_Name: Txt_ (Legacy)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -836,7 +868,7 @@ GameObject:
   - component: {fileID: 3857821689971180507}
   - component: {fileID: 5765963204769597888}
   m_Layer: 0
-  m_Name: InputField_Password
+  m_Name: Input_Password
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -998,7 +1030,7 @@ GameObject:
   - component: {fileID: 3759301235096923351}
   - component: {fileID: 6142138481660236627}
   m_Layer: 0
-  m_Name: Background
+  m_Name: RawImg_Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1087,7 +1119,7 @@ GameObject:
   - component: {fileID: 5029629069953246836}
   - component: {fileID: 7403680083186963283}
   m_Layer: 0
-  m_Name: InputField_UserName
+  m_Name: Input_UserName
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1250,7 +1282,7 @@ GameObject:
   - component: {fileID: 3954325671146272068}
   - component: {fileID: 6907711868444851003}
   m_Layer: 0
-  m_Name: Button_LogIn
+  m_Name: Btn_LogIn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

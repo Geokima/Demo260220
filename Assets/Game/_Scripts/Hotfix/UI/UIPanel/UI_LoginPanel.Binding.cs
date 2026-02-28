@@ -4,20 +4,17 @@ using Framework.Modules.UI;
 
 public partial class UI_LoginPanel : UIPanel
 {
-    public Image ImgContent;
-    public Image ImgTitleBar;
-    public Text TxtTitle;
-    public Text TxtTip;
+    public InputField InputUserName;
+    public InputField InputPassword;
+    public Button BtnLogIn;
 
     partial void InitComponents();
 
-    protected override void Awake()
+    void Awake()
     {
-        base.Awake();
-        ImgContent = transform.Find("UI_LoginPanel/Img_Content").GetComponent<Image>();
-        ImgTitleBar = transform.Find("UI_LoginPanel/Img_Content/Img_TitleBar").GetComponent<Image>();
-        TxtTitle = transform.Find("UI_LoginPanel/Img_Content/Txt_Title").GetComponent<Text>();
-        TxtTip = transform.Find("UI_LoginPanel/Img_Content/Txt_Tip").GetComponent<Text>();
+        InputUserName = transform.Find("Img_Content/Input_UserName").GetComponent<InputField>();
+        InputPassword = transform.Find("Img_Content/Input_Password").GetComponent<InputField>();
+        BtnLogIn = transform.Find("Img_Content/Btn_LogIn").GetComponent<Button>();
         InitComponents();
     }
 }

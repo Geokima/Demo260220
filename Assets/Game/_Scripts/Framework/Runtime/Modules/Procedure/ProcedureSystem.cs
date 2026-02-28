@@ -32,13 +32,16 @@ namespace Framework.Modules.Procedure
         public void RegisterProcedure(IProcedure procedure)
         {
             procedure.Architecture = Architecture;
+            if (procedure is ProcedureBase procedureBase)
+                procedureBase.Owner = this;
+
             procedure.OnInit();
             _fsm.RegisterState(procedure.GetType(), procedure);
             _procedures.Add(procedure);
         }
 
-        public void RegisterTransitionCondition<TFrom, TTo>(ITransitionCondition<Type> condition) 
-            where TFrom : IProcedure 
+        public void RegisterTransitionCondition<TFrom, TTo>(ITransitionCondition<Type> condition)
+            where TFrom : IProcedure
             where TTo : IProcedure
         {
             _fsm.RegisterTransitionCondition(typeof(TFrom), typeof(TTo), condition);

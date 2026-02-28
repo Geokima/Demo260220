@@ -1,9 +1,8 @@
-using System;
+using UnityEngine;
 
 namespace Framework.Utils
 {
-    [AttributeUsage(AttributeTargets.Field)]
-    public class ShowIfAttribute : Attribute
+    public class ShowIfAttribute : PropertyAttribute
     {
         public string ConditionField { get; }
         public bool ExpectedValue { get; }

@@ -1,9 +1,6 @@
-#if UNITY_EDITOR
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Reflection;
-
 using Framework.Utils;
 
 namespace Framework.Editor
@@ -14,9 +11,7 @@ namespace Framework.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (ShouldShow(property))
-            {
                 EditorGUI.PropertyField(position, property, label, true);
-            }
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -77,4 +72,3 @@ namespace Framework.Editor
         }
     }
 }
-#endif

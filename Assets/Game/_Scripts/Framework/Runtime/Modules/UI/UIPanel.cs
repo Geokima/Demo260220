@@ -19,12 +19,6 @@ namespace Framework.Modules.UI
         public Canvas Canvas => _canvas ??= GetComponent<Canvas>();
         public CanvasGroup CanvasGroup => _canvasGroup ??= GetComponent<CanvasGroup>();
 
-        protected virtual void Awake()
-        {
-            if (CanvasGroup == null)
-                gameObject.AddComponent<CanvasGroup>();
-        }
-
         public virtual void OnOpen(object data = null) { }
         public virtual void OnPause() { }
         public virtual void OnResume() { }

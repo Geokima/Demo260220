@@ -3,6 +3,7 @@ namespace Framework.Modules.Procedure
     public abstract class ProcedureBase : IProcedure
     {
         public IArchitecture Architecture { get; set; } = default!;
+        public ProcedureSystem Owner { get; set; } = default!;
 
         public virtual void OnInit() { }
         public virtual void OnEnter() { }
@@ -13,7 +14,7 @@ namespace Framework.Modules.Procedure
 
         protected void ChangeProcedure<T>() where T : IProcedure
         {
-            Architecture.GetSystem<ProcedureSystem>().ChangeProcedure<T>();
+            Owner.ChangeProcedure<T>();
         }
     }
 }

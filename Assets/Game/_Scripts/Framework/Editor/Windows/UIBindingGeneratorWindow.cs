@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -106,7 +105,14 @@ namespace Framework.Editor
                     comp.Selected = newSelected;
                     RefreshCode();
                 }
-                EditorGUILayout.LabelField(comp.TypeName, GUILayout.Width(100));
+                // 特殊组件类型高亮显示
+                GUIStyle typeStyle = new GUIStyle(EditorStyles.label);
+                if (IsImportantComponent(comp.TypeName))
+                {
+                    typeStyle.fontStyle = FontStyle.Bold;
+                    typeStyle.normal.textColor = new Color(0.3f, 0.8f, 1f); // 青色
+                }
+                EditorGUILayout.LabelField(comp.TypeName, typeStyle, GUILayout.Width(100));
 
                 GUIStyle nameStyle = new GUIStyle(EditorStyles.miniLabel);
                 if (!isValid)
@@ -162,6 +168,10 @@ namespace Framework.Editor
 
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("自动重命名", GUILayout.Height(30)))
+            {
+                AutoRename();
+            }
             if (GUILayout.Button("复制到剪贴板", GUILayout.Height(30)))
             {
                 EditorGUIUtility.systemCopyBuffer = _generatedCode;
@@ -204,74 +214,140 @@ namespace Framework.Editor
 
         private void CollectComponentsRecursive(Transform transform, string parentPath, int depth)
         {
-            string path = string.IsNullOrEmpty(parentPath) ? transform.name : $"{parentPath}/{transform.name}";
             string name = transform.name;
+            string actualPath = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
 
             var btn = transform.GetComponent<Button>();
             if (btn != null)
+            {
+                string newName = MakeObjectName("Btn", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("Button", MakeFieldName("Btn", name), path, transform, depth);
+            }
 
             var img = transform.GetComponent<Image>();
-            if (img != null)
+            if (img != null && btn == null)
+            {
+                string newName = MakeObjectName("Img", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("Image", MakeFieldName("Img", name), path, transform, depth);
+            }
 
             var rawImg = transform.GetComponent<RawImage>();
             if (rawImg != null)
+            {
+                string newName = MakeObjectName("RawImg", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("RawImage", MakeFieldName("Raw", name), path, transform, depth);
+            }
 
             if (_hasTMP && TryGetTMPText(transform, out string tmpTextType))
             {
+                string newName = MakeObjectName("Txt", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent(tmpTextType, MakeFieldName("Txt", name), path, transform, depth);
             }
             else
             {
                 var txt = transform.GetComponent<Text>();
                 if (txt != null)
+                {
+                    string newName = MakeObjectName("Txt", name);
+                    string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                     AddComponent("Text", MakeFieldName("Txt", name), path, transform, depth);
+                }
             }
 
             if (_hasTMP && TryGetTMPInputField(transform, out string tmpInputType))
             {
+                string newName = MakeObjectName("Input", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent(tmpInputType, MakeFieldName("Input", name), path, transform, depth);
             }
             else
             {
                 var input = transform.GetComponent<InputField>();
                 if (input != null)
+                {
+                    string newName = MakeObjectName("Input", name);
+                    string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                     AddComponent("InputField", MakeFieldName("Input", name), path, transform, depth);
+                }
             }
 
             if (_hasTMP && TryGetTMPDropdown(transform, out string tmpDropType))
             {
+                string newName = MakeObjectName("Drop", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent(tmpDropType, MakeFieldName("Drop", name), path, transform, depth);
             }
             else
             {
                 var dropdown = transform.GetComponent<Dropdown>();
                 if (dropdown != null)
+                {
+                    string newName = MakeObjectName("Drop", name);
+                    string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                     AddComponent("Dropdown", MakeFieldName("Drop", name), path, transform, depth);
+                }
             }
 
             var slider = transform.GetComponent<Slider>();
             if (slider != null)
+            {
+                string newName = MakeObjectName("Slider", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("Slider", MakeFieldName("Slider", name), path, transform, depth);
+            }
 
             var toggle = transform.GetComponent<Toggle>();
             if (toggle != null)
+            {
+                string newName = MakeObjectName("Toggle", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("Toggle", MakeFieldName("Toggle", name), path, transform, depth);
+            }
 
             var scroll = transform.GetComponent<ScrollRect>();
             if (scroll != null)
+            {
+                string newName = MakeObjectName("Scroll", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("ScrollRect", MakeFieldName("Scroll", name), path, transform, depth);
+            }
 
             var scrollbar = transform.GetComponent<Scrollbar>();
             if (scrollbar != null)
+            {
+                string newName = MakeObjectName("ScrollBar", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
                 AddComponent("Scrollbar", MakeFieldName("ScrollBar", name), path, transform, depth);
+            }
 
+            if (transform.GetComponent<RectTransform>() != null &&
+                transform.GetComponent<Canvas>() == null &&
+                transform.GetComponent<Button>() == null &&
+                transform.GetComponent<Image>() == null &&
+                transform.GetComponent<RawImage>() == null &&
+                transform.GetComponent<Text>() == null &&
+                transform.GetComponent<InputField>() == null &&
+                transform.GetComponent<Dropdown>() == null &&
+                transform.GetComponent<Slider>() == null &&
+                transform.GetComponent<Toggle>() == null &&
+                transform.GetComponent<ScrollRect>() == null &&
+                transform.GetComponent<Scrollbar>() == null &&
+                !(_hasTMP && HasTMPComponent(transform)))
+            {
+                string newName = MakeObjectName("Rect", name);
+                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                AddComponent("RectTransform", MakeFieldName("Rect", name), path, transform, depth);
+            }
+
+            // 递归子物体，使用实际路径（基于当前物体名）
             foreach (Transform child in transform)
             {
                 if (child == transform) continue;
-                CollectComponentsRecursive(child, path, depth + 1);
+                CollectComponentsRecursive(child, actualPath, depth + 1);
             }
         }
 
@@ -318,9 +394,8 @@ namespace Framework.Editor
             sb.AppendLine();
             sb.AppendLine("    partial void InitComponents();");
             sb.AppendLine();
-            sb.AppendLine("    protected override void Awake()");
+            sb.AppendLine("    void Awake()");
             sb.AppendLine("    {");
-            sb.AppendLine("        base.Awake();");
 
             foreach (var comp in selectedComps)
             {
@@ -340,6 +415,48 @@ namespace Framework.Editor
             return sb.ToString();
         }
 
+        private void AutoRename()
+        {
+            if (_selectedObject == null) return;
+
+            int renamedCount = 0;
+            Undo.RecordObject(_selectedObject.transform, "Auto Rename UI Elements");
+
+            foreach (var comp in _components)
+            {
+                if (comp.Transform == null) continue;
+                if (comp.Transform.GetComponent<Canvas>() != null) continue;
+
+                string newName = GetNameFromPath(comp.Path);
+                if (!string.IsNullOrEmpty(newName) && comp.Transform.name != newName)
+                {
+                    Undo.RecordObject(comp.Transform, "Rename UI Element");
+                    comp.Transform.name = newName;
+                    renamedCount++;
+                }
+            }
+
+            if (renamedCount > 0)
+            {
+                EditorUtility.SetDirty(_selectedObject);
+                ShowNotification(new GUIContent($"已重命名 {renamedCount} 个物体!"));
+                RefreshCode();
+            }
+            else
+            {
+                ShowNotification(new GUIContent("没有需要重命名的物体!"));
+            }
+        }
+
+        private string GetNameFromPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            int lastSlash = path.LastIndexOf('/');
+            if (lastSlash >= 0)
+                return path.Substring(lastSlash + 1);
+            return path;
+        }
+
         private void GenerateFile()
         {
             string path = GetSelectedFolderPath() ?? _lastValidFolderPath;
@@ -350,13 +467,60 @@ namespace Framework.Editor
                 return;
             }
 
-            string fileName = $"{_className}.Binding.cs";
-            string fullPath = System.IO.Path.Combine(path, fileName);
+            string bindingFileName = $"{_className}.Binding.cs";
+            string bindingFullPath = System.IO.Path.Combine(path, bindingFileName);
+            System.IO.File.WriteAllText(bindingFullPath, _generatedCode);
 
-            System.IO.File.WriteAllText(fullPath, _generatedCode);
+            // 生成主文件（如果不存在）
+            string mainFileName = $"{_className}.cs";
+            string mainFullPath = System.IO.Path.Combine(path, mainFileName);
+            if (!System.IO.File.Exists(mainFullPath))
+            {
+                string mainCode = GenerateMainClassCode();
+                System.IO.File.WriteAllText(mainFullPath, mainCode);
+            }
+
             AssetDatabase.Refresh();
 
-            ShowNotification(new GUIContent($"已生成: {fileName}"));
+            // 添加脚本到物体
+            AddScriptToObject();
+
+            ShowNotification(new GUIContent($"已生成: {bindingFileName}"));
+        }
+
+        private string GenerateMainClassCode()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("using UnityEngine;");
+            sb.AppendLine("using Framework.Modules.UI;");
+            sb.AppendLine();
+            sb.AppendLine($"public partial class {_className} : UIPanel");
+            sb.AppendLine("{");
+            sb.AppendLine("    partial void InitComponents()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // 在这里添加额外的组件初始化代码");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private void AddScriptToObject()
+        {
+            if (_selectedObject == null) return;
+
+            // 等待编译完成后再添加
+            EditorApplication.delayCall += () =>
+            {
+                var script = AssetDatabase.LoadAssetAtPath<MonoScript>($"Assets/{_className}.cs");
+                if (script != null)
+                {
+                    var scriptType = script.GetClass();
+                    if (scriptType != null && _selectedObject.GetComponent(scriptType) == null)
+                    {
+                        Undo.AddComponent(_selectedObject, scriptType);
+                    }
+                }
+            };
         }
 
         private string GetSelectedFolderPath()
@@ -374,6 +538,7 @@ namespace Framework.Editor
         #endregion
 
         #region Helpers
+        // 生成字段名（如 InputUserName）
         private static string MakeFieldName(string prefix, string objectName)
         {
             string name = objectName.Replace("_", "");
@@ -397,6 +562,30 @@ namespace Framework.Editor
             return prefix + name;
         }
 
+        // 生成物体名（如 Input_UserName）
+        private static string MakeObjectName(string prefix, string objectName)
+        {
+            string name = objectName.Replace("_", "");
+
+            string[] prefixes = { "Button", "Btn", "Text", "Txt", "Image", "Img", "RawImage", "Raw",
+                                  "InputField", "Input", "Dropdown", "Drop", "Slider", "Toggle",
+                                  "ScrollRect", "Scroll", "Scrollbar", "ScrollBar" };
+
+            foreach (var p in prefixes)
+            {
+                if (name.StartsWith(p, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name.Substring(p.Length);
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(name))
+                name = objectName.Replace("_", "");
+
+            return $"{prefix}_{name}";
+        }
+
         private static string RemovePrefix(string name, params string[] prefixes)
         {
             foreach (var prefix in prefixes)
@@ -405,6 +594,12 @@ namespace Framework.Editor
                     return name.Substring(prefix.Length);
             }
             return name;
+        }
+
+        private static bool IsImportantComponent(string typeName)
+        {
+            string[] importantTypes = { "Button", "InputField", "TMP_InputField", "Slider", "Toggle", "ScrollRect", "Scrollbar" };
+            return importantTypes.Contains(typeName);
         }
 
         private static bool IsValidIdentifier(string name)
@@ -443,6 +638,14 @@ namespace Framework.Editor
         #endregion
 
         #region TMP Detection
+        private static bool HasTMPComponent(Transform t)
+        {
+            return t.GetComponent("TMPro.TextMeshProUGUI") != null ||
+                   t.GetComponent("TMPro.TMP_Text") != null ||
+                   t.GetComponent("TMPro.TMP_InputField") != null ||
+                   t.GetComponent("TMPro.TMP_Dropdown") != null;
+        }
+
         private static bool TryGetTMPText(Transform t, out string typeName)
         {
             typeName = null;
@@ -487,4 +690,3 @@ namespace Framework.Editor
         #endregion
     }
 }
-#endif

@@ -1,17 +1,17 @@
-#if UNITY_EDITOR
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Framework.Editor
 {
     [Overlay(typeof(SceneView), "UI Analyzer", true)]
     public class UIAnalyzerOverlay : Overlay
     {
+        #region Fields
         private bool _showRaycastTargets = true;
         private bool _showDrawCallInfo = false;
         private bool _showOverdraw = false;
@@ -22,7 +22,9 @@ namespace Framework.Editor
         private Color _overdrawColor = new Color(1, 1, 1, 0.1f);
 
         private Dictionary<Canvas, DrawCallInfo> _canvasInfo = new Dictionary<Canvas, DrawCallInfo>();
+        #endregion
 
+        #region Overlay
         public override VisualElement CreatePanelContent()
         {
             var root = new VisualElement { style = { paddingTop = 4, paddingBottom = 4 } };
@@ -55,6 +57,14 @@ namespace Framework.Editor
             return root;
         }
 
+        public override void OnWillBeDestroyed()
+        {
+            SceneView.duringSceneGui -= OnSceneGUI;
+            base.OnWillBeDestroyed();
+        }
+        #endregion
+
+        #region Scene GUI
         private void OnSceneGUI(SceneView sceneView)
         {
             if (_showDrawCallInfo || _showOverdraw)
@@ -94,50 +104,6 @@ namespace Framework.Editor
                     continue;
 
                 DrawRect(rectTransform, color);
-            }
-        }
-
-        private void AnalyzeDrawCalls()
-        {
-            _canvasInfo.Clear();
-
-            var canvases = Object.FindObjectsOfType<Canvas>();
-            foreach (var canvas in canvases)
-            {
-                if (!canvas.isActiveAndEnabled) continue;
-
-                var info = new DrawCallInfo();
-                var graphics = canvas.GetComponentsInChildren<Graphic>(true);
-
-                foreach (var graphic in graphics)
-                {
-                    if (!graphic.isActiveAndEnabled) continue;
-                    if (graphic.canvasRenderer.cull) continue;
-
-                    info.TotalGraphics++;
-
-                    var material = graphic.materialForRendering;
-                    var texture = graphic.mainTexture;
-
-                    var batchKey = new BatchKey
-                    {
-                        Material = material,
-                        Texture = texture,
-                        Depth = GetDepth(graphic.transform)
-                    };
-
-                    if (!info.Batches.ContainsKey(batchKey))
-                    {
-                        info.Batches[batchKey] = new List<Graphic>();
-                        info.EstimatedDrawCalls++;
-                    }
-                    info.Batches[batchKey].Add(graphic);
-
-                    if (graphic.color.a > 0 && graphic.raycastTarget)
-                        info.OverdrawElements++;
-                }
-
-                _canvasInfo[canvas] = info;
             }
         }
 
@@ -197,19 +163,6 @@ namespace Framework.Editor
             }
         }
 
-        private bool HasInteractionComponent(Graphic graphic)
-        {
-            var go = graphic.gameObject;
-            return go.GetComponent<UnityEngine.UI.Button>() != null ||
-                   go.GetComponent<InputField>() != null ||
-                   go.GetComponent<UnityEngine.UI.Toggle>() != null ||
-                   go.GetComponent<UnityEngine.UI.Slider>() != null ||
-                   go.GetComponent<Scrollbar>() != null ||
-                   go.GetComponent<Dropdown>() != null ||
-                   go.GetComponent<ScrollRect>() != null ||
-                   go.GetComponent<UnityEngine.EventSystems.EventTrigger>() != null;
-        }
-
         private void DrawRect(RectTransform rectTransform, Color color)
         {
             Vector3[] corners = new Vector3[4];
@@ -223,6 +176,65 @@ namespace Framework.Editor
             Handles.DrawLine(corners[1], corners[2]);
             Handles.DrawLine(corners[2], corners[3]);
             Handles.DrawLine(corners[3], corners[0]);
+        }
+        #endregion
+
+        #region Analysis
+        private void AnalyzeDrawCalls()
+        {
+            _canvasInfo.Clear();
+
+            var canvases = Object.FindObjectsOfType<Canvas>();
+            foreach (var canvas in canvases)
+            {
+                if (!canvas.isActiveAndEnabled) continue;
+
+                var info = new DrawCallInfo();
+                var graphics = canvas.GetComponentsInChildren<Graphic>(true);
+
+                foreach (var graphic in graphics)
+                {
+                    if (!graphic.isActiveAndEnabled) continue;
+                    if (graphic.canvasRenderer.cull) continue;
+
+                    info.TotalGraphics++;
+
+                    var material = graphic.materialForRendering;
+                    var texture = graphic.mainTexture;
+
+                    var batchKey = new BatchKey
+                    {
+                        Material = material,
+                        Texture = texture,
+                        Depth = GetDepth(graphic.transform)
+                    };
+
+                    if (!info.Batches.ContainsKey(batchKey))
+                    {
+                        info.Batches[batchKey] = new List<Graphic>();
+                        info.EstimatedDrawCalls++;
+                    }
+                    info.Batches[batchKey].Add(graphic);
+
+                    if (graphic.color.a > 0 && graphic.raycastTarget)
+                        info.OverdrawElements++;
+                }
+
+                _canvasInfo[canvas] = info;
+            }
+        }
+
+        private bool HasInteractionComponent(Graphic graphic)
+        {
+            var go = graphic.gameObject;
+            return go.GetComponent<UnityEngine.UI.Button>() != null ||
+                   go.GetComponent<InputField>() != null ||
+                   go.GetComponent<UnityEngine.UI.Toggle>() != null ||
+                   go.GetComponent<UnityEngine.UI.Slider>() != null ||
+                   go.GetComponent<Scrollbar>() != null ||
+                   go.GetComponent<Dropdown>() != null ||
+                   go.GetComponent<ScrollRect>() != null ||
+                   go.GetComponent<UnityEngine.EventSystems.EventTrigger>() != null;
         }
 
         private Rect GetWorldRect(RectTransform rectTransform)
@@ -256,13 +268,9 @@ namespace Framework.Editor
             }
             return depth;
         }
+        #endregion
 
-        public override void OnWillBeDestroyed()
-        {
-            SceneView.duringSceneGui -= OnSceneGUI;
-            base.OnWillBeDestroyed();
-        }
-
+        #region Data Classes
         private class DrawCallInfo
         {
             public int TotalGraphics;
@@ -277,6 +285,6 @@ namespace Framework.Editor
             public Texture Texture;
             public int Depth;
         }
+        #endregion
     }
 }
-#endif
