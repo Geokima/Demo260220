@@ -8,6 +8,7 @@ using UnityEditor;
 namespace Framework.Editor
 {
     [CustomEditor(typeof(MonoBehaviour), true)]
+    [CanEditMultipleObjects]
     public class ButtonEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
@@ -40,7 +41,8 @@ namespace Framework.Editor
 
                 if (GUILayout.Button(label))
                 {
-                    method.Invoke(target, null);
+                    foreach (var t in targets)
+                        method.Invoke(t, null);
                 }
             }
         }

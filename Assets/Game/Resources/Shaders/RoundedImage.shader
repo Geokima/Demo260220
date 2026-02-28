@@ -102,8 +102,10 @@ Shader "UI/RoundedImage"
             {
                 half4 color = tex2D(_MainTex, IN.texcoord) * IN.color;
                 
-                // 将 UV 等价到左下角（利用对称性）
-                float2 p = abs(step(0.5, IN.texcoord) - IN.texcoord);
+                // 将 UV 映射到 [-0.5, 0.5] 范围，并考虑宽高比
+                float2 uv = IN.texcoord - 0.5;
+                float2 size = float2(1.0, _AspectRatio);
+                float2 p = uv * size;
                 
                 // 根据象限获取对应的圆角半径
                 float radius;
@@ -116,11 +118,20 @@ Shader "UI/RoundedImage"
                 else                                                  // 左下
                     radius = _RadiusBL;
                 
-                // 三个条件同时成立则乘0，否则乘1
-                // 1. 在左下角区域内，2. 长度超过半径
-                // step(radius, p.x) || step(radius, p.y * _AspectRatio) || step(length(...), radius)
-                float keep = step(radius, p.x) + step(radius, p.y * _AspectRatio) + step(length(float2(p.x - radius, p.y * _AspectRatio - radius)), radius);
-                color.a *= step(0.5, keep);
+                // 将半径从“相对于短边的比例”转换为当前坐标系下的绝对值
+                radius *= min(1.0, _AspectRatio);
+                
+                // 确保半径不会超过边长的一半
+                radius = min(radius, min(size.x, size.y) * 0.5);
+                
+                // 计算 Rounded Box SDF
+                // q 是点到内部矩形边缘的距离
+                float2 q = abs(p) - (size * 0.5) + radius;
+                float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+                
+                // 抗锯齿：使用 fwidth 获取当前像素的距离变化率
+                float blur = fwidth(dist) * 0.5;
+                color.a *= smoothstep(blur, -blur, dist);
                 
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
