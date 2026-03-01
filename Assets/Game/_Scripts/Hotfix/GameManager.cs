@@ -4,7 +4,7 @@ using Game.Models;
 using Game.Services;
 using Game.Procedures;
 using UnityEngine;
-using Framework;
+using Framework.Modules.Scene;
 
 namespace Game
 {
@@ -62,6 +62,7 @@ namespace Game
         private void Update()
         {
             GameArchitecture.Instance.GetSystem<ProcedureSystem>()?.Update();
+            GameArchitecture.Instance.GetSystem<SceneSystem>()?.Update();
         }
 
         private void FixedUpdate()

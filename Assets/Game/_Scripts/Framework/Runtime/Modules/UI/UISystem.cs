@@ -198,7 +198,7 @@ namespace Framework.Modules.UI
                 return null;
             }
 
-            var obj = UnityEngine.Object.Instantiate(prefab);
+            var obj = UnityEngine.Object.Instantiate(prefab, _layerRoots[prefab.GetComponent<UIPanel>().Layer]);
             var panel = obj.GetComponent<T>();
 
             if (panel == null)
@@ -208,7 +208,7 @@ namespace Framework.Modules.UI
                 return null;
             }
 
-            obj.transform.SetParent(_layerRoots[panel.Layer], false);
+            panel.Architecture = Architecture;
             return panel;
         }
 

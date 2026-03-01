@@ -56,6 +56,7 @@ namespace Framework
         void SendEvent<T>(object sender, T e);
         void SendEvent<T>(object sender) where T : new();
         IUnRegister RegisterEvent<T>(Action<T> onEvent) where T : new();
+        void UnRegisterEvent<T>(Action<T> onEvent) where T : new();
         void Shutdown();
     }
 
@@ -87,7 +88,7 @@ namespace Framework
 
             arch.RegisterModule();
             OnRegisterPatch?.Invoke(arch);
-            
+
             var models = arch._container.GetInstancesByType<IModel>();
             foreach (var model in models)
                 model.Init();
@@ -177,6 +178,8 @@ namespace Framework
         public void SendEvent<TEvent>(object sender) where TEvent : new() => _eventSystem.Send<TEvent>(sender);
 
         public IUnRegister RegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.Register(onEvent);
+
+        public void UnRegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.UnRegister(onEvent);
     }
 
     #endregion
@@ -239,6 +242,9 @@ namespace Framework
     {
         public static void RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
             self.Architecture.RegisterEvent(onEvent);
+
+        public static void UnRegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
+            self.Architecture.UnRegisterEvent(onEvent);
     }
 
     public static class ISystemAwareExtensions
@@ -462,7 +468,7 @@ namespace Framework
         public void UnRegister<T>(Action<T> onEvent) => (GetEvent<T>() as Event<T>)?.UnRegister(onEvent);
 
         private Event<T> GetEvent<T>()
-        {      
+        {
             return _typeEvents.TryGetValue(typeof(T), out var e) ? e as Event<T> : default;
         }
 

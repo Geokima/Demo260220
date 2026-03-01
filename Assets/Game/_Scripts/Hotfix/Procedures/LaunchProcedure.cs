@@ -15,9 +15,9 @@ namespace Game.Procedures
 #if UNITY_ANDROID
         private string[] _permissions = new string[]
         {
-            "android.permission.WRITE_EXTERNAL_STORAGE",
-            "android.permission.READ_EXTERNAL_STORAGE",
-            "android.permission.INTERNET"
+            // "android.permission.WRITE_EXTERNAL_STORAGE",
+            // "android.permission.READ_EXTERNAL_STORAGE",
+            // "android.permission.INTERNET"
         };
 #endif
 

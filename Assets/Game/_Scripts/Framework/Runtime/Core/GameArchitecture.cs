@@ -5,6 +5,7 @@ using Framework.Modules.Pool;
 using Framework.Modules.Procedure;
 using Framework.Modules.Res;
 using Framework.Modules.Scene;
+using Framework.Modules.Timer;
 using Framework.Modules.UI;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ namespace Game
             RegisterSystem(new PoolSystem());
             RegisterSystem(new ProcedureSystem());
             RegisterSystem(new SceneSystem());
+            RegisterSystem(new TimerSystem());
             RegisterSystem(new UISystem());
         }
     }

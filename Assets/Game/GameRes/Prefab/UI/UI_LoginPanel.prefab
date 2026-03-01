@@ -189,7 +189,7 @@ MonoBehaviour:
   _fixedOrder: 0
   InputUserName: {fileID: 0}
   InputPassword: {fileID: 0}
-  BtnButtonLogIn: {fileID: 0}
+  BtnLogin: {fileID: 0}
 --- !u!1 &3135620155931367045
 GameObject:
   m_ObjectHideFlags: 0
@@ -1282,7 +1282,7 @@ GameObject:
   - component: {fileID: 3954325671146272068}
   - component: {fileID: 6907711868444851003}
   m_Layer: 0
-  m_Name: Btn_LogIn
+  m_Name: Btn_Login
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

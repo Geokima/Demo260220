@@ -4,6 +4,7 @@ using System.Reflection;
 using UnityEngine;
 using Framework;
 using Framework.Modules.Http;
+using System.Linq;
 
 namespace Game.Tests
 {
@@ -13,18 +14,18 @@ namespace Game.Tests
     public class FrameworkMonitor : MonoBehaviour
     {
         #region Serialized Fields
-        
+
         [Header("显示设置")]
         [SerializeField] private bool _showGui = true;
         [SerializeField] private KeyCode _toggleKey = KeyCode.F12;
 
         [Header("刷新设置")]
         [SerializeField] private float _containerRefreshInterval = 3f;
-        
+
         #endregion
 
         #region Private Fields - Window
-        
+
         private Vector2 _scrollPosition;
         private Rect _windowRect;
         private bool _isMinimized = false;
@@ -33,11 +34,11 @@ namespace Game.Tests
         private bool _isResizing = false;
         private Vector2 _resizeStartMouse;
         private Vector2 _resizeStartSize;
-        
+
         #endregion
 
         #region Private Fields - Container Page
-        
+
         private bool _showSystems = true;
         private bool _showModels = true;
         private bool _showEvents = true;
@@ -56,24 +57,31 @@ namespace Game.Tests
         #endregion
 
         #region Private Fields - Event History Page
-        
+
         private int _currentPage = 0;
-        private readonly string[] _pageNames = { "容器", "事件记录", "HTTP监听" };
+        private readonly string[] _pageNames = { "容器", "事件记录", "HTTP监听", "配置表" };
         private List<EventRecord> _eventRecords = new List<EventRecord>();
         private int _maxEventRecords = 100;
         private int _expandedEventIndex = -1;
         private Dictionary<string, List<string>> _eventDataCache = new Dictionary<string, List<string>>();
-        
+
         #endregion
 
         #region Private Fields - HTTP Page
-        
+
         private List<HttpRequestRecord> _httpRecords = new List<HttpRequestRecord>();
         private int _maxHttpRecords = 50;
         private int _expandedHttpIndex = -1;
         private bool _showHttpSuccess = true;
         private bool _showHttpError = true;
-        
+
+        #endregion
+
+        #region Private Fields - Config Page
+
+        private string _expandedConfigType = null;
+        private Vector2 _configDetailScrollPosition;
+
         private class HttpRequestRecord
         {
             public DateTime RealTime;
@@ -85,7 +93,7 @@ namespace Game.Tests
             public bool IsSuccess;
             public int StatusCode;
         }
-        
+
         private class EventRecord
         {
             public DateTime RealTime;
@@ -93,20 +101,20 @@ namespace Game.Tests
             public string EventType;
             public object EventData;
         }
-        
+
         #endregion
 
         #region Private Fields - GUI Styles
-        
+
         private GUIStyle _flatButtonStyle;
         private GUIStyle _flatBoxStyle;
         private GUIStyle _flatLabelStyle;
         private bool _stylesInitialized;
-        
+
         #endregion
 
         #region Unity Lifecycle
-        
+
         private void Start()
         {
             _windowRect = new Rect(Screen.width - 410, 10, 400, 400);
@@ -114,13 +122,13 @@ namespace Game.Tests
             EventSystem.OnEventSent += OnEventSent;
             HttpSystem.OnRequestSent += OnHttpRequest;
         }
-        
+
         private void OnDestroy()
         {
             EventSystem.OnEventSent -= OnEventSent;
             HttpSystem.OnRequestSent -= OnHttpRequest;
         }
-        
+
         private void OnHttpRequest(string method, string url, string requestBody, string responseBody, long durationMs, bool isSuccess, int statusCode)
         {
             _httpRecords.Add(new HttpRequestRecord
@@ -134,11 +142,11 @@ namespace Game.Tests
                 IsSuccess = isSuccess,
                 StatusCode = statusCode
             });
-            
+
             if (_httpRecords.Count > _maxHttpRecords)
                 _httpRecords.RemoveAt(0);
         }
-        
+
         private void Update()
         {
             if (Input.GetKeyDown(_toggleKey))
@@ -147,7 +155,7 @@ namespace Game.Tests
             if (!_isMinimized && Time.time - _lastRefreshTime >= _containerRefreshInterval)
                 RefreshData();
         }
-        
+
         private void OnGUI()
         {
             if (!_showGui) return;
@@ -161,11 +169,11 @@ namespace Game.Tests
                 DrawMaximized();
             }
         }
-        
+
         #endregion
 
         #region GUI Styles
-        
+
         private void InitStyles()
         {
             if (_stylesInitialized) return;
@@ -246,12 +254,12 @@ namespace Game.Tests
         private void DrawWindow(int windowId)
         {
             InitStyles();
-            
+
             DrawTitleBar();
             DrawPageTabs();
             DrawPageContent();
             DrawResizeHandle();
-            
+
             GUI.DragWindow();
         }
 
@@ -299,6 +307,9 @@ namespace Game.Tests
                 case 2:
                     DrawHttpPage();
                     break;
+                case 3:
+                    DrawConfigPage();
+                    break;
             }
 
             GUILayout.EndScrollView();
@@ -310,22 +321,22 @@ namespace Game.Tests
             GUI.Box(new Rect(_windowRect.width - 25, _windowRect.height - 25, 20, 20), "::");
             HandleWindowResize();
         }
-        
+
         #endregion
 
         #region Window Resize
-        
+
         private void HandleWindowResize()
         {
             var e = UnityEngine.Event.current;
             var resizeArea = new Rect(_windowRect.width - 25, _windowRect.height - 25, 25, 25);
-            
+
             if (_isResizing && !Input.GetMouseButton(0))
             {
                 _isResizing = false;
                 return;
             }
-            
+
             if (_isResizing)
             {
                 var screenMouse = Input.mousePosition;
@@ -336,7 +347,7 @@ namespace Game.Tests
                 _windowRect.height = Mathf.Max(200, _resizeStartSize.y + deltaY);
                 return;
             }
-            
+
             if (e.type == EventType.MouseDown && resizeArea.Contains(e.mousePosition))
             {
                 _isResizing = true;
@@ -347,11 +358,11 @@ namespace Game.Tests
                 e.Use();
             }
         }
-        
+
         #endregion
 
         #region Container Page
-        
+
         private void DrawContainerPage()
         {
             DrawSystemsSection();
@@ -405,13 +416,13 @@ namespace Game.Tests
                 var isExpanded = _expandedRegisteredEventType == eventInfo.EventType;
                 var eventIcon = isExpanded ? "●" : "○";
                 btnStyle.alignment = TextAnchor.MiddleLeft;
-                
+
                 GUILayout.BeginHorizontal();
                 GUILayout.Space(20);
                 if (GUILayout.Button($"{eventIcon} {eventInfo.EventType} ({eventInfo.HandlerNames.Count})", btnStyle))
                     _expandedRegisteredEventType = isExpanded ? null : eventInfo.EventType;
                 GUILayout.EndHorizontal();
-                
+
                 if (isExpanded)
                 {
                     GUILayout.BeginHorizontal();
@@ -426,11 +437,11 @@ namespace Game.Tests
                 }
             }
         }
-        
+
         #endregion
 
         #region Event History Page
-        
+
         private void DrawEventHistoryPage()
         {
             GUILayout.BeginHorizontal();
@@ -458,21 +469,21 @@ namespace Game.Tests
         {
             var record = _eventRecords[index];
             var isExpanded = _expandedEventIndex == index;
-            
+
             var btnStyle = new GUIStyle(_flatButtonStyle);
             btnStyle.alignment = TextAnchor.MiddleLeft;
             if (GUILayout.Button($"[{record.RealTime:HH:mm:ss}] {record.Sender} -> {record.EventType}", btnStyle))
             {
                 _expandedEventIndex = isExpanded ? -1 : index;
             }
-            
+
             if (isExpanded)
             {
                 GUILayout.BeginVertical(_flatBoxStyle);
-                
+
                 // 显示谁能收到这个事件
                 DrawEventHandlers(record.EventType);
-                
+
                 GUILayout.Space(5);
                 DrawEventData(record.EventData, record.EventType);
                 GUILayout.EndVertical();
@@ -482,7 +493,7 @@ namespace Game.Tests
         private void DrawEventHandlers(string eventType)
         {
             GUILayout.Label("<color=yellow>监听器:</color>", _flatLabelStyle);
-            
+
             // 从缓存中查找该事件类型的监听器
             var eventInfo = _cachedEventInfos.Find(e => e.EventType == eventType);
             if (eventInfo != null && eventInfo.HandlerNames.Count > 0)
@@ -501,7 +512,7 @@ namespace Game.Tests
         private void DrawEventData(object eventData, string eventType)
         {
             GUILayout.Label("<color=yellow>事件数据:</color>", _flatLabelStyle);
-            
+
             if (eventData == null)
             {
                 GUILayout.Label("  null", _flatLabelStyle);
@@ -545,11 +556,11 @@ namespace Game.Tests
             var prop = type.GetProperty(name);
             return field?.GetValue(obj) ?? prop?.GetValue(obj);
         }
-        
+
         #endregion
 
         #region HTTP Page
-        
+
         private void DrawHttpPage()
         {
             // 筛选选项
@@ -574,7 +585,7 @@ namespace Game.Tests
                     // 根据筛选条件显示
                     if ((record.IsSuccess && !_showHttpSuccess) || (!record.IsSuccess && !_showHttpError))
                         continue;
-                    
+
                     DrawHttpRecord(i);
                     GUILayout.Space(2);
                 }
@@ -585,10 +596,10 @@ namespace Game.Tests
         {
             var record = _httpRecords[index];
             var isExpanded = _expandedHttpIndex == index;
-            
+
             var btnStyle = new GUIStyle(_flatButtonStyle);
             btnStyle.alignment = TextAnchor.MiddleLeft;
-            
+
             var color = record.IsSuccess ? "<color=green>" : "<color=red>";
             var colorEnd = "</color>";
             var shortUrl = record.Url.Length > 40 ? record.Url.Substring(0, 40) + "..." : record.Url;
@@ -597,37 +608,37 @@ namespace Game.Tests
             {
                 _expandedHttpIndex = isExpanded ? -1 : index;
             }
-            
+
             if (isExpanded)
             {
                 GUILayout.BeginVertical(_flatBoxStyle);
                 GUILayout.Label($"<color=white>URL:</color> {record.Url}", _flatLabelStyle);
                 GUILayout.Label($"<color=white>状态:</color> {(record.IsSuccess ? "成功" : "失败")} (HTTP {record.StatusCode})", _flatLabelStyle);
                 GUILayout.Label($"<color=white>耗时:</color> {record.DurationMs}ms", _flatLabelStyle);
-                
+
                 if (!string.IsNullOrEmpty(record.RequestBody))
                 {
                     GUILayout.Label("<color=white>请求体:</color>", _flatLabelStyle);
                     GUILayout.TextArea(record.RequestBody, GUILayout.Height(60));
                 }
-                
+
                 if (!string.IsNullOrEmpty(record.ResponseBody))
                 {
                     GUILayout.Label("<color=white>响应体:</color>", _flatLabelStyle);
-                    var response = record.ResponseBody.Length > 500 
-                        ? record.ResponseBody.Substring(0, 500) + "..." 
+                    var response = record.ResponseBody.Length > 500
+                        ? record.ResponseBody.Substring(0, 500) + "..."
                         : record.ResponseBody;
                     GUILayout.TextArea(response, GUILayout.Height(80));
                 }
-                
+
                 GUILayout.EndVertical();
             }
         }
-        
+
         #endregion
 
         #region Data Refresh
-        
+
         private void RefreshData()
         {
             _cachedSystems = GetSystems();
@@ -645,15 +656,15 @@ namespace Game.Tests
                 EventType = eventData.GetType().Name,
                 EventData = eventData
             });
-            
+
             if (_eventRecords.Count > _maxEventRecords)
                 _eventRecords.RemoveAt(0);
         }
-        
+
         #endregion
 
         #region Reflection Helpers
-        
+
         private List<string> GetSystems()
         {
             return GetInstancesFromContainer<ISystem>();
@@ -705,28 +716,28 @@ namespace Game.Tests
             try
             {
                 var eventSystemField = GetFieldIncludingBase(architecture.GetType(), "_eventSystem");
-                if (eventSystemField == null) 
+                if (eventSystemField == null)
                 {
                     Debug.LogWarning("[FrameworkMonitor] _eventSystem field not found");
                     return result;
                 }
 
                 var eventSystem = eventSystemField.GetValue(architecture);
-                if (eventSystem == null) 
+                if (eventSystem == null)
                 {
                     Debug.LogWarning("[FrameworkMonitor] _eventSystem is null");
                     return result;
                 }
 
                 var typeEventsField = GetFieldIncludingBase(eventSystem.GetType(), "_typeEvents");
-                if (typeEventsField == null) 
+                if (typeEventsField == null)
                 {
                     Debug.LogWarning("[FrameworkMonitor] _typeEvents field not found");
                     return result;
                 }
 
                 var typeEvents = typeEventsField.GetValue(eventSystem) as System.Collections.IDictionary;
-                if (typeEvents == null) 
+                if (typeEvents == null)
                 {
                     Debug.LogWarning("[FrameworkMonitor] _typeEvents is null or not IDictionary");
                     return result;
@@ -736,11 +747,11 @@ namespace Game.Tests
                 {
                     var keyType = kvp.Key as Type;
                     if (keyType == null) continue;
-                    
+
                     var eventInfo = new EventInfo { EventType = keyType.Name };
                     var eventValue = kvp.Value;
                     if (eventValue == null) continue;
-                    
+
                     var onEventField = GetFieldIncludingBase(eventValue.GetType(), "_onEvent");
                     if (onEventField != null)
                     {
@@ -776,7 +787,110 @@ namespace Game.Tests
             }
             return null;
         }
-        
+
+        #endregion
+
+        #region Config Page
+
+        private void DrawConfigPage()
+        {
+            var architecture = GameArchitecture.Instance;
+            if (architecture == null)
+            {
+                GUILayout.Label("Architecture not initialized", _flatLabelStyle);
+                return;
+            }
+
+            var configSystem = architecture.GetSystem<Framework.Modules.Config.ConfigSystem>();
+            if (configSystem == null)
+            {
+                GUILayout.Label("ConfigSystem not found", _flatLabelStyle);
+                return;
+            }
+
+            var sheetsField = configSystem.GetType().GetField("_sheets",
+                BindingFlags.NonPublic |
+                BindingFlags.Instance);
+
+            if (sheetsField == null)
+            {
+                GUILayout.Label("无法获取配置表数据", _flatLabelStyle);
+                return;
+            }
+
+            var sheets = sheetsField.GetValue(configSystem) as System.Collections.IDictionary;
+            if (sheets == null || sheets.Count == 0)
+            {
+                GUILayout.Label("暂无已加载的配置表", _flatLabelStyle);
+                return;
+            }
+
+            GUILayout.Label($"已加载配置表数量: {sheets.Count}", _flatLabelStyle);
+            GUILayout.Space(5);
+
+            foreach (System.Collections.DictionaryEntry entry in sheets)
+            {
+                var configType = entry.Key as Type;
+                var sheet = entry.Value;
+                var typeName = configType?.Name ?? "Unknown";
+
+                var countProperty = sheet.GetType().GetProperty("Count");
+                var count = countProperty?.GetValue(sheet) ?? 0;
+
+                var isExpanded = _expandedConfigType == typeName;
+                var icon = isExpanded ? "●" : "○";
+                var btnStyle = new GUIStyle(_flatButtonStyle);
+                btnStyle.alignment = TextAnchor.MiddleLeft;
+                if (GUILayout.Button($"{icon} {typeName} ({count} 行)", btnStyle))
+                {
+                    _expandedConfigType = isExpanded ? null : typeName;
+                }
+
+                if (isExpanded)
+                {
+                    DrawConfigDetail(sheet, configType);
+                }
+            }
+        }
+
+        private void DrawConfigDetail(object sheet, Type configType)
+        {
+            _configDetailScrollPosition = GUILayout.BeginScrollView(_configDetailScrollPosition,
+                GUILayout.MaxHeight(150));
+
+            var allMethod = sheet.GetType().GetMethod("All");
+            var rows = allMethod?.Invoke(sheet, null) as System.Collections.IEnumerable;
+
+            if (rows != null)
+            {
+                int index = 0;
+                foreach (var row in rows)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"  [{index}] ", _flatLabelStyle, GUILayout.Width(45));
+
+                    var properties = row.GetType().GetProperties()
+                        .Where(p => p.Name != "Id" && p.GetValue(row) != null)
+                        .Take(3);
+
+                    var details = string.Join(", ", properties.Select(p =>
+                        $"{p.Name}={p.GetValue(row)}"));
+
+                    GUILayout.Label(details, _flatLabelStyle);
+                    GUILayout.EndHorizontal();
+
+                    index++;
+                    if (index >= 50)
+                    {
+                        GUILayout.Label("  ... (更多数据)", _flatLabelStyle);
+                        break;
+                    }
+                }
+            }
+
+            GUILayout.EndScrollView();
+        }
+
         #endregion
     }
 }

@@ -22,13 +22,13 @@ namespace Tests.EditMode.Scene
             _sceneSystem = new SceneSystem();
             _sceneSystem.Architecture = _architecture;
             _sceneSystem.Init();
-            
+
             // 重置事件计数
             _startEventCount = 0;
             _progressEventCount = 0;
             _completeEventCount = 0;
             _errorEventCount = 0;
-            
+
             // 订阅事件
             _architecture.RegisterEvent<SceneLoadStartEvent>(e => _startEventCount++);
             _architecture.RegisterEvent<SceneLoadProgressEvent>(e => _progressEventCount++);
@@ -66,7 +66,7 @@ namespace Tests.EditMode.Scene
         [Test]
         public void SceneSystem_OnUpdate_ShouldNotThrow()
         {
-            Assert.DoesNotThrow(() => _sceneSystem.OnUpdate());
+            Assert.DoesNotThrow(() => _sceneSystem.Update());
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace Tests.EditMode.Scene
             {
                 // 空实现，测试不需要注册模块
             }
-            
+
         }
     }
 }

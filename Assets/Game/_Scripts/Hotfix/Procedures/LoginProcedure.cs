@@ -1,5 +1,7 @@
 using Framework.Modules.Procedure;
+using Framework.Modules.Scene;
 using Framework.Modules.UI;
+using Game.Commands;
 using UnityEngine;
 
 namespace Game.Procedures
@@ -12,8 +14,14 @@ namespace Game.Procedures
 
         public override void OnEnter()
         {
-            Debug.Log("[LoginProcedure] OnEnter - 显示登录UI");
+            Architecture.SendCommand(this, new ChangeSceneCommand() { SceneGroup = "Login" });
+            Architecture.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
+        }
+
+        private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
+        {
             Architecture.GetSystem<UISystem>().Open<UI_LoginPanel>();
+            Architecture.UnRegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
         }
 
         public override void OnExit()

@@ -1,57 +1,12 @@
 [
   {
     "SceneGroup": "Main",
-    "AssetFullPath": "Assets/Game/Download/Scenes/Main.unity",
-    "BGMId": "maintheme1"
-  },
-  {
-    "SceneGroup": "TestDataTable",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestDataTable.unity",
+    "AssetFullPath": "Assets/Game/GameRes/Scene/SceneMain.unity",
     "BGMId": null
   },
   {
-    "SceneGroup": "TestFsm",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestFsm.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestInput",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestInput.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestLoader",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestLoader.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestPlayerPrefs",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestPlayerPrefs.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestPool",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestPool.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestScene",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestScene.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestTask",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestTask.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestTime",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestTime.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "TestUI",
-    "AssetFullPath": "Assets/Game/YouYouTest/Scenes/TestUI.unity",
+    "SceneGroup": "Login",
+    "AssetFullPath": "Assets/Game/GameRes/Scene/SceneLogin.unity",
     "BGMId": null
   }
 ]

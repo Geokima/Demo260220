@@ -9,7 +9,7 @@ namespace Framework.Modules.Scene
     public class SceneSystem : AbstractSystem
     {
         public List<string> CurrentScenes { get; private set; } = new();
-        
+
         private List<string> _pendingScenes = new();
         private List<AsyncOperation> _loadingScenes = new();
         private bool _isLoading;
@@ -24,7 +24,7 @@ namespace Framework.Modules.Scene
         {
             UnitySceneManager.sceneLoaded -= OnSceneLoaded;
             UnitySceneManager.sceneUnloaded -= OnSceneUnloaded;
-            
+
             CurrentScenes.Clear();
             _pendingScenes.Clear();
             _loadingScenes.Clear();
@@ -45,9 +45,9 @@ namespace Framework.Modules.Scene
         private void OnSceneUnloaded(Scene scene)
         {
             if (CurrentScenes.Count == 0) return;
-            if (CurrentScenes.Find(x => x == scene.name) == null) return;
+            if (CurrentScenes.Find(x => x == scene.path) == null) return;
 
-            CurrentScenes.Remove(scene.name);
+            CurrentScenes.Remove(scene.path);
             if (CurrentScenes.Count == 0)
             {
                 var res = this.GetSystem<Res.ResSystem>();
@@ -56,10 +56,11 @@ namespace Framework.Modules.Scene
             }
         }
 
-        public void OnUpdate()
+        public void Update()
         {
             if (_isLoading)
             {
+                Debug.Log($"[Scene] Scene loading progress: {GetSceneLoadProgress()}");
                 if (GetSceneLoadProgress() == 1f)
                 {
                     Debug.Log($"[Scene] Scene loading completed: {string.Join(", ", CurrentScenes)}");
@@ -69,8 +70,8 @@ namespace Framework.Modules.Scene
                 }
                 else
                 {
-                    this.SendEvent(new SceneLoadProgressEvent 
-                    { 
+                    this.SendEvent(new SceneLoadProgressEvent
+                    {
                         SceneNames = CurrentScenes.ToArray(),
                         Progress = GetSceneLoadProgress()
                     });
@@ -85,7 +86,7 @@ namespace Framework.Modules.Scene
                 Debug.LogError($"[Scene] Already loading scenes: {string.Join(", ", CurrentScenes)}");
                 return;
             }
-            
+
             if (CurrentScenes.Contains(scenePath))
             {
                 Debug.LogError($"[Scene] Duplicate scene: {scenePath}");
@@ -94,8 +95,9 @@ namespace Framework.Modules.Scene
 
             _isLoading = true;
             this.SendEvent(new SceneLoadStartEvent { SceneName = scenePath });
+            Debug.Log($"[Scene] Loading scene: {scenePath}");
             _pendingScenes.Add(scenePath);
-            
+
             if (CurrentScenes.Count > 0)
             {
                 foreach (var scene in CurrentScenes)
@@ -106,7 +108,7 @@ namespace Framework.Modules.Scene
                 LoadPendingScene();
             }
         }
-        
+
         public void LoadScenes(string[] scenePaths)
         {
             if (_isLoading)
@@ -127,7 +129,7 @@ namespace Framework.Modules.Scene
             _isLoading = true;
             this.SendEvent(new SceneLoadStartEvent { SceneName = string.Join(", ", scenePaths) });
             _pendingScenes.AddRange(scenePaths);
-            
+
             if (CurrentScenes.Count > 0)
             {
                 foreach (var scene in CurrentScenes)
@@ -159,11 +161,11 @@ namespace Framework.Modules.Scene
 
             _pendingScenes.Clear();
         }
-        
+
         public float GetSceneLoadProgress()
         {
             if (_loadingScenes.Count == 0) return 0f;
-            
+
             float progress = 0f;
             foreach (var operation in _loadingScenes)
                 progress += operation.progress;

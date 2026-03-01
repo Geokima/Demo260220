@@ -4,8 +4,9 @@ namespace Framework.Modules.UI
 {
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class UIPanel : MonoBehaviour
+    public abstract class UIPanel : MonoBehaviour, IController
     {
+        public IArchitecture Architecture { get; set; }
         [SerializeField] protected UILayer _layer = UILayer.Window;
         [SerializeField] protected bool _isSingleton = true;
         [SerializeField] protected bool _fixedOrder = false;

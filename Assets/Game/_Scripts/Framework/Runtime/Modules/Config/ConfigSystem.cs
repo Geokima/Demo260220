@@ -3,52 +3,51 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace Framework.Modules.Config
 {
     using Res;
-    
+
     public class ConfigSystem : AbstractSystem
     {
         private readonly Dictionary<Type, object> _sheets = new Dictionary<Type, object>();
-
-
 
         public IConfigSheet<TRow> GetSheet<TRow>() where TRow : IConfigRow
         {
             if (_sheets.TryGetValue(typeof(TRow), out var sheet))
                 return sheet as IConfigSheet<TRow>;
-            
+
             return new ConfigSheet<TRow>(new Dictionary<int, TRow>());
         }
 
         public TRow Get<TRow>(int id) where TRow : class, IConfigRow
             => GetSheet<TRow>()?.Get(id) ?? default;
 
-        public async UniTask LoadConfigsFrom(IResLoader loader, string folder = "Configs")
+        public async UniTask LoadConfigsFrom(IResLoader loader)
         {
             try
             {
                 if (loader == null) return;
 
                 var configRowTypes = ScanConfigRowTypes();
-                
+
                 foreach (var type in configRowTypes)
                 {
                     var fileName = GetConfigFileName(type);
-                    var path = $"{folder}/{fileName}";
-                    
-                    if (!loader.Exists(path))
+
+                    if (!loader.Exists(fileName))
                     {
-                        Debug.LogWarning($"[Config] Config file not found: {path}");
+                        Debug.LogWarning($"[Config] Config file not found: {fileName}");
                         continue;
                     }
-                    
-                    var asset = await loader.LoadAsync<TextAsset>(path);
+
+                    var asset = await loader.LoadAsync<TextAsset>(fileName);
                     if (asset == null)
                     {
-                        Debug.LogError($"[Config] Failed to load config: {path}");
+                        Debug.LogError($"[Config] Failed to load config: {fileName}");
                         continue;
                     }
 
@@ -88,15 +87,53 @@ namespace Framework.Modules.Config
                 return;
             }
 
-            var parseMethod = GetType().GetMethod("ParseJson", BindingFlags.NonPublic | BindingFlags.Instance);
-            var generic = parseMethod.MakeGenericMethod(rowType);
-            var configs = generic.Invoke(this, new[] { json }) as System.Collections.IList;
+            var jArray = JArray.Parse(json);
+            var configs = new List<object>();
 
-            if (configs == null || configs.Count == 0) return;
+            bool hasAnyId = jArray.Any(j => j["Id"] != null);
+            if (!hasAnyId)
+            {
+                Debug.LogWarning($"[Config] No Id field found in {rowType.Name}, will auto assign");
+            }
+
+            var existingIds = new HashSet<int>();
+            bool hasDuplicate = false;
+
+            int autoIndex = 1;
+            foreach (var jToken in jArray)
+            {
+                var jObject = (JObject)jToken;
+
+                if (jObject["Id"] == null)
+                {
+                    jObject["Id"] = autoIndex;
+                }
+
+                int id = jObject["Id"].Value<int>();
+
+                if (!existingIds.Add(id))
+                {
+                    Debug.LogWarning($"[Config] Duplicate Id {id} found in {rowType.Name}");
+                    hasDuplicate = true;
+                }
+
+                var config = jObject.ToObject(rowType);
+                configs.Add(config);
+                autoIndex++;
+            }
+
+            if (configs.Count == 0)
+            {
+                Debug.LogWarning($"[Config] No configs found for type: {rowType.Name}");
+                return;
+            }
 
             var registerMethod = GetType().GetMethod("RegisterConfigs", BindingFlags.NonPublic | BindingFlags.Instance);
             var genericRegister = registerMethod.MakeGenericMethod(rowType);
             genericRegister.Invoke(this, new[] { configs });
+
+            var idSource = hasAnyId ? "json" : "auto";
+            Debug.Log($"[Config] Registered {configs.Count} configs for type: {rowType.Name} (Id source: {idSource}, duplicate: {hasDuplicate})");
         }
 
         private bool IsValidJson(string json)
@@ -110,8 +147,7 @@ namespace Framework.Modules.Config
             {
                 try
                 {
-                    var testWrapper = $"{{\"array\":{json}}}";
-                    JsonUtility.FromJson<JsonArrayWrapper<object>>(testWrapper);
+                    JsonConvert.DeserializeObject(json);
                     return true;
                 }
                 catch
@@ -123,14 +159,6 @@ namespace Framework.Modules.Config
         }
 
         // 注意：此方法通过反射在 ParseAndRegister 中调用
-        private List<T> ParseJson<T>(string json) where T : IConfigRow
-        {
-            var wrapped = $"{{\"array\":{json}}}";
-            var wrapper = JsonUtility.FromJson<JsonArrayWrapper<T>>(wrapped);
-            return wrapper?.array?.ToList() ?? new List<T>();
-        }
-
-        // 注意：此方法通过反射在 ParseAndRegister 中调用
         private void RegisterConfigs<T>(System.Collections.IList configs) where T : IConfigRow
         {
             var dict = new Dictionary<int, T>();
@@ -139,11 +167,7 @@ namespace Framework.Modules.Config
             _sheets[typeof(T)] = new ConfigSheet<T>(dict);
         }
 
-        [Serializable]
-        private class JsonArrayWrapper<T>
-        {
-            public T[] array;
-        }
+
 
         public override void Init() { }
 

@@ -36,14 +36,19 @@ namespace Game.Main
 
             OnInitStart?.Invoke();
 
+            MainEntry.Instance.ActualProgress = 0;
             Debug.Log("[AssetUpdater] 初始化资源包");
             if (!await InitializePackageAsync()) return;
+            MainEntry.Instance.ActualProgress = 0.2f;
             Debug.Log("[AssetUpdater] 请求版本号");
             if (!await RequestVersionAsync()) return;
+            MainEntry.Instance.ActualProgress = 0.4f;
             Debug.Log("[AssetUpdater] 更新资源清单");
             if (!await UpdateManifestAsync()) return;
+            MainEntry.Instance.ActualProgress = 0.6f;
             Debug.Log("[AssetUpdater] 下载资源");
             if (!await DownloadAssetsAsync()) return;
+            MainEntry.Instance.ActualProgress = 0.8f;
             Debug.Log("[AssetUpdater] 检查版本完成");
             OnInitSuccess?.Invoke();
         }

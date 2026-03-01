@@ -21,7 +21,7 @@ namespace Game.Procedures
         {
             var configSystem = Architecture.GetSystem<ConfigSystem>();
             var resSystem = Architecture.GetSystem<ResSystem>();
-            await configSystem.LoadConfigsFrom(resSystem.AssetLoader, "Config");
+            await configSystem.LoadConfigsFrom(resSystem.AssetLoader);
             Debug.Log("[PreloadProcedure] Configs loaded");
 
             // 预加载完成后进入登录流程
