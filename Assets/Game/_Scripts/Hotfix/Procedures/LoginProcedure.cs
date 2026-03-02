@@ -20,12 +20,8 @@ namespace Game.Procedures
 
         private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
         {
-            Architecture.GetSystem<UISystem>().Open<UI_LoginPanel>();
+            Architecture.GetSystem<IUISystem>().Open<UI_LoginPanel>();
             Architecture.UnRegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
-        }
-
-        public override void OnExit()
-        {
         }
     }
 }

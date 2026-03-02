@@ -2,11 +2,11 @@
     "name": "Hotfix",
     "rootNamespace": "",
     "references": [
-        "GUID:25f3552c5fec047b8ba4badb47fe021f",
         "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:e34a5702dd353724aa315fb8011f08c3",
-        "GUID:e5a171e3dccb3424497a1aee7572b091",
-        "GUID:84a698602a831c24db0de29abd87476e"
+        "GUID:84a698602a831c24db0de29abd87476e",
+        "GUID:304e42b60094d2d4fbd46093fbc5d42d",
+        "GUID:89168be36305b1e4c992d6a9a09c11e6"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

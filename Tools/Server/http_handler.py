@@ -82,6 +82,11 @@ class HTTPHandler(BaseHTTPRequestHandler):
             self._handle_announce()
             return
         
+        # 管理员接口 - 强制玩家下线
+        if self.path == '/admin/kick':
+            self._handle_kick()
+            return
+        
         # 404
         self.send_response(404)
         self.end_headers()
@@ -488,6 +493,37 @@ class HTTPHandler(BaseHTTPRequestHandler):
                     loop.close()
                     print(f"[HTTP] 公告已发送: {message}")
                     response = {'code': 0, 'msg': '公告发送成功'}
+                else:
+                    response = {'code': 1, 'msg': 'WebSocket服务未启动'}
+            
+            self._send_json_response(response)
+
+    def _handle_kick(self):
+        """强制玩家下线接口"""
+        content_length = int(self.headers.get('Content-Length', 0))
+        if content_length > 0:
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
+            
+            user_id = data.get('userId')
+            reason = data.get('reason', '被管理员强制下线')
+            
+            if not user_id:
+                response = {'code': 1, 'msg': '用户ID不能为空'}
+            else:
+                if self.websocket_handler:
+                    import asyncio
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    success = loop.run_until_complete(
+                        self.websocket_handler.kill_player(int(user_id), reason)
+                    )
+                    loop.close()
+                    
+                    if success:
+                        response = {'code': 0, 'msg': f'用户 {user_id} 已强制下线'}
+                    else:
+                        response = {'code': 1, 'msg': f'用户 {user_id} 不在线或下线失败'}
                 else:
                     response = {'code': 1, 'msg': 'WebSocket服务未启动'}
             

@@ -35,19 +35,6 @@ public partial class UI_LoginPanel : UIPanel
         DOTween.To(() => CanvasGroup.alpha, x => CanvasGroup.alpha = x, 0, .5f);
     }
 
-    [Button]
-    public void Show_Hide()
-    {
-        if (CanvasGroup.alpha == 0)
-        {
-            OnOpen();
-        }
-        else
-        {
-            OnClose();
-        }
-    }
-
     void OnDestroy()
     {
         BtnLogin.onClick.RemoveListener(OnLoginButtonClick);
@@ -63,7 +50,7 @@ public partial class UI_LoginPanel : UIPanel
     private void OnLoginSuccess(LoginSuccessEvent @event)
     {
         Debug.Log($"Login success: {@event.UserId} {@event.Token}");
-        this.GetSystem<UISystem>().Close<UI_LoginPanel>();
+        this.GetSystem<IUISystem>().Close<UI_LoginPanel>();
         this.SendCommand(new ChangeSceneCommand { SceneGroup = "Main" });
     }
 

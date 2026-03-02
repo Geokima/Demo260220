@@ -13,14 +13,14 @@ namespace Game.Commands
 
         public override void Execute(object sender)
         {
-            this.GetSystem<UISystem>().Open<UI_BlackScreen>();
+            this.GetSystem<IUISystem>().Open<UI_BlackScreen>();
             DelayLoadSceneAsync();
         }
 
         private async void DelayLoadSceneAsync()
         {
             await UniTask.Delay(1000);
-            var sceneConfig = this.GetSystem<ConfigSystem>()
+            var sceneConfig = this.GetSystem<IConfigSystem>()
                 .GetSheet<SceneConfig>()
                 .FindBy(x => x.SceneGroup, SceneGroup);
 
@@ -30,7 +30,7 @@ namespace Game.Commands
                 return;
             }
 
-            this.GetSystem<SceneSystem>().LoadScene(sceneConfig.AssetFullPath);
+            this.GetSystem<ISceneSystem>().LoadScene(sceneConfig.AssetFullPath);
         }
     }
 }

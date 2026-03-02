@@ -254,6 +254,46 @@ def cmd_announce(args):
     except Exception as e:
         print(f"错误: {e}")
 
+def cmd_kick(args):
+    """强制玩家下线（通过HTTP接口）"""
+    import urllib.request
+    import urllib.error
+    
+    # 1. 先通过用户名查到 userId
+    data = load_accounts()
+    acc = find_account(data, args.username)
+    if not acc:
+        print(f"错误: 玩家 '{args.username}' 不存在")
+        return
+    
+    user_id = acc.get('userId')
+    
+    # 2. 发送 Kick 请求
+    url = 'http://localhost:8080/admin/kick'
+    payload = json.dumps({
+        'userId': user_id,
+        'reason': args.reason
+    }, ensure_ascii=False).encode('utf-8')
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            if result.get('code') == 0:
+                print(f"成功: 用户 {args.username}({user_id}) 已被强制下线")
+                print(f"  原因: {args.reason}")
+            else:
+                print(f"失败: {result.get('msg', '未知错误')}")
+                
+    except Exception as e:
+        print(f"错误: 无法连接到服务器 - {e}")
+
 def main():
     parser = argparse.ArgumentParser(description='GM 管理工具')
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
@@ -306,6 +346,11 @@ def main():
     p_announce = subparsers.add_parser('announce', help='发送全服公告')
     p_announce.add_argument('message', help='公告内容')
     
+    # kick
+    p_kick = subparsers.add_parser('kick', help='强制玩家下线')
+    p_kick.add_argument('username', help='玩家账号')
+    p_kick.add_argument('--reason', default='被管理员强制下线', help='下线原因')
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -324,6 +369,7 @@ def main():
         'remove_item': cmd_remove_item,
         'set_password': cmd_set_password,
         'announce': cmd_announce,
+        'kick': cmd_kick,
     }
     
     func = commands.get(args.command)

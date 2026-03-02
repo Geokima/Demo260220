@@ -17,7 +17,7 @@ namespace Game.Main
 
         private readonly List<LogEntry> _logs = new();
 
-        public int fontSize = 15;
+        public int fontSize = 25;
 
         void OnEnable() { Application.logMessageReceived += Log; }
         void OnDisable() { Application.logMessageReceived -= Log; }
@@ -33,12 +33,12 @@ namespace Game.Main
                     _logs.Add(new LogEntry { message = line, type = type });
                     continue;
                 }
-                var lineCount = line.Length / maxLineLength + 1;
+                var lineCount = (line.Length + maxLineLength - 1) / maxLineLength;
                 for (int i = 0; i < lineCount; i++)
                 {
-                    var subLine = (i + 1) * maxLineLength <= line.Length
-                        ? line.Substring(i * maxLineLength, maxLineLength)
-                        : line.Substring(i * maxLineLength, line.Length - i * maxLineLength);
+                    int start = i * maxLineLength;
+                    int length = Math.Min(maxLineLength, line.Length - start);
+                    var subLine = line[start..(start + length)];
                     _logs.Add(new LogEntry { message = subLine, type = type });
                 }
             }
@@ -49,23 +49,36 @@ namespace Game.Main
 
         void OnGUI()
         {
-            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity,
-               new Vector3(Screen.width / 1920.0f, Screen.height / 1080.0f, 1.0f));
+            // 适配分辨率：以 1080p 为基准进行等比缩放
+            float scale = Screen.height / 1080f;
+            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
 
-            var style = new GUIStyle
+            var style = new GUIStyle(GUI.skin.label)
             {
-                fontSize = Math.Max(10, fontSize),
-                richText = true
+                fontSize = fontSize,
+                richText = true,
+                wordWrap = true
             };
 
+            // 绘制背景
+            GUI.backgroundColor = new Color(0, 0, 0, 0.5f);
+            float width = Screen.width / scale;
+            float height = Screen.height / scale;
+            GUI.Box(new Rect(0, 0, width, height), "");
+
             float y = 10;
-            foreach (var log in _logs)
+            for (int i = 0; i < _logs.Count; i++)
             {
+                var log = _logs[i];
                 var color = GetColor(log.type);
                 var coloredText = $"<color={color}>{log.message}</color>";
-                var size = style.CalcSize(new GUIContent(log.message));
-                GUI.Label(new Rect(10, y, size.x + 10, size.y), coloredText, style);
-                y += size.y;
+                
+                // 计算文本高度
+                float textHeight = style.CalcHeight(new GUIContent(log.message), width - 20);
+                GUI.Label(new Rect(10, y, width - 20, textHeight), coloredText, style);
+                y += textHeight;
+
+                if (y > height) break; // 超过屏幕高度停止绘制
             }
         }
 

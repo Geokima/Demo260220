@@ -12,13 +12,13 @@ namespace Game.Services
     /// </summary>
     public class PlayerService : AbstractSystem
     {
-        private HttpSystem _httpSystem;
+        private IHttpSystem _httpSystem;
         private long _lastSyncTime = 0;
         private const long SyncInterval = 300; // 5分钟同步一次（秒）
 
         public override void Init()
         {
-            _httpSystem = this.GetSystem<HttpSystem>();
+            _httpSystem = this.GetSystem<IHttpSystem>();
             
             // 监听登录成功事件，自动同步数据
             this.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);

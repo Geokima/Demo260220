@@ -8,11 +8,11 @@ namespace Game.Services
 {
     public class ResourceService : AbstractSystem
     {
-        private HttpSystem _httpSystem;
+        private IHttpSystem _httpSystem;
 
         public override void Init()
         {
-            _httpSystem = this.GetSystem<HttpSystem>();
+            _httpSystem = this.GetSystem<IHttpSystem>();
         }
 
         public void RequestChangeDiamond(int amount, string reason)

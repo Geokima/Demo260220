@@ -1,7 +1,7 @@
-using Framework.Modules.Procedure;
-using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
+using Framework.Modules.Procedure;
 using UnityEngine;
 
 namespace Game.Procedures
@@ -80,8 +80,5 @@ namespace Game.Procedures
         }
 #endif
 
-        public override void OnExit()
-        {
-        }
     }
 }

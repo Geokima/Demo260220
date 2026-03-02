@@ -1,7 +1,7 @@
-using Framework.Modules.Procedure;
-using Framework.Modules.Config;
-using Framework.Modules.Res;
 using Cysharp.Threading.Tasks;
+using Framework;
+using Framework.Modules.Procedure;
+using Game.Commands;
 using UnityEngine;
 
 namespace Game.Procedures
@@ -14,22 +14,12 @@ namespace Game.Procedures
 
         public override void OnEnter()
         {
-            LoadAll().Forget();
-        }
+            this.SendCommand(new LoadAllConfigsCommand());
+            Debug.Log("[PreloadProcedure] Started loading configs via Command");
 
-        private async UniTaskVoid LoadAll()
-        {
-            var configSystem = Architecture.GetSystem<ConfigSystem>();
-            var resSystem = Architecture.GetSystem<ResSystem>();
-            await configSystem.LoadConfigsFrom(resSystem.AssetLoader);
-            Debug.Log("[PreloadProcedure] Configs loaded");
-
-            // 预加载完成后进入登录流程
+            // TODO: 如果需要等待加载完成，可以监听事件或改用异步 Command
+            // 目前暂时直接进入登录流程（假设加载很快）
             ChangeProcedure<LoginProcedure>();
-        }
-
-        public override void OnExit()
-        {
         }
     }
 }

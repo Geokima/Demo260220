@@ -28,7 +28,7 @@ public class UI_BlackScreen : UIPanel
 
     private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
     {
-        this.GetSystem<UISystem>().Close<UI_BlackScreen>();
+        this.GetSystem<IUISystem>().Close<UI_BlackScreen>();
     }
 
     private void OnDestroy()

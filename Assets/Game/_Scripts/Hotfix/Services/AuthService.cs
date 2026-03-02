@@ -30,7 +30,7 @@ namespace Game.Services
 
             try
             {
-                var httpSystem = this.GetSystem<HttpSystem>();
+                var httpSystem = this.GetSystem<IHttpSystem>();
                 var json = JsonUtility.ToJson(new LoginRequest { username = username, password = password });
                 var result = await httpSystem.PostAsync("/login", json);
 
@@ -95,7 +95,7 @@ namespace Game.Services
 
             try
             {
-                var httpSystem = this.GetSystem<HttpSystem>();
+                var httpSystem = this.GetSystem<IHttpSystem>();
                 var json = JsonUtility.ToJson(new RegisterRequest { username = username, password = password });
                 var result = await httpSystem.PostAsync("/register", json);
 

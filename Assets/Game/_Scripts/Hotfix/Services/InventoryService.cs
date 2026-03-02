@@ -9,11 +9,11 @@ namespace Game.Services
 {
     public class InventoryService : AbstractSystem
     {
-        private HttpSystem _httpSystem;
+        private IHttpSystem _httpSystem;
 
         public override void Init()
         {
-            _httpSystem = this.GetSystem<HttpSystem>();
+            _httpSystem = this.GetSystem<IHttpSystem>();
         }
 
         public void RequestGetInventory()

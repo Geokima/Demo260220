@@ -1,10 +1,12 @@
 using Framework.Modules.Http;
+using Framework.Modules.Network;
 using Framework.Modules.Procedure;
-using Game.Models;
-using Game.Services;
-using Game.Procedures;
-using UnityEngine;
 using Framework.Modules.Scene;
+using Framework.Unity.Bridge;
+using Game.Models;
+using Game.Procedures;
+using Game.Services;
+using UnityEngine;
 
 namespace Game
 {
@@ -13,6 +15,7 @@ namespace Game
         [Header("Server")]
         public string ProductionServerUrl = "";
         public string TestServerUrl = "http://localhost:8080";
+        public string TestWebSocketUrl = "ws://localhost:8081";
         public bool IsTestServer = true;
 
         public static GameManager Instance { get; private set; }
@@ -22,6 +25,7 @@ namespace Game
         private void Awake()
         {
             Instance ??= this;
+            gameObject.AddComponent<ArchitectureDriver>();
             GameArchitecture.OnRegisterPatch += architecture =>
             {
                 // Services
@@ -44,30 +48,27 @@ namespace Game
             GameArchitecture.Launch();
 
             // HttpSystem 配置
-            var httpSystem = GameArchitecture.Instance.GetSystem<HttpSystem>();
+            var httpSystem = GameArchitecture.Instance.GetSystem<IHttpSystem>();
             httpSystem.SetConfig(ProductionServerUrl, TestServerUrl, IsTestServer);
 
             // Procedures 注册
-            var procedureSystem = GameArchitecture.Instance.GetSystem<ProcedureSystem>();
+            var procedureSystem = GameArchitecture.Instance.GetSystem<IProcedureSystem>();
             procedureSystem.RegisterProcedure(new LaunchProcedure());
             procedureSystem.RegisterProcedure(new PreloadProcedure());
             procedureSystem.RegisterProcedure(new LoginProcedure());
             procedureSystem.RegisterProcedure(new MainProcedure());
 
             // 启动流程
-            var procedure = GameArchitecture.Instance.GetSystem<ProcedureSystem>();
+            var procedure = GameArchitecture.Instance.GetSystem<IProcedureSystem>();
             procedure.Start<LaunchProcedure>();
         }
 
-        private void Update()
+        private void OnApplicationPause(bool pauseStatus)
         {
-            GameArchitecture.Instance.GetSystem<ProcedureSystem>()?.Update();
-            GameArchitecture.Instance.GetSystem<SceneSystem>()?.Update();
-        }
-
-        private void FixedUpdate()
-        {
-            GameArchitecture.Instance.GetSystem<ProcedureSystem>()?.FixedUpdate();
+            if (!pauseStatus)
+            {
+                GameArchitecture.Instance.GetSystem<INetworkSystem>()?.OnApplicationResume();
+            }
         }
     }
 }
