@@ -38,7 +38,6 @@ namespace Framework.Modules.Network
         private int _reconnectAttempts;
         private float _lastHeartbeatSentTime;
         private float _lastHeartbeatReceivedTime;
-        private ITimeProvider _timeProvider;
         private readonly Random _random = new Random();
         private readonly Dictionary<int, Action<byte[]>> _handlers = new Dictionary<int, Action<byte[]>>();
 
@@ -54,7 +53,6 @@ namespace Framework.Modules.Network
         {
             _client = new WebSocketClient();
             _status = NetworkStatus.Disconnected;
-            _timeProvider = Architecture.GetSystem<ITimeProvider>();
         }
 
         /// <inheritdoc />
@@ -151,12 +149,12 @@ namespace Framework.Modules.Network
         private void OnConnectSuccess()
         {
             UpdateStatus(NetworkStatus.Connected);
-            _lastHeartbeatReceivedTime = _timeProvider.Time;
+            _lastHeartbeatReceivedTime = Framework.Time.Now;
         }
 
         private void HandleMessage(NetworkPackage pkg)
         {
-            _lastHeartbeatReceivedTime = _timeProvider.Time;
+            _lastHeartbeatReceivedTime = Framework.Time.Now;
 
             if (_handlers.TryGetValue(pkg.Cmd, out var handler))
             {
@@ -168,7 +166,7 @@ namespace Framework.Modules.Network
 
         private void UpdateHeartbeat()
         {
-            float now = _timeProvider.Time;
+            float now = Framework.Time.Now;
 
             if (now - _lastHeartbeatSentTime > HeartbeatIntervalMs / 1000f)
             {

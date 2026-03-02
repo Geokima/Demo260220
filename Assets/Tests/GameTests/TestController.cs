@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Config;
 using Framework.Utils;
@@ -520,7 +520,7 @@ namespace Game.Tests
             string message = "这是来自 GM 面板的测试公告 " + System.DateTime.Now.ToString("HH:mm:ss");
             Debug.Log($"<color=cyan>▶ 发送测试公告: {message}</color>");
 
-            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.HttpSystem>();
+            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.IHttpSystem>();
             string url = "http://localhost:8080/admin/announce";
             string json = "{\"message\":\"" + message + "\"}";
 
@@ -539,7 +539,7 @@ namespace Game.Tests
             int userId = accountModel.UserId.Value;
             Debug.Log($"<color=red>▶ 正在请求强制下线 UID: {userId}</color>");
 
-            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.HttpSystem>();
+            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.IHttpSystem>();
             string url = "http://localhost:8080/admin/kick";
             string json = "{\"userId\":" + userId + ", \"reason\":\"GM面板测试强制下线\"}";
 

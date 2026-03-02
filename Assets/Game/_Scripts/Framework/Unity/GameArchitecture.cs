@@ -17,7 +17,6 @@ namespace Game
     {
         protected override void RegisterModule()
         {
-            RegisterSystem<ITimeProvider>(new UnityTimeProvider());
             RegisterSystem<IConfigSystem>(new ConfigSystem());
             RegisterSystem<IHttpSystem>(new HttpSystem());
             RegisterSystem<INetworkSystem>(new NetworkSystem());

@@ -1,7 +1,7 @@
 using UnityEngine;
 using Framework;
 
-namespace Framework.Unity.Runtime
+namespace Framework.Unity.Runtime.Initializer
 {
     /// <summary>
     /// 日志工具初始化器

@@ -5,6 +5,7 @@ using UnityEngine;
 using Framework;
 using Framework.Modules.Http;
 using System.Linq;
+using Time = UnityEngine.Time;
 
 namespace Game.Tests
 {
@@ -801,7 +802,7 @@ namespace Game.Tests
                 return;
             }
 
-            var configSystem = architecture.GetSystem<Framework.Modules.Config.ConfigSystem>();
+            var configSystem = architecture.GetSystem<Framework.Modules.Config.IConfigSystem>();
             if (configSystem == null)
             {
                 GUILayout.Label("ConfigSystem not found", _flatLabelStyle);

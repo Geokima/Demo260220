@@ -14,7 +14,6 @@ namespace Framework.Modules.Timer
         private readonly TimerMinHeap _timerMinHeap = new TimerMinHeap();
         private readonly Dictionary<int, Timer> _timerDict = new Dictionary<int, Timer>();
         private int _timerIdCounter;
-        private ITimeProvider _timeProvider;
 
         #endregion
 
@@ -23,7 +22,6 @@ namespace Framework.Modules.Timer
         /// <inheritdoc />
         public override void Init()
         {
-            _timeProvider = Architecture.GetSystem<ITimeProvider>();
         }
 
         /// <inheritdoc />
@@ -36,9 +34,7 @@ namespace Framework.Modules.Timer
         /// <inheritdoc />
         public void OnUpdate()
         {
-            if (_timeProvider == null) return;
-
-            float now = _timeProvider.Time;
+            float now = Framework.Time.Now;
             while (_timerMinHeap.Count > 0 && _timerMinHeap.Peek().TriggerTime <= now)
             {
                 var timer = _timerMinHeap.Pop();
@@ -91,7 +87,7 @@ namespace Framework.Modules.Timer
                 Interval = delay,
                 RepeatCount = loop,
                 Callback = callback,
-                TriggerTime = _timeProvider.Time + delay,
+                TriggerTime = Framework.Time.Now + delay,
                 ExecutedCount = 0
             };
 
