@@ -24,7 +24,7 @@ namespace Framework.Modules.Network
         public static event Action<int, byte[]> OnMessageReceived;
 
         private INetworkClient _client;
-        private string _lastUrl;
+        private string _url;
         private NetworkStatus _status = NetworkStatus.Disconnected;
 
         // 配置参数
@@ -43,6 +43,9 @@ namespace Framework.Modules.Network
 
         /// <inheritdoc />
         public NetworkStatus Status => _status;
+
+        /// <inheritdoc />
+        public string Url { get => _url; set => _url = value; }
 
         #endregion
 
@@ -84,21 +87,34 @@ namespace Framework.Modules.Network
         #region Public Methods
 
         /// <inheritdoc />
-        public async UniTask Connect(string url)
+        public async UniTask<bool> Connect(string url = null)
         {
-            _lastUrl = url;
+            if (!string.IsNullOrEmpty(url))
+            {
+                _url = url;
+            }
+
+            if (string.IsNullOrEmpty(_url))
+            {
+                LogError("[Network] Connect failed: URL is null or empty.");
+                return false;
+            }
+
             _reconnectAttempts = 0;
             UpdateStatus(NetworkStatus.Connecting);
 
             try
             {
-                await _client.ConnectAsync(url);
+                await _client.ConnectAsync(_url);
                 OnConnectSuccess();
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
+                LogError($"[Network] Connection failed: {ex.Message}");
                 UpdateStatus(NetworkStatus.Disconnected);
                 TriggerReconnect();
+                return false;
             }
         }
 
@@ -214,7 +230,7 @@ namespace Framework.Modules.Network
 
                 try
                 {
-                    await _client.ConnectAsync(_lastUrl);
+                    await _client.ConnectAsync(_url);
                     OnConnectSuccess();
                     return;
                 }

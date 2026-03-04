@@ -10,17 +10,20 @@ namespace Framework.Modules.Res
     public class ResourcesLoader : IResLoader
     {
         /// <inheritdoc />
-        public T Load<T>(string path) where T : class
+        public T Load<T>(string path, GameObject target = null) where T : class
         {
             if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
             {
-                return Resources.Load(path, typeof(T)) as T;
+                var asset = Resources.Load(path, typeof(T)) as T;
+                // Resources 加载通常不需要像 YooAsset 那样显式 Release Handle，
+                // 但为了接口统一依然保留 target 参数。
+                return asset;
             }
             return null;
         }
 
         /// <inheritdoc />
-        public async UniTask<T> LoadAsync<T>(string path) where T : class
+        public async UniTask<T> LoadAsync<T>(string path, GameObject target = null) where T : class
         {
             if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
             {

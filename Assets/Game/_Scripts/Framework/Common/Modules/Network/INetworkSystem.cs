@@ -16,11 +16,16 @@ namespace Framework.Modules.Network
         NetworkStatus Status { get; }
 
         /// <summary>
+        /// 服务器连接地址
+        /// </summary>
+        string Url { get; set; }
+
+        /// <summary>
         /// 发起网络连接
         /// </summary>
-        /// <param name="url">服务器地址</param>
-        /// <returns>连接任务</returns>
-        UniTask Connect(string url);
+        /// <param name="url">服务器地址（为 null 时使用当前属性 Url）</param>
+        /// <returns>连接结果 (true 为成功)</returns>
+        UniTask<bool> Connect(string url = null);
 
         /// <summary>
         /// 注册特定指令的消息处理器

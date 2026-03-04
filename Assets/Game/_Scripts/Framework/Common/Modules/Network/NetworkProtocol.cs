@@ -27,6 +27,10 @@ namespace Framework.Modules.Network
             /// </summary>
             public const int Pong = 1;
             /// <summary>
+            /// 业务消息 (JSON 格式)
+            /// </summary>
+            public const int Business = 100;
+            /// <summary>
             /// 错误消息
             /// </summary>
             public const int Error = -1;

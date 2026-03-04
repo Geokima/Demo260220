@@ -574,7 +574,7 @@ PlayerSettings:
     PS5: DOTWEEN
     QNX: DOTWEEN
     Stadia: DOTWEEN
-    Standalone: DOTWEEN
+    Standalone: DOTWEEN;DEBUG_LOG_NORMAL;DEBUG_LOG_ERROR;DEBUG_LOG_WARNING
     VisionOS: DOTWEEN
     WebGL: DOTWEEN
     Windows Store Apps: DOTWEEN

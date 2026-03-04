@@ -39,27 +39,6 @@ class HTTPHandler(BaseHTTPRequestHandler):
             self._handle_resource_get(accounts_by_id, account_data)
             return
         
-        if self.path == '/resource/diamond':
-            self._handle_resource_change(accounts_by_id, account_data, 'diamond')
-            return
-        
-        if self.path == '/resource/gold':
-            self._handle_resource_change(accounts_by_id, account_data, 'gold')
-            return
-        
-        if self.path == '/resource/exp':
-            self._handle_exp_change(accounts_by_id, account_data)
-            return
-        
-        if self.path == '/resource/energy':
-            self._handle_resource_change(accounts_by_id, account_data, 'energy')
-            return
-
-        # 兑换接口
-        if self.path == '/exchange/diamond_to_gold':
-            self._handle_exchange_diamond_to_gold(accounts_by_id, account_data)
-            return
-
         # 背包接口
         if self.path == '/inventory/get':
             self._handle_inventory_get(accounts_by_id)
@@ -112,12 +91,19 @@ class HTTPHandler(BaseHTTPRequestHandler):
                 else:
                     token = self.account_manager.hash_password(f"{username}{time.time()}")
                     self.account_manager.add_token(token, account['userId'])
+                    
+                    # 动态下发 WebSocket 地址 (由服务器决定连哪里)
+                    ws_url = "ws://localhost:8081"
+                    
                     response = {
                         'code': 0,
                         'msg': '登录成功',
-                        'token': token,
-                        'userId': account['userId'],
-                        'username': account['username']
+                        'data': {
+                            'token': token,
+                            'userId': account['userId'],
+                            'username': account['username'],
+                            'wsUrl': ws_url
+                        }
                     }
             
             self._send_json_response(response)
@@ -167,7 +153,9 @@ class HTTPHandler(BaseHTTPRequestHandler):
                 response = {
                     'code': 0,
                     'msg': '注册成功',
-                    'userId': user_id
+                    'data': {
+                        'userId': user_id
+                    }
                 }
 
             self._send_json_response(response)
@@ -197,12 +185,14 @@ class HTTPHandler(BaseHTTPRequestHandler):
                     response = {
                         'code': 0,
                         'msg': '成功',
-                        'diamond': account.get('diamond', 0),
-                        'gold': account.get('gold', 0),
-                        'exp': account.get('exp', 0),
-                        'level': level,
-                        'energy': energy,
-                        'lastEnergyTime': last_time
+                        'data': {
+                            'diamond': account.get('diamond', 0),
+                            'gold': account.get('gold', 0),
+                            'exp': account.get('exp', 0),
+                            'level': level,
+                            'energy': energy,
+                            'lastEnergyTime': last_time
+                        }
                     }
 
                     # 如果有体力恢复，保存数据
@@ -211,126 +201,6 @@ class HTTPHandler(BaseHTTPRequestHandler):
 
             self._send_json_response(response)
     
-    def _handle_resource_change(self, accounts_by_id, account_data, resource_type):
-        """处理资源变更"""
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length > 0:
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data)
-            
-            token = data.get('token', '')
-            amount = data.get('amount', 0)
-            
-            user_id = self.account_manager.validate_token(token)
-            if not user_id:
-                response = {'code': 1, 'msg': '未登录或token无效'}
-            else:
-                account = accounts_by_id.get(user_id)
-                if not account:
-                    response = {'code': 1, 'msg': '玩家不存在'}
-                else:
-                    # 如果是体力变更，先计算恢复后的值
-                    if resource_type == 'energy':
-                        current, _, last_time, _ = self.account_manager.calculate_recovered_energy(account)
-                        new_amount = current + amount
-
-                        if amount < 0 and new_amount < 0:
-                            response = {'code': 1, 'msg': '体力不足'}
-                        else:
-                            account['energy'] = new_amount
-                            # 只在增加体力时更新时间（恢复或道具补充）
-                            # 消耗体力时不更新，保持恢复计时
-                            if amount > 0:
-                                account['lastEnergyTime'] = int(time.time())
-                            self.account_manager.save_accounts(account_data)
-                            response = {
-                                'code': 0,
-                                'msg': '成功',
-                                'currentEnergy': new_amount
-                            }
-                    else:
-                        current = account.get(resource_type, 0)
-                        new_amount = current + amount
-                        
-                        if amount < 0 and new_amount < 0:
-                            response = {'code': 1, 'msg': '资源不足'}
-                        else:
-                            account[resource_type] = new_amount
-                            self.account_manager.save_accounts(account_data)
-                            response = {'code': 0, 'msg': '成功', 'currentAmount': new_amount}
-            
-            self._send_json_response(response)
-    
-    def _handle_exp_change(self, accounts_by_id, account_data):
-        """处理经验变更"""
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length > 0:
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data)
-            
-            token = data.get('token', '')
-            amount = data.get('amount', 0)
-            
-            user_id = self.account_manager.validate_token(token)
-            if not user_id:
-                response = {'code': 1, 'msg': '未登录或token无效'}
-            else:
-                account = accounts_by_id.get(user_id)
-                if not account:
-                    response = {'code': 1, 'msg': '玩家不存在'}
-                else:
-                    current = account.get('exp', 0)
-                    new_amount = current + amount
-
-                    if amount < 0 and new_amount < 0:
-                        response = {'code': 1, 'msg': '经验不足'}
-                    else:
-                        account['exp'] = new_amount
-                        # 等级根据经验实时计算，不存储
-                        level = self.account_manager.calculate_level(new_amount)
-                        self.account_manager.save_accounts(account_data)
-                        response = {'code': 0, 'msg': '成功', 'currentExp': new_amount, 'currentLevel': level}
-
-            self._send_json_response(response)
-
-    def _handle_exchange_diamond_to_gold(self, accounts_by_id, account_data):
-        """处理钻石兑换金币"""
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length > 0:
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data)
-
-            token = data.get('token', '')
-            diamond_amount = data.get('diamondAmount', 0)
-            gold_amount = data.get('goldAmount', 0)
-
-            user_id = self.account_manager.validate_token(token)
-            if not user_id:
-                response = {'code': 1, 'msg': '未登录或token无效'}
-            else:
-                account = accounts_by_id.get(user_id)
-                if not account:
-                    response = {'code': 1, 'msg': '玩家不存在'}
-                else:
-                    current_diamond = account.get('diamond', 0)
-
-                    # 检查钻石是否足够
-                    if current_diamond < diamond_amount:
-                        response = {'code': 1, 'msg': '钻石不足'}
-                    else:
-                        # 原子操作：扣钻石加金币
-                        account['diamond'] = current_diamond - diamond_amount
-                        account['gold'] = account.get('gold', 0) + gold_amount
-                        self.account_manager.save_accounts(account_data)
-                        response = {
-                            'code': 0,
-                            'msg': '兑换成功',
-                            'currentDiamond': account['diamond'],
-                            'currentGold': account['gold']
-                        }
-
-            self._send_json_response(response)
-
     def _handle_inventory_get(self, accounts_by_id):
         """获取背包"""
         content_length = int(self.headers.get('Content-Length', 0))
@@ -349,7 +219,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
                     response = {'code': 1, 'msg': '玩家不存在'}
                 else:
                     inventory = account.get('inventory', {'items': [], 'maxSlots': 9})
-                    response = {'code': 0, 'msg': '成功', 'inventory': inventory}
+                    response = {'code': 0, 'msg': '成功', 'data': {'inventory': inventory}}
             
             self._send_json_response(response)
     
@@ -384,7 +254,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
                     })
                     
                     self.account_manager.save_accounts(account_data)
-                    response = {'code': 0, 'msg': '成功', 'inventory': inventory}
+                    response = {'code': 0, 'msg': '成功', 'data': {'inventory': inventory}}
             
             self._send_json_response(response)
     
@@ -425,7 +295,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
                         if item['count'] <= 0:
                             items.remove(item)
                         self.account_manager.save_accounts(account_data)
-                        response = {'code': 0, 'msg': '成功', 'inventory': inventory}
+                        response = {'code': 0, 'msg': '成功', 'data': {'inventory': inventory}}
             
             self._send_json_response(response)
     
@@ -466,7 +336,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
                         if item['count'] <= 0:
                             items.remove(item)
                         self.account_manager.save_accounts(account_data)
-                        response = {'code': 0, 'msg': '使用成功', 'inventory': inventory}
+                        response = {'code': 0, 'msg': '使用成功', 'data': {'inventory': inventory}}
             
             self._send_json_response(response)
     

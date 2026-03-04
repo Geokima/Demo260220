@@ -55,8 +55,8 @@ namespace Framework
         TResult SendQuery<TResult>(object sender, IQuery<TResult> query);
         void SendEvent<T>(object sender, T e);
         void SendEvent<T>(object sender) where T : new();
-        IUnRegister RegisterEvent<T>(Action<T> onEvent) where T : new();
-        void UnRegisterEvent<T>(Action<T> onEvent) where T : new();
+        IUnregister RegisterEvent<T>(Action<T> onEvent) where T : new();
+        void UnregisterEvent<T>(Action<T> onEvent) where T : new();
         void Update();
         void FixedUpdate();
         void Shutdown();
@@ -187,9 +187,9 @@ namespace Framework
 
         public void SendEvent<TEvent>(object sender) where TEvent : new() => _eventSystem.Send<TEvent>(sender);
 
-        public IUnRegister RegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.Register(onEvent);
+        public IUnregister RegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.Register(onEvent);
 
-        public void UnRegisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.UnRegister(onEvent);
+        public void UnregisterEvent<TEvent>(Action<TEvent> onEvent) where TEvent : new() => _eventSystem.Unregister(onEvent);
 
         public void Update()
         {
@@ -269,8 +269,8 @@ namespace Framework
         public static void RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
             self.Architecture.RegisterEvent(onEvent);
 
-        public static void UnRegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
-            self.Architecture.UnRegisterEvent(onEvent);
+        public static void UnregisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
+            self.Architecture.UnregisterEvent(onEvent);
     }
 
     public static class ISystemAwareExtensions
@@ -365,24 +365,24 @@ namespace Framework
 
     #region EventSystem
 
-    public interface IUnRegister
+    public interface IUnregister
     {
-        void UnRegister();
+        void Unregister();
     }
 
-    public class CommonUnRegister : IUnRegister
+    public class CommonUnregister : IUnregister
     {
-        private Action _onUnRegister;
+        private Action _onUnregister;
 
-        public CommonUnRegister(Action onUnRegister)
+        public CommonUnregister(Action onUnregister)
         {
-            _onUnRegister = onUnRegister;
+            _onUnregister = onUnregister;
         }
 
-        public void UnRegister()
+        public void Unregister()
         {
-            _onUnRegister?.Invoke();
-            _onUnRegister = null;
+            _onUnregister?.Invoke();
+            _onUnregister = null;
         }
     }
 
@@ -399,13 +399,13 @@ namespace Framework
             _onEvent?.Invoke();
         }
 
-        public IUnRegister Register(Action onEvent)
+        public IUnregister Register(Action onEvent)
         {
             _onEvent += onEvent;
-            return new CommonUnRegister(() => _onEvent -= onEvent);
+            return new CommonUnregister(() => _onEvent -= onEvent);
         }
 
-        public void UnRegister(Action onEvent)
+        public void Unregister(Action onEvent)
         {
             _onEvent -= onEvent;
         }
@@ -420,13 +420,13 @@ namespace Framework
             _onEvent?.Invoke(e);
         }
 
-        public IUnRegister Register(Action<T> onEvent)
+        public IUnregister Register(Action<T> onEvent)
         {
             _onEvent += onEvent;
-            return new CommonUnRegister(() => _onEvent -= onEvent);
+            return new CommonUnregister(() => _onEvent -= onEvent);
         }
 
-        public void UnRegister(Action<T> onEvent)
+        public void Unregister(Action<T> onEvent)
         {
             _onEvent -= onEvent;
         }
@@ -441,13 +441,13 @@ namespace Framework
             _onEvent?.Invoke(arg1, arg2);
         }
 
-        public IUnRegister Register(Action<T1, T2> onEvent)
+        public IUnregister Register(Action<T1, T2> onEvent)
         {
             _onEvent += onEvent;
-            return new CommonUnRegister(() => _onEvent -= onEvent);
+            return new CommonUnregister(() => _onEvent -= onEvent);
         }
 
-        public void UnRegister(Action<T1, T2> onEvent)
+        public void Unregister(Action<T1, T2> onEvent)
         {
             _onEvent -= onEvent;
         }
@@ -462,13 +462,13 @@ namespace Framework
             _onEvent?.Invoke(arg1, arg2, arg3);
         }
 
-        public IUnRegister Register(Action<T1, T2, T3> onEvent)
+        public IUnregister Register(Action<T1, T2, T3> onEvent)
         {
             _onEvent += onEvent;
-            return new CommonUnRegister(() => _onEvent -= onEvent);
+            return new CommonUnregister(() => _onEvent -= onEvent);
         }
 
-        public void UnRegister(Action<T1, T2, T3> onEvent)
+        public void Unregister(Action<T1, T2, T3> onEvent)
         {
             _onEvent -= onEvent;
         }
@@ -499,9 +499,9 @@ namespace Framework
             OnEventSent?.Invoke(sender.GetType(), e);
         }
 
-        public IUnRegister Register<T>(Action<T> onEvent) where T : new() => (GetOrAddEvent<T>() as Event<T>)?.Register(onEvent);
+        public IUnregister Register<T>(Action<T> onEvent) where T : new() => (GetOrAddEvent<T>() as Event<T>)?.Register(onEvent);
 
-        public void UnRegister<T>(Action<T> onEvent) => (GetEvent<T>() as Event<T>)?.UnRegister(onEvent);
+        public void Unregister<T>(Action<T> onEvent) => (GetEvent<T>() as Event<T>)?.Unregister(onEvent);
 
         private Event<T> GetEvent<T>()
         {
@@ -527,9 +527,9 @@ namespace Framework
     public interface IReadonlyBindableProperty<T>
     {
         T Value { get; }
-        IUnRegister Register(Action<T> onValueChanged);
-        IUnRegister RegisterWithInitValue(Action<T> onValueChanged);
-        void UnRegister(Action<T> onValueChanged);
+        IUnregister Register(Action<T> onValueChanged);
+        IUnregister RegisterWithInitValue(Action<T> onValueChanged);
+        void Unregister(Action<T> onValueChanged);
     }
 
     public interface IBindableProperty<T> : IReadonlyBindableProperty<T>
@@ -556,15 +556,15 @@ namespace Framework
             }
         }
 
-        public IUnRegister Register(Action<T> onValueChanged) => _onValueChanged.Register(onValueChanged);
+        public IUnregister Register(Action<T> onValueChanged) => _onValueChanged.Register(onValueChanged);
 
-        public IUnRegister RegisterWithInitValue(Action<T> onValueChanged)
+        public IUnregister RegisterWithInitValue(Action<T> onValueChanged)
         {
             onValueChanged(_value);
             return Register(onValueChanged);
         }
 
-        public void UnRegister(Action<T> onValueChanged) => _onValueChanged.UnRegister(onValueChanged);
+        public void Unregister(Action<T> onValueChanged) => _onValueChanged.Unregister(onValueChanged);
 
         public void SetValueWithoutEvent(T newValue) => _value = newValue;
 

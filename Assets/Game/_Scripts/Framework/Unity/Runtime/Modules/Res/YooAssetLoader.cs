@@ -33,19 +33,7 @@ namespace Framework.Modules.Res
         #region Public Methods
 
         /// <inheritdoc />
-        public T Load<T>(string path) where T : class
-        {
-            return Load<T>(path, null);
-        }
-
-        /// <summary>
-        /// 同步加载资源并绑定生命周期
-        /// </summary>
-        /// <typeparam name="T">资源类型</typeparam>
-        /// <param name="path">资源路径</param>
-        /// <param name="target">生命周期绑定的目标 GameObject</param>
-        /// <returns>资源对象</returns>
-        public T Load<T>(string path, GameObject target) where T : class
+        public T Load<T>(string path, GameObject target = null) where T : class
         {
             if (_package == null)
             {
@@ -76,19 +64,7 @@ namespace Framework.Modules.Res
         }
 
         /// <inheritdoc />
-        public async UniTask<T> LoadAsync<T>(string path) where T : class
-        {
-            return await LoadAsync<T>(path, null);
-        }
-
-        /// <summary>
-        /// 异步加载资源并绑定生命周期
-        /// </summary>
-        /// <typeparam name="T">资源类型</typeparam>
-        /// <param name="path">资源路径</param>
-        /// <param name="target">生命周期绑定的目标 GameObject</param>
-        /// <returns>加载任务</returns>
-        public async UniTask<T> LoadAsync<T>(string path, GameObject target) where T : class
+        public async UniTask<T> LoadAsync<T>(string path, GameObject target = null) where T : class
         {
             if (_package == null)
             {
@@ -163,8 +139,8 @@ namespace Framework.Modules.Res
 
             var releaseHandle = target.GetComponent<AssetReleaseHandle>();
             if (releaseHandle == null)
-                releaseHandle = target.AddComponent<AssetReleaseHandle>();  
-            
+                releaseHandle = target.AddComponent<AssetReleaseHandle>();
+
             releaseHandle.AddHandle(handle);
         }
 

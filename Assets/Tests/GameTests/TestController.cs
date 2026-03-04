@@ -2,10 +2,11 @@ using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Config;
 using Framework.Utils;
-using Game.Commands;
+using Game.Auth;
 using Game.Configs;
-using Game.Models;
-using Game.Services;
+using Game.DTOs;
+using Game.Inventory;
+using Game.Player;
 using UnityEngine;
 
 namespace Game.Tests
@@ -84,15 +85,6 @@ namespace Game.Tests
             this.RegisterEvent<LoginFailedEvent>(OnLoginFailed);
             this.RegisterEvent<RegisterSuccessEvent>(OnRegisterSuccess);
             this.RegisterEvent<RegisterFailedEvent>(OnRegisterFailed);
-            this.RegisterEvent<DiamondChangedEvent>(OnDiamondChanged);
-            this.RegisterEvent<DiamondChangeFailedEvent>(OnDiamondChangeFailed);
-            this.RegisterEvent<GoldChangedEvent>(OnGoldChanged);
-            this.RegisterEvent<GoldChangeFailedEvent>(OnGoldChangeFailed);
-            this.RegisterEvent<ExpChangedEvent>(OnExpChanged);
-            this.RegisterEvent<ExpChangeFailedEvent>(OnExpChangeFailed);
-            this.RegisterEvent<LevelUpEvent>(OnLevelUp);
-            this.RegisterEvent<EnergyChangedEvent>(OnEnergyChanged);
-            this.RegisterEvent<EnergyChangeFailedEvent>(OnEnergyChangeFailed);
             this.RegisterEvent<InventoryUpdatedEvent>(OnInventoryUpdated);
             this.RegisterEvent<ItemAddedEvent>(OnItemAdded);
             this.RegisterEvent<ItemRemovedEvent>(OnItemRemoved);
@@ -134,7 +126,7 @@ namespace Game.Tests
                 return;
             }
 
-            var resourceService = this.GetSystem<ResourceService>();
+            var resourceService = this.GetSystem<PlayerService>();
             GetResourcesAsync(resourceService).Forget();
         }
 
@@ -152,8 +144,6 @@ namespace Game.Tests
 
             var resourcesModel = this.GetModel<PlayerModel>();
             Debug.Log($"当前: <color=white>{resourcesModel.Diamond.Value}</color>");
-
-            this.SendCommand(new ChangeDiamondCommand { Amount = 100, Reason = "测试增加" });
         }
 
         [Button("花费钻石(-50)", "资源")]
@@ -170,8 +160,6 @@ namespace Game.Tests
 
             var resourcesModel = this.GetModel<PlayerModel>();
             Debug.Log($"当前: <color=white>{resourcesModel.Diamond.Value}</color>");
-
-            this.SendCommand(new ChangeDiamondCommand { Amount = -50, Reason = "测试花费" });
         }
 
         [Button("增加金币(+500)", "资源")]
@@ -188,8 +176,6 @@ namespace Game.Tests
 
             var resourcesModel = this.GetModel<PlayerModel>();
             Debug.Log($"当前: <color=white>{resourcesModel.Gold.Value}</color>");
-
-            this.SendCommand(new ChangeGoldCommand { Amount = 500, Reason = "测试增加" });
         }
 
         [Button("花费金币(-200)", "资源")]
@@ -206,8 +192,6 @@ namespace Game.Tests
 
             var resourcesModel = this.GetModel<PlayerModel>();
             Debug.Log($"当前: <color=white>{resourcesModel.Gold.Value}</color>");
-
-            this.SendCommand(new ChangeGoldCommand { Amount = -200, Reason = "测试花费" });
         }
 
         [Button("增加经验(+100)", "资源")]
@@ -224,8 +208,6 @@ namespace Game.Tests
 
             var playerModel = this.GetModel<PlayerModel>();
             Debug.Log($"当前: <color=white>经验{playerModel.Exp.Value} 等级{playerModel.Level.Value}</color>");
-
-            this.SendCommand(new ChangeExpCommand { Amount = 100, Reason = "测试增加" });
         }
 
         [Button("增加体力(+20)", "资源")]
@@ -243,8 +225,6 @@ namespace Game.Tests
             var playerModel = this.GetModel<PlayerModel>();
             var maxEnergy = playerModel.GetMaxEnergy();
             Debug.Log($"当前: <color=white>{playerModel.Energy.Value}/{maxEnergy}</color>");
-
-            this.SendCommand(new ChangeEnergyCommand { Amount = 20, Reason = "测试增加" });
         }
 
         [Button("消耗体力(-10)", "资源")]
@@ -262,8 +242,6 @@ namespace Game.Tests
             var playerModel = this.GetModel<PlayerModel>();
             var maxEnergy = playerModel.GetMaxEnergy();
             Debug.Log($"当前: <color=white>{playerModel.Energy.Value}/{maxEnergy}</color>");
-
-            this.SendCommand(new ChangeEnergyCommand { Amount = -10, Reason = "测试消耗" });
         }
 
         [Button("查询状态", "资源")]
@@ -432,55 +410,6 @@ namespace Game.Tests
             _loginError = e.Error;
         }
 
-        private void OnDiamondChanged(DiamondChangedEvent e)
-        {
-            var changeType = e.Amount > 0 ? "<color=green>+" : "<color=orange>";
-            Debug.Log($"钻石 {changeType}{e.Amount}</color> → <color=white>{e.Current}</color>");
-        }
-
-        private void OnDiamondChangeFailed(DiamondChangeFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 钻石失败: {e.Reason}</color>");
-        }
-
-        private void OnGoldChanged(GoldChangedEvent e)
-        {
-            var changeType = e.Amount > 0 ? "<color=green>+" : "<color=orange>";
-            Debug.Log($"金币 {changeType}{e.Amount}</color> → <color=white>{e.Current}</color>");
-        }
-
-        private void OnGoldChangeFailed(GoldChangeFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 金币失败: {e.Reason}</color>");
-        }
-
-        private void OnExpChanged(ExpChangedEvent e)
-        {
-            var changeType = e.Amount >= 0 ? "<color=green>+" : "<color=red>";
-            Debug.Log($"经验 {changeType}{e.Amount}</color> → <color=white>{e.Current}</color> (等级{e.Level})");
-        }
-
-        private void OnExpChangeFailed(ExpChangeFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 经验失败: {e.Reason}</color>");
-        }
-
-        private void OnLevelUp(LevelUpEvent e)
-        {
-            Debug.Log($"<color=yellow>⭐ 升级! {e.OldLevel} → {e.NewLevel}</color>");
-        }
-
-        private void OnEnergyChanged(EnergyChangedEvent e)
-        {
-            var changeType = e.Amount >= 0 ? "<color=green>+" : "<color=red>";
-            Debug.Log($"体力 {changeType}{e.Amount}</color> → <color=white>{e.Current}/{e.Max}</color>");
-        }
-
-        private void OnEnergyChangeFailed(EnergyChangeFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 体力失败: {e.Reason}</color>");
-        }
-
         private void OnInventoryUpdated(InventoryUpdatedEvent e)
         {
             Debug.Log($"<color=green>✓ 背包更新</color> 物品数:{e.Inventory.items?.Length ?? 0} 格子:{e.Inventory.maxSlots}");
@@ -550,12 +479,13 @@ namespace Game.Tests
                 Debug.LogError("✗ 强制下线请求失败");
         }
 
-        private async UniTaskVoid GetResourcesAsync(ResourceService resourceService)
+        private async UniTaskVoid GetResourcesAsync(PlayerService resourceService)
         {
-            var (success, diamond, gold) = await resourceService.GetResourcesAsync();
-            if (success)
+            var response = await resourceService.GetResourcesAsync();
+            if (response != null && response.Code == 0)
             {
-                Debug.Log($"<color=green>✓</color> 钻石:<color=cyan>{diamond}</color> 金币:<color=yellow>{gold}</color>");
+                var data = response.Data;
+                Debug.Log($"<color=green>✓</color> 钻石:<color=cyan>{data.Diamond}</color> 金币:<color=yellow>{data.Gold}</color>");
             }
             else
             {
@@ -778,28 +708,22 @@ namespace Game.Tests
 
             if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "+100 钻石", _flatBtnStyle))
             {
-                this.SendCommand(new ChangeDiamondCommand { Amount = 100, Reason = "面板增加" });
             }
             if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "+500 金币", _flatBtnStyle))
             {
-                this.SendCommand(new ChangeGoldCommand { Amount = 500, Reason = "面板增加" });
             }
             y += btnHeight2 + 8;
 
             if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "+100 经验", _flatBtnStyle))
             {
-                this.SendCommand(new ChangeExpCommand { Amount = 100, Reason = "面板增加" });
             }
             if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "+20 体力", _flatBtnStyle))
             {
-                this.SendCommand(new ChangeEnergyCommand { Amount = 20, Reason = "面板增加" });
             }
             y += btnHeight2 + 8;
 
             if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "1钻石→100金币", _flatBtnStyle))
             {
-                // 使用ExchangeDiamondForGoldCommand进行原子兑换
-                this.SendCommand(new ExchangeDiamondForGoldCommand { DiamondAmount = 1, GoldAmount = 100 });
             }
             if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "添加药水", _flatBtnStyle))
             {

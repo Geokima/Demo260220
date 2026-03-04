@@ -17,7 +17,7 @@ namespace Framework.Modules.Res
         /// <inheritdoc />
         public override void Init()
         {
-            // 目前默认使用 YooAssetLoader，未来可在此一键切换实现
+            //TODO目前默认使用 YooAssetLoader，未来可在此一键切换实现
             _loader = new YooAssetLoader();
             UnityEngine.Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
         }
@@ -34,16 +34,16 @@ namespace Framework.Modules.Res
         #region Public Methods
 
         /// <inheritdoc />
-        public T Load<T>(string path) where T : class
+        public T Load<T>(string path, GameObject target = null) where T : class
         {
-            return _loader?.Load<T>(path);
+            return _loader?.Load<T>(path, target);
         }
 
         /// <inheritdoc />
-        public async UniTask<T> LoadAsync<T>(string path) where T : class
+        public async UniTask<T> LoadAsync<T>(string path, GameObject target = null) where T : class
         {
             if (_loader == null) return null;
-            return await _loader.LoadAsync<T>(path);
+            return await _loader.LoadAsync<T>(path, target);
         }
 
         /// <inheritdoc />

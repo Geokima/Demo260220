@@ -3,12 +3,12 @@ using System.Security.Cryptography;
 
 namespace YooAsset
 {
-    internal class SafeProxy
+    internal class SafeSyncer
     {
         private const uint Poly = 0xedb88320u;
         private readonly uint[] _table = new uint[16 * 256];
 
-        internal SafeProxy()
+        internal SafeSyncer()
         {
             Init(Poly);
         }
@@ -235,7 +235,7 @@ namespace YooAsset
         }
 
 
-        private static readonly SafeProxy _proxy = new SafeProxy();
+        private static readonly SafeSyncer _proxy = new SafeSyncer();
         private static uint AppendInternal(uint initial, byte[] input, int offset, int length)
         {
             if (length > 0)
