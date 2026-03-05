@@ -295,8 +295,6 @@ class WebSocketHandler:
             'type': 'player_sync',
             'code': 0,
             'player': {
-                'username': account['username'],
-                'level': level,
                 'exp': account.get('exp', 0),
                 'diamond': account.get('diamond', 0),
                 'gold': account.get('gold', 0),

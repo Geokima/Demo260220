@@ -1,42 +1,25 @@
+using System.Collections.Generic;
 using Framework;
 using Game.DTOs;
 
 namespace Game.Inventory
 {
     /// <summary>
-    /// 背包数据更新事件
+    /// 背包增量同步事件 - 全系统唯一的数据真相对齐入口
     /// </summary>
-    public struct InventoryUpdatedEvent : IEvent
+    public struct InventorySyncEvent : IEvent
     {
-        public InventoryDTO Inventory;
+        public InventorySyncData SyncData;
     }
 
     /// <summary>
-    /// 物品添加成功事件
-    /// </summary>
-    public struct ItemAddedEvent : IEvent
-    {
-        public int ItemId;
-        public int Amount;
-    }
-
-    /// <summary>
-    /// 物品移除成功事件
-    /// </summary>
-    public struct ItemRemovedEvent : IEvent
-    {
-        public string Uid;
-        public int Amount;
-    }
-
-    /// <summary>
-    /// 物品使用成功事件
+    /// 物品使用成功表现事件 - 用于 UI 播放特定的动作/特效
     /// </summary>
     public struct ItemUsedEvent : IEvent
     {
         public string Uid;
         public int Amount;
-        public ItemEffect Effect;
+        public List<ItemEffect> Effects;
     }
 
     /// <summary>

@@ -2,7 +2,7 @@ using System.Linq;
 using Framework;
 using Framework.Modules.Config;
 using Framework.Modules.Scene;
-using Game.Configs;
+using Game.Config;
 using UnityEngine;
 
 namespace Game.Scene

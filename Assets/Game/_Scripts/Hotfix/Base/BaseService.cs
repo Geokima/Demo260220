@@ -10,10 +10,9 @@ namespace Game.Base
     {
         protected IServerGateway NetworkClient => this.GetSystem<IServerGateway>();
 
-
         /// <summary>
         /// 获取指定类型的 Syncer
         /// </summary>
-        protected T GetSyncer<T>() where T : class, ISystem => this.GetSystem<T>();
+        protected T GetSyncer<T>() where T : BaseSyncer => this.GetSystem<T>();
     }
 }

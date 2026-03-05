@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace Framework
 {
@@ -592,15 +594,15 @@ namespace Framework
         {
             var beforeCount = Count;
             base.ClearItems();
-            mOnClear?.Trigger();
-            if (beforeCount > 0) mOnCountChanged?.Trigger(Count);
+            _OnClear?.Trigger();
+            if (beforeCount > 0) _OnCountChanged?.Trigger(Count);
         }
 
         protected override void InsertItem(int index, T item)
         {
             base.InsertItem(index, item);
-            mCollectionAdd?.Trigger(index, item);
-            mOnCountChanged?.Trigger(Count);
+            _OnAdd?.Trigger(index, item);
+            _OnCountChanged?.Trigger(Count);
         }
 
         public void Move(int oldIndex, int newIndex) => MoveItem(oldIndex, newIndex);
@@ -610,46 +612,179 @@ namespace Framework
             var item = this[oldIndex];
             base.RemoveItem(oldIndex);
             base.InsertItem(newIndex, item);
-            mOnMove?.Trigger(oldIndex, newIndex, item);
+            _OnMove?.Trigger(oldIndex, newIndex, item);
         }
 
         protected override void RemoveItem(int index)
         {
             var item = this[index];
             base.RemoveItem(index);
-            mOnRemove?.Trigger(index, item);
-            mOnCountChanged?.Trigger(Count);
+            _OnRemove?.Trigger(index, item);
+            _OnCountChanged?.Trigger(Count);
         }
 
         protected override void SetItem(int index, T item)
         {
             var oldItem = this[index];
             base.SetItem(index, item);
-            mOnReplace?.Trigger(index, oldItem, item);
+            _OnReplace?.Trigger(index, oldItem, item);
         }
 
-        [NonSerialized] private Event<int> mOnCountChanged;
-        public Event<int> OnCountChanged => mOnCountChanged ?? (mOnCountChanged = new Event<int>());
+        [NonSerialized] private Event<int> _OnCountChanged;
+        public Event<int> OnCountChanged => _OnCountChanged ??= new Event<int>();
 
-        [NonSerialized] private Event mOnClear;
-        public Event OnClear => mOnClear ?? (mOnClear = new Event());
+        [NonSerialized] private Event _OnClear;
+        public Event OnClear => _OnClear ??= new Event();
 
-        [NonSerialized] private Event<int, T> mCollectionAdd;
-        public Event<int, T> OnAdd => mCollectionAdd ?? (mCollectionAdd = new Event<int, T>());
+        [NonSerialized] private Event<int, T> _OnAdd;
+        public Event<int, T> OnAdd => _OnAdd ??= new Event<int, T>();
 
-        [NonSerialized] private Event<int, int, T> mOnMove;
-        public Event<int, int, T> OnMove => mOnMove ?? (mOnMove = new Event<int, int, T>());
+        [NonSerialized] private Event<int, int, T> _OnMove;
+        public Event<int, int, T> OnMove => _OnMove ??= new Event<int, int, T>();
 
-        [NonSerialized] private Event<int, T> mOnRemove;
-        public Event<int, T> OnRemove => mOnRemove ?? (mOnRemove = new Event<int, T>());
+        [NonSerialized] private Event<int, T> _OnRemove;
+        public Event<int, T> OnRemove => _OnRemove ??= new Event<int, T>();
 
-        [NonSerialized] private Event<int, T, T> mOnReplace;
-        public Event<int, T, T> OnReplace => mOnReplace ?? (mOnReplace = new Event<int, T, T>());
+        [NonSerialized] private Event<int, T, T> _OnReplace;
+        public Event<int, T, T> OnReplace => _OnReplace ??= new Event<int, T, T>();
     }
 
     public static class BindableListExtensions
     {
         public static BindableList<T> ToBindableList<T>(this IEnumerable<T> self) => new BindableList<T>(self);
+    }
+
+    #endregion
+
+    #region BindableDictionary
+    
+    [Serializable]
+    public class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
+        IDictionary, ISerializable, IDeserializationCallback
+    {
+        private readonly Dictionary<TKey, TValue> mInner;
+
+        public BindableDictionary() => mInner = new Dictionary<TKey, TValue>();
+        public BindableDictionary(IEqualityComparer<TKey> comparer) => mInner = new Dictionary<TKey, TValue>(comparer);
+        public BindableDictionary(Dictionary<TKey, TValue> innerDictionary) => mInner = innerDictionary;
+
+        public TValue this[TKey key]
+        {
+            get => mInner[key];
+            set
+            {
+                if (mInner.TryGetValue(key, out var oldValue))
+                {
+                    mInner[key] = value;
+                    mOnReplace?.Trigger(key, oldValue, value);
+                }
+                else
+                {
+                    mInner[key] = value;
+                    mOnAdd?.Trigger(key, value);
+                    mOnCountChanged?.Trigger(Count);
+                }
+            }
+        }
+
+        public int Count => mInner.Count;
+        public Dictionary<TKey, TValue>.KeyCollection Keys => mInner.Keys;
+        public Dictionary<TKey, TValue>.ValueCollection Values => mInner.Values;
+
+        public void Add(TKey key, TValue value)
+        {
+            mInner.Add(key, value);
+            mOnAdd?.Trigger(key, value);
+            mOnCountChanged?.Trigger(Count);
+        }
+
+        public void Clear()
+        {
+            var beforeCount = Count;
+            mInner.Clear();
+            mOnClear?.Trigger();
+            if (beforeCount > 0)
+            {
+                mOnCountChanged?.Trigger(Count);
+            }
+        }
+
+        public bool Remove(TKey key)
+        {
+            if (mInner.TryGetValue(key, out var oldValue))
+            {
+                if (mInner.Remove(key))
+                {
+                    mOnRemove?.Trigger(key, oldValue);
+                    mOnCountChanged?.Trigger(Count);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool ContainsKey(TKey key) => mInner.ContainsKey(key);
+        public bool TryGetValue(TKey key, out TValue value) => mInner.TryGetValue(key, out value);
+        public Dictionary<TKey, TValue>.Enumerator GetEnumerator() => mInner.GetEnumerator();
+
+        // --- 核心事件系统：已完全对齐你的 Core.cs Event 接口 ---
+
+        [NonSerialized] private Event<int> mOnCountChanged;
+        public Event<int> OnCountChanged => mOnCountChanged ??= new Event<int>();
+
+        [NonSerialized] private Event mOnClear;
+        public Event OnClear => mOnClear ??= new Event();
+
+        [NonSerialized] private Event<TKey, TValue> mOnAdd;
+        public Event<TKey, TValue> OnAdd => mOnAdd ??= new Event<TKey, TValue>();
+
+        [NonSerialized] private Event<TKey, TValue> mOnRemove;
+        public Event<TKey, TValue> OnRemove => mOnRemove ??= new Event<TKey, TValue>();
+
+        [NonSerialized] private Event<TKey, TValue, TValue> mOnReplace;
+        /// <summary> Trigger参数: (Key, OldValue, NewValue) </summary>
+        public Event<TKey, TValue, TValue> OnReplace => mOnReplace ??= new Event<TKey, TValue, TValue>();
+
+
+        #region IDictionary Explicit Implementation
+        object IDictionary.this[object key] { get => this[(TKey)key]; set => this[(TKey)key] = (TValue)value; }
+        bool IDictionary.IsFixedSize => ((IDictionary)mInner).IsFixedSize;
+        bool IDictionary.IsReadOnly => ((IDictionary)mInner).IsReadOnly;
+        bool ICollection.IsSynchronized => ((IDictionary)mInner).IsSynchronized;
+        ICollection IDictionary.Keys => ((IDictionary)mInner).Keys;
+        object ICollection.SyncRoot => ((IDictionary)mInner).SyncRoot;
+        ICollection IDictionary.Values => ((IDictionary)mInner).Values;
+        bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => ((ICollection<KeyValuePair<TKey, TValue>>)mInner).IsReadOnly;
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys => mInner.Keys;
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => mInner.Values;
+        void IDictionary.Add(object key, object value) => Add((TKey)key, (TValue)value);
+        bool IDictionary.Contains(object key) => ((IDictionary)mInner).Contains(key);
+        void ICollection.CopyTo(Array array, int index) => ((IDictionary)mInner).CopyTo(array, index);
+        public void GetObjectData(SerializationInfo info, StreamingContext context) => ((ISerializable)mInner).GetObjectData(info, context);
+        public void OnDeserialization(object sender) => ((IDeserializationCallback)mInner).OnDeserialization(sender);
+        void IDictionary.Remove(object key) => Remove((TKey)key);
+        void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+        bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item) => ((ICollection<KeyValuePair<TKey, TValue>>)mInner).Contains(item);
+        void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => ((ICollection<KeyValuePair<TKey, TValue>>)mInner).CopyTo(array, arrayIndex);
+        IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() => ((ICollection<KeyValuePair<TKey, TValue>>)mInner).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => mInner.GetEnumerator();
+        bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
+        {
+            if (TryGetValue(item.Key, out var v) && EqualityComparer<TValue>.Default.Equals(v, item.Value))
+            {
+                Remove(item.Key);
+                return true;
+            }
+            return false;
+        }
+        IDictionaryEnumerator IDictionary.GetEnumerator() => ((IDictionary)mInner).GetEnumerator();
+        #endregion
+    }
+
+    public static class BindableDictionaryExtensions
+    {
+        public static BindableDictionary<TKey, TValue> ToBindableDictionary<TKey, TValue>(this Dictionary<TKey, TValue> self)
+            => new BindableDictionary<TKey, TValue>(self);
     }
 
     #endregion

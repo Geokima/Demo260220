@@ -1,20 +1,27 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Framework;
+using Framework.Modules.Config;
 using Game.Auth;
 using Game.Base;
+using Game.Config;
 using Game.DTOs;
+using Game.Effect;
 using UnityEngine;
 
 namespace Game.Inventory
 {
-    /// <summary>
-    /// 背包服务 - 处理物品相关业务流程（业务导演）
-    /// </summary>
     public class InventoryService : BaseService
     {
         public override void Init()
         {
             this.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);
+            this.RegisterEvent<LogoutEvent>(OnLogout);
+        }
+
+        private void OnLogout(LogoutEvent e)
+        {
+            this.GetModel<InventoryModel>().Clear();
         }
 
         private async void OnLoginSuccess(LoginSuccessEvent e)
@@ -65,15 +72,13 @@ namespace Game.Inventory
             Debug.Log($"[InventoryService] 申请添加物品: {itemId}, 数量: {amount}");
 
             var response = await NetworkClient.PostAsync<object, InventoryResponse>("/inventory/add",
-                new { itemId = itemId, amount = amount, bind = bind });
+                new AddItemRequest { ItemId = itemId, Amount = amount });
 
             if (response != null && response.Code == 0)
             {
-                // 成功：由 Syncer 对齐真理
+                // 成功：由 Syncer 对齐真理。在真实项目中，服务器可能推的是全量页(SyncInventoryResponse)
+                // 也可能是通过 WebSocket 推的差异包。如果是局部成功的回报带了全量，这里依然支持。
                 this.GetSyncer<InventorySyncer>().SyncInventoryResponse(response);
-
-                // 发送成功表现事件
-                this.SendEvent(new ItemAddedEvent { ItemId = itemId, Amount = amount });
             }
             else
             {
@@ -93,12 +98,11 @@ namespace Game.Inventory
             Debug.Log($"[InventoryService] 申请移除物品: {uid}, 数量: {amount}");
 
             var response = await NetworkClient.PostAsync<object, InventoryResponse>("/inventory/remove",
-                new { uid = uid, amount = amount });
+                new RemoveItemRequest { Uid = uid, Amount = amount });
 
             if (response != null && response.Code == 0)
             {
                 this.GetSyncer<InventorySyncer>().SyncInventoryResponse(response);
-                this.SendEvent(new ItemRemovedEvent { Uid = uid, Amount = amount });
             }
             else
             {
@@ -108,33 +112,35 @@ namespace Game.Inventory
             }
         }
 
-        public void RequestUseItem(string uid, int amount)
+        public void RequestUseItem(string uid, int amount, Dictionary<string, string> parameters)
         {
-            UseItemAsync(uid, amount).Forget();
+            UseItemAsync(uid, amount, parameters).Forget();
         }
 
-        private async UniTaskVoid UseItemAsync(string uid, int amount)
+        private async UniTaskVoid UseItemAsync(string uid, int amount, Dictionary<string, string> parameters)
         {
             Debug.Log($"[InventoryService] 申请使用物品: {uid}");
 
-            // 1. 发起请求
-            var response = await NetworkClient.PostAsync<object, UseItemResponse>("/inventory/use",
-                new { uid = uid, amount = amount });
+            var response = await NetworkClient.PostAsync<UseItemRequest, UseItemResponse>("/inventory/use", 
+                new UseItemRequest { Uid = uid, Amount = amount, Params = parameters });
 
             if (response != null && response.Code == 0)
             {
-                if (response.Data != null && response.Data.Inventory != null)
-                {
-                    this.GetSyncer<InventorySyncer>().SyncInventoryResponse(new InventoryResponse
-                    {
-                        Code = 0,
-                        Data = response.Data.Inventory
-                    });
-                }
-
-                // 3. 播放表现（如：使用成功音效、特效）
                 Debug.Log($"[InventoryService] 物品使用成功: {uid}");
-                this.SendEvent(new ItemUsedEvent { Uid = uid, Amount = amount });
+                var model = this.GetModel<InventoryModel>();
+                var slot = model.GetSlot(uid);
+                if (slot != null && response.Data != null && response.Data.Count > 0)
+                {
+                    foreach (var effect in response.Data)
+                    {
+                        var itemConfig = this.GetSystem<IConfigSystem>().Get<ItemConfig>(slot.Value.ItemId);
+                        if (itemConfig?.EffectId > 0)
+                        {
+                            this.GetSystem<EffectSystem>().Execute(itemConfig.EffectId, effect.Params);
+                        }
+                    }
+                }
+                this.SendEvent(new ItemUsedEvent { Uid = uid, Amount = amount, Effects = response.Data });
             }
             else
             {

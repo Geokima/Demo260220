@@ -1,10 +1,7 @@
 using Framework.Modules.Config;
 
-namespace Game.Configs
+namespace Game.Config
 {
-    /// <summary>
-    /// 物品配置
-    /// </summary>
     public class ItemConfig : IConfigRow
     {
         public int Id { get; set; }
@@ -13,13 +10,6 @@ namespace Game.Configs
         public string Description { get; set; }
         public string Icon { get; set; }
         public int MaxStack { get; set; }
-        public int Value { get; set; }
-        public string UseEffect { get; set; }
-        public int Attack { get; set; }
-        public int Defense { get; set; }
-        public int Durability { get; set; }
-        public string Rarity { get; set; }
-        public int QuestId { get; set; }
-        public bool IsKeyItem { get; set; }
+        public int EffectId { get; set; }
     }
 }

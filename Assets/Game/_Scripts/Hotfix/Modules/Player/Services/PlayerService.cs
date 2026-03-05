@@ -20,17 +20,24 @@ namespace Game.Player
         public override void Init()
         {
             this.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);
-            NetworkSystem.OnStatusUpdate += OnNetworkStatusUpdate;
+            this.RegisterEvent<LogoutEvent>(OnLogout);
+            this.RegisterEvent<NetworkStatusUpdateEvent>(OnNetworkStatusUpdate);
         }
 
         public override void Deinit()
         {
-            NetworkSystem.OnStatusUpdate -= OnNetworkStatusUpdate;
+            // QFramework 的 RegisterEvent 返回的 IUnregister 会在 Deinit/Shutdown 时自动由架构处理，
+            // 除非你想手动提早解绑。这里你可以保留或移除。
         }
 
-        private void OnNetworkStatusUpdate(NetworkStatus status, int retryCount)
+        private void OnLogout(LogoutEvent e)
         {
-            if (status == NetworkStatus.Connected)
+            this.GetModel<PlayerModel>().Clear();
+        }
+
+        private void OnNetworkStatusUpdate(NetworkStatusUpdateEvent e)
+        {
+            if (e.NewStatus == NetworkStatus.Connected)
             {
                 SendBindTokenAsync().Forget();
                 OnReconnectAsync().Forget();
@@ -51,11 +58,6 @@ namespace Game.Player
             return await GetResourcesInternalAsync();
         }
 
-        public async UniTask SyncPlayerDataAsync()
-        {
-            Debug.Log("[PlayerService] /player/sync not implemented, using /resource/get instead");
-        }
-
         #endregion
 
         #region Private Methods
@@ -63,8 +65,6 @@ namespace Game.Player
         private async UniTaskVoid HandleLoginFlowAsync()
         {
             Debug.Log("[PlayerService] Starting Login Flow...");
-
-            await SyncPlayerDataAsync();
 
             bool wsConnected = await NetworkClient.ConnectWsAsync();
             if (wsConnected)

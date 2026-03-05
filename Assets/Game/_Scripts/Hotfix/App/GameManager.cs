@@ -8,6 +8,7 @@ using Game.Inventory;
 using Game.Procedures;
 using UnityEngine;
 using Game.Gateways;
+using Game.Effect;
 
 namespace Game
 {
@@ -17,6 +18,7 @@ namespace Game
         public string ProductionServerUrl = "";
         public string TestServerUrl = "http://localhost:8080";
         public bool IsTestServer = true;
+        public bool IsLocalServer = true;
 
         public static GameManager Instance { get; private set; }
         public static Transform Transform => Instance?.transform;
@@ -29,15 +31,21 @@ namespace Game
             GameArchitecture.OnRegisterPatch += architecture =>
             {
                 // Services
-                architecture.RegisterSystem(new AuthService());
-                architecture.RegisterSystem<IServerGateway>(new NetworkServerGateway());
-                architecture.RegisterSystem(new PlayerService());
-                architecture.RegisterSystem(new InventoryService());
+                if (IsLocalServer)
+                    architecture.RegisterSystem<IServerGateway>(new LocalServerGateway());
+                else
+                    architecture.RegisterSystem<IServerGateway>(new NetworkServerGateway());
 
-                // Proxies
+                // Service & Syncers
+                architecture.RegisterSystem(new AuthService());
                 architecture.RegisterSystem(new AuthSyncer());
+                architecture.RegisterSystem(new PlayerService());
                 architecture.RegisterSystem(new PlayerSyncer());
+                architecture.RegisterSystem(new InventoryService());
                 architecture.RegisterSystem(new InventorySyncer());
+
+                // System
+                architecture.RegisterSystem(new EffectSystem());
 
                 // Models
                 architecture.RegisterModel(new AccountModel());
@@ -76,5 +84,10 @@ namespace Game
                 GameArchitecture.Instance.GetSystem<INetworkSystem>()?.OnApplicationResume();
             }
         }
+
+        private void OnApplicationQuit()
+        {
+            GameArchitecture.Instance.Shutdown();
+        }   
     }
 }

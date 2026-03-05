@@ -1,60 +1,122 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Game.DTOs
 {
-    /// <summary>
-    /// 物品数据传输对象
-    /// </summary>
-    [Serializable]
-    public class ItemDTO
-    {
-        /// <summary>物品唯一ID</summary>
-        public string uid;
-        /// <summary>物品配置ID</summary>
-        public int itemId;
-        /// <summary>数量</summary>
-        public int count;
-        /// <summary>是否绑定</summary>
-        public bool bind;
-    }
+    #region Item
 
-    /// <summary>
-    /// 物品使用效果数据传输对象
-    /// </summary>
     [Serializable]
-    public struct ItemEffect
+    public class ItemData
     {
-        public string Type;
+        [JsonProperty("uid")]
+        public string Uid;
+
+        [JsonProperty("itemId")]
         public int ItemId;
+
+        [JsonProperty("count")]
+        public int Count;
     }
 
-    /// <summary>
-    /// 背包数据传输对象
-    /// </summary>
     [Serializable]
-    public class InventoryDTO
+    public class ItemEffect
     {
-        /// <summary>物品列表</summary>
-        public ItemDTO[] items;
-        /// <summary>最大格子数</summary>
-        public int maxSlots;
+        [JsonProperty("effectId")]
+        public string EffectId;
+
+        [JsonProperty("params")]
+        public Dictionary<string, string> Params;
     }
 
-    /// <summary>
-    /// 使用物品请求数据
-    /// </summary>
-    public class UseItemData
-    {
-        [JsonProperty("inventory")]
-        public InventoryDTO Inventory { get; set; }
+    #endregion
 
-        [JsonProperty("effect")]
-        public ItemEffect Effect { get; set; }
+    #region Inventory
+
+    public enum InventorySyncReason
+    {
+        UNKNOWN = 0,
+        LOGIN = 1,      // 登录全量同步
+        DROP = 2,       // 掉落获得
+        USE = 3,        // 使用消耗
+        BUY = 4,        // 购买获得
+        TASK = 5        // 任务奖励
     }
 
-    /// <summary>
-    /// 使用物品响应
-    /// </summary>
-    public class UseItemResponse : BaseResponse<UseItemData> { }
+    [Serializable]
+    public class InventoryData
+    {
+        [JsonProperty("items")]
+        public ItemData[] Items;
+
+        [JsonProperty("maxSlots")]
+        public int MaxSlots;
+    }
+
+    [Serializable]
+    public class InventorySyncData
+    {
+        [JsonProperty("changedItems")]
+        public List<ItemData> ChangedItems;
+
+        [JsonProperty("removedUids")]
+        public List<string> RemovedUids;
+
+        [JsonProperty("newSlots")]
+        public int NewSlots;
+
+        [JsonProperty("reason")]
+        public InventorySyncReason Reason;
+    }
+
+    public class InventoryResponse : BaseResponse<InventoryData> { }
+
+    #endregion
+
+    #region UseItem
+
+    [Serializable]
+    public class UseItemRequest
+    {
+        [JsonProperty("uid")]
+        public string Uid;
+
+        [JsonProperty("amount")]
+        public int Amount;
+        
+        [JsonProperty("params")]
+        public Dictionary<string, string> Params = new(); 
+    }
+
+    public class UseItemResponse : BaseResponse<List<ItemEffect>> { }
+
+    #endregion
+
+    #region AddItem
+
+    [Serializable]
+    public class AddItemRequest
+    {
+        [JsonProperty("itemId")]
+        public int ItemId;
+
+        [JsonProperty("amount")]
+        public int Amount;
+    }
+
+    #endregion
+
+    #region RemoveItem
+
+    [Serializable]
+    public class RemoveItemRequest
+    {
+        [JsonProperty("uid")]
+        public string Uid;
+
+        [JsonProperty("amount")]
+        public int Amount;
+    }
+
+    #endregion
 }

@@ -13,15 +13,7 @@ namespace Framework.Modules.Network
     {
         #region Fields & Properties
 
-        /// <summary>
-        /// 网络状态更新事件。参数1：新状态，参数2：当前重试次数。
-        /// </summary>
-        public static event Action<NetworkStatus, int> OnStatusUpdate;
-
-        /// <summary>
-        /// 收到任何网络消息时的全局广播。参数1：指令号，参数2：原始负载。
-        /// </summary>
-        public static event Action<int, byte[]> OnMessageReceived;
+        // --- 移除了静态 Action 事件，改为使用 Framework 的 SendEvent ---
 
         private INetworkClient _client;
         private string _url;
@@ -177,7 +169,7 @@ namespace Framework.Modules.Network
                 handler.Invoke(pkg.Payload);
             }
 
-            OnMessageReceived?.Invoke(pkg.Cmd, pkg.Payload);
+            this.SendEvent(new NetworkMessageReceivedEvent { Cmd = pkg.Cmd, Payload = pkg.Payload });
         }
 
         private void UpdateHeartbeat()
@@ -247,7 +239,7 @@ namespace Framework.Modules.Network
         private void UpdateStatus(NetworkStatus newStatus, int retryCount = 0)
         {
             _status = newStatus;
-            OnStatusUpdate?.Invoke(newStatus, retryCount);
+            this.SendEvent(new NetworkStatusUpdateEvent { NewStatus = newStatus, RetryCount = retryCount });
             Log($"[Network] Status changed to: {newStatus} (Retry: {retryCount})");
         }
 

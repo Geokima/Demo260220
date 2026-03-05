@@ -1,0 +1,30 @@
+[
+    {
+        "Id": 11,
+        "Type": "AddGold",
+        "Description": "获得金币",
+        "Vfx": "VFX/Gold",
+        "Params": "{\"gold\": 500}"
+    },
+    {
+        "Id": 12,
+        "Type": "AddEnergy",
+        "Description": "恢复体力",
+        "Vfx": "VFX/Energy",
+        "Params": "{\"energy\": 50}"
+    },
+    {
+        "Id": 13,
+        "Type": "SpendEnergy",
+        "Description": "消耗体力",
+        "Vfx": "VFX/Energy",
+        "Params": "{\"energy\": 50}"
+    },
+    {
+        "Id": 14,
+        "Type": "SpendGold",
+        "Description": "消耗金币",
+        "Vfx": "VFX/Gold",
+        "Params": "{\"gold\": 100}"
+    }
+]

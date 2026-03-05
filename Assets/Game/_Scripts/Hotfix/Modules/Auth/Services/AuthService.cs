@@ -163,10 +163,6 @@ namespace Game.Auth
             // 让 Syncer 清除数据
             authSyncer.ClearAccount();
 
-            // 其他模型也需要清理
-            this.GetModel<PlayerModel>().Clear();
-            this.GetModel<InventoryModel>().Clear();
-
             Debug.Log("[AuthService] Logout - 所有数据已清除");
         }
     }

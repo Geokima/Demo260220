@@ -1,6 +1,6 @@
 using Framework.Modules.Config;
 
-namespace Game.Configs
+namespace Game.Config
 {
     public class AudioConfig : IConfigRow
     {

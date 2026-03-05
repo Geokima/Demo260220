@@ -1,60 +1,48 @@
 [
-  {
-    "Id": 1001,
-    "Name": "治疗药水",
-    "Type": "Consumable",
-    "Description": "恢复50点生命值",
-    "Icon": "Items/Potions/HealthPotion",
-    "Value": 25,
-    "MaxStack": 99,
-    "UseEffect": "Heal_50"
-  },
-  {
-    "Id": 1002,
-    "Name": "魔力药水",
-    "Type": "Consumable",
-    "Description": "恢复30点魔法值",
-    "Icon": "Items/Potions/ManaPotion",
-    "Value": 30,
-    "MaxStack": 99,
-    "UseEffect": "RestoreMana_30"
-  },
-  {
-    "Id": 2001,
-    "Name": "铁剑",
-    "Type": "Weapon",
-    "Description": "基础近战武器",
-    "Icon": "Items/Weapons/IronSword",
-    "Attack": 15,
-    "Durability": 100,
-    "Rarity": "Common"
-  },
-  {
-    "Id": 2002,
-    "Name": "木盾",
-    "Type": "Shield",
-    "Description": "基础防御装备",
-    "Icon": "Items/Armor/WoodenShield",
-    "Defense": 10,
-    "Durability": 80,
-    "Rarity": "Common"
-  },
-  {
-    "Id": 3001,
-    "Name": "任务物品：古老的地图",
-    "Type": "Quest",
-    "Description": "标记着宝藏位置的神秘地图",
-    "Icon": "Items/Quest/AncientMap",
-    "QuestId": 101,
-    "IsKeyItem": true
-  },
-  {
-    "Id": 4001,
-    "Name": "金币",
-    "Type": "Currency",
-    "Description": "游戏内通用货币",
-    "Icon": "Items/Currency/GoldCoin",
-    "Value": 1,
-    "MaxStack": 999999
-  }
+    {
+      "Id": 1001,
+      "Name": "体力消耗器",
+      "Type": "Consumable",
+      "Description": "消耗50点体力",
+      "Icon": "Items/Potions/EnergyPotion",
+      "MaxStack": 99,
+      "EffectId": 13
+    },
+    {
+      "Id": 1002,
+      "Name": "金币消耗器",
+      "Type": "Consumable",
+      "Description": "消耗100金币",
+      "Icon": "Items/Box/GoldBox",
+      "MaxStack": 99,
+      "EffectId": 14
+    },
+    {
+      "Id": 1003,
+      "Name": "金币礼包",
+      "Type": "Consumable",
+      "Description": "获得500金币",
+      "Icon": "Items/Box/GoldBox",
+      "MaxStack": 99,
+      "EffectId": 11
+    },
+    {
+      "Id": 1004,
+      "Name": "体力药水",
+      "Type": "Consumable",
+      "Description": "恢复50点体力",
+      "Icon": "Items/Potions/EnergyPotion",
+      "MaxStack": 99,
+      "EffectId": 12
+    },
+    {
+      "Id": 2001,
+      "Name": "铁剑",
+      "Type": "Weapon",
+      "Description": "基础近战武器",
+      "Icon": "Items/Weapons/IronSword",
+      "Attack": 15,
+      "Durability": 100,
+      "Rarity": "Common"
+    }
 ]

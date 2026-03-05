@@ -3,9 +3,8 @@ using Newtonsoft.Json;
 
 namespace Game.DTOs
 {
-    /// <summary>
-    /// 登录请求
-    /// </summary>
+    #region Login
+
     [Serializable]
     public class LoginRequest
     {
@@ -16,9 +15,6 @@ namespace Game.DTOs
         public string Password { get; set; }
     }
 
-    /// <summary>
-    /// 登录响应数据
-    /// </summary>
     [Serializable]
     public class LoginData
     {
@@ -35,14 +31,12 @@ namespace Game.DTOs
         public string WsUrl { get; set; }
     }
 
-    /// <summary>
-    /// 登录响应
-    /// </summary>
     public class LoginResponse : BaseResponse<LoginData> { }
 
-    /// <summary>
-    /// 注册请求
-    /// </summary>
+    #endregion
+
+    #region Register
+
     [Serializable]
     public class RegisterRequest
     {
@@ -53,9 +47,6 @@ namespace Game.DTOs
         public string Password { get; set; }
     }
 
-    /// <summary>
-    /// 注册响应数据
-    /// </summary>
     [Serializable]
     public class RegisterData
     {
@@ -63,14 +54,12 @@ namespace Game.DTOs
         public int UserId { get; set; }
     }
 
-    /// <summary>
-    /// 注册响应
-    /// </summary>
     public class RegisterResponse : BaseResponse<RegisterData> { }
 
-    /// <summary>
-    /// 登出请求
-    /// </summary>
+    #endregion
+
+    #region Logout
+
     [Serializable]
     public class LogoutRequest
     {
@@ -78,16 +67,10 @@ namespace Game.DTOs
         public string Token { get; set; }
     }
 
-    /// <summary>
-    /// 登出响应数据
-    /// </summary>
     [Serializable]
-    public class LogoutData
-    {
-    }
+    public class LogoutData { }
 
-    /// <summary>
-    /// 登出响应
-    /// </summary>
     public class LogoutResponse : BaseResponse<LogoutData> { }
+
+    #endregion
 }

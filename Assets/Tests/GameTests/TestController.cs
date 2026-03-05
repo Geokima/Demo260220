@@ -3,7 +3,7 @@ using Framework;
 using Framework.Modules.Config;
 using Framework.Utils;
 using Game.Auth;
-using Game.Configs;
+using Game.Config;
 using Game.DTOs;
 using Game.Inventory;
 using Game.Player;
@@ -85,9 +85,10 @@ namespace Game.Tests
             this.RegisterEvent<LoginFailedEvent>(OnLoginFailed);
             this.RegisterEvent<RegisterSuccessEvent>(OnRegisterSuccess);
             this.RegisterEvent<RegisterFailedEvent>(OnRegisterFailed);
-            this.RegisterEvent<InventoryUpdatedEvent>(OnInventoryUpdated);
-            this.RegisterEvent<ItemAddedEvent>(OnItemAdded);
-            this.RegisterEvent<ItemRemovedEvent>(OnItemRemoved);
+            
+            // 核心增量同步事件
+            this.RegisterEvent<InventorySyncEvent>(OnInventorySync);
+            
             this.RegisterEvent<ItemUsedEvent>(OnItemUsed);
             this.RegisterEvent<ItemOperationFailedEvent>(OnItemOperationFailed);
         }
@@ -345,15 +346,16 @@ namespace Game.Tests
             }
 
             var inventoryModel = this.GetModel<InventoryModel>();
-            if (inventoryModel.Items.Count == 0)
+            var allItems = inventoryModel.GetAllItems();
+            if (allItems.Count == 0)
             {
                 Debug.LogWarning("<color=red>背包为空!</color>");
                 return;
             }
 
-            var firstItem = inventoryModel.Items[0];
-            Debug.Log($"使用: {firstItem.uid} (ID:{firstItem.itemId})");
-            this.SendCommand(new UseItemCommand { Uid = firstItem.uid, Amount = 1 });
+            var firstItem = allItems[0];
+            Debug.Log($"使用: {firstItem.Uid} (ID:{firstItem.ItemId})");
+            this.SendCommand(new UseItemCommand { Uid = firstItem.Uid, Amount = 1 });
         }
 
         [Button("移除第一个物品", "背包")]
@@ -369,15 +371,16 @@ namespace Game.Tests
             }
 
             var inventoryModel = this.GetModel<InventoryModel>();
-            if (inventoryModel.Items.Count == 0)
+            var allItems = inventoryModel.GetAllItems();
+            if (allItems.Count == 0)
             {
                 Debug.LogWarning("<color=red>背包为空!</color>");
                 return;
             }
 
-            var firstItem = inventoryModel.Items[0];
-            Debug.Log($"移除: {firstItem.uid} (ID:{firstItem.itemId})");
-            this.SendCommand(new RemoveItemCommand { Uid = firstItem.uid, Amount = 1 });
+            var firstItem = allItems[0];
+            Debug.Log($"移除: {firstItem.Uid} (ID:{firstItem.ItemId})");
+            this.SendCommand(new RemoveItemCommand { Uid = firstItem.Uid, Amount = 1 });
         }
 
         #endregion
@@ -410,33 +413,34 @@ namespace Game.Tests
             _loginError = e.Error;
         }
 
-        private void OnInventoryUpdated(InventoryUpdatedEvent e)
+        private void OnInventorySync(InventorySyncEvent e)
         {
-            Debug.Log($"<color=green>✓ 背包更新</color> 物品数:{e.Inventory.items?.Length ?? 0} 格子:{e.Inventory.maxSlots}");
-            if (e.Inventory.items != null)
+            var data = e.SyncData;
+            Debug.Log($"<color=green>✓ 背包同步 [{data.Reason}]</color> 变动:{data.ChangedItems?.Count ?? 0} 移除:{data.RemovedUids?.Count ?? 0}");
+            
+            if (data.ChangedItems != null)
             {
-                foreach (var item in e.Inventory.items)
+                foreach (var item in data.ChangedItems)
                 {
-                    var itemConfig = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.itemId);
-                    var itemName = itemConfig?.Name ?? $"物品{item.itemId}";
-                    Debug.Log($"  - {itemName} x{item.count} [ID:{item.itemId}] 绑定:{item.bind}");
+                    var itemConfig = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
+                    var itemName = itemConfig?.Name ?? $"物品{item.ItemId}";
+                    Debug.Log($"  - [更新] {itemName} x{item.Count}");
+                }
+            }
+            
+            if (data.RemovedUids != null)
+            {
+                foreach (var uid in data.RemovedUids)
+                {
+                    Debug.Log($"  - [物理移除] UID: {uid}");
                 }
             }
         }
 
-        private void OnItemAdded(ItemAddedEvent e)
-        {
-            Debug.Log($"<color=green>✓ 获得物品</color> ID:{e.ItemId} 数量:{e.Amount}");
-        }
-
-        private void OnItemRemoved(ItemRemovedEvent e)
-        {
-            Debug.Log($"<color=orange>✓ 移除物品</color> UID:{e.Uid} 数量:{e.Amount}");
-        }
-
         private void OnItemUsed(ItemUsedEvent e)
         {
-            Debug.Log($"<color=cyan>✓ 使用物品</color> UID:{e.Uid} 数量:{e.Amount} 类型:{e.Effect.Type}");
+            var effectInfo = e.Effects != null && e.Effects.Count > 0 ? e.Effects[0].EffectId : "none";
+            Debug.Log($"<color=cyan>✓ 使用物品</color> UID:{e.Uid} 数量:{e.Amount} 效果:{effectInfo}");
         }
 
         private void OnItemOperationFailed(ItemOperationFailedEvent e)
@@ -527,12 +531,22 @@ namespace Game.Tests
             playerModel.Energy.Register(v => _isDirty = true);
             playerModel.Diamond.Register(v => _isDirty = true);
             playerModel.Gold.Register(v => _isDirty = true);
-            inventoryModel.Items.OnCountChanged.Register(c => _isDirty = true);
-            inventoryModel.Items.OnReplace.Register((i, old, @new) => _isDirty = true);
-            inventoryModel.Items.OnAdd.Register((i, item) => _isDirty = true);
-            inventoryModel.Items.OnRemove.Register((i, item) => _isDirty = true);
-            inventoryModel.Items.OnClear.Register(() => _isDirty = true);
-            inventoryModel.Items.OnMove.Register((oldI, newI, item) => _isDirty = true);
+            inventoryModel.MaxSlots.Register(v => _isDirty = true);
+            
+            // 嵌套绑定：字典增减
+            inventoryModel.Slots.OnAdd.Register((k, v) => 
+            {
+                _isDirty = true;
+                v.Register(data => _isDirty = true); // 绑定格子内部数值变化
+            });
+            inventoryModel.Slots.OnRemove.Register((k, v) => _isDirty = true);
+            inventoryModel.Slots.OnClear.Register(() => _isDirty = true);
+            
+            // 初次绑定现有格子的数值监听
+            foreach (var slot in inventoryModel.Slots.Values)
+            {
+                slot.Register(data => _isDirty = true);
+            }
         }
 
         private void OnGUI()
@@ -577,7 +591,7 @@ namespace Game.Tests
                 _cachedEnergy = playerModel.Energy.Value;
                 _cachedDiamond = playerModel.Diamond.Value;
                 _cachedGold = playerModel.Gold.Value;
-                _cachedItemCount = inventoryModel.Items.Count;
+                _cachedItemCount = inventoryModel.GetAllItems().Count;
             }
 
             // 可拖动窗口
@@ -701,6 +715,42 @@ namespace Game.Tests
 
             GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#32CD32>背包:</color> {_cachedItemCount} 格", _labelStyle);
             y += lineHeight + 10;
+
+            // 物品列表显示
+            var allItems = inventoryModelRef.GetAllItems();
+            if (allItems.Count > 0)
+            {
+                var itemNameWidth = itemWidth - 110;
+                var actionBtnWidth = 50;
+                foreach (var item in allItems)
+                {
+                    var config = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
+                    var itemName = config?.Name ?? $"ID:{item.ItemId}";
+                    var displayText = $"{itemName} x{item.Count}";
+
+                    if (GUI.Button(new Rect(0, y, itemNameWidth, 24), displayText, _flatBtnStyle))
+                    {
+                    }
+
+                    if (GUI.Button(new Rect(itemNameWidth + 5, y, actionBtnWidth, 24), "使用", _flatBtnStyle))
+                    {
+                        this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
+                    }
+
+                    if (GUI.Button(new Rect(itemNameWidth + actionBtnWidth + 10, y, actionBtnWidth, 24), "丢弃", _flatBtnStyle))
+                    {
+                        this.SendCommand(new RemoveItemCommand { Uid = item.Uid, Amount = 1 });
+                    }
+
+                    y += 28;
+                }
+            }
+            else
+            {
+                GUI.Label(new Rect(0, y, itemWidth, lineHeight), "<color=gray>背包为空</color>", _labelStyle);
+                y += lineHeight;
+            }
+            y += 10;
 
             // 操作按钮（扁平样式）
             var btnWidth = (itemWidth - 10) / 2;

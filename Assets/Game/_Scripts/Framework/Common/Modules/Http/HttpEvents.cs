@@ -3,7 +3,7 @@ namespace Framework.Modules.Http
     /// <summary>
     /// HTTP 状态事件，用于通知加载状态变化
     /// </summary>
-    public struct HttpStateEvent
+    public struct HttpStatusUpdateEvent : IEvent
     {
         /// <summary>
         /// 请求的 URL
@@ -19,7 +19,7 @@ namespace Framework.Modules.Http
     /// <summary>
     /// HTTP 错误事件，用于通知请求失败
     /// </summary>
-    public struct HttpErrorEvent
+    public struct HttpErrorEvent : IEvent
     {
         /// <summary>
         /// 请求的 URL

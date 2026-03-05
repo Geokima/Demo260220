@@ -34,7 +34,7 @@ namespace Tests.PlayMode.Http
             _errorEvents = 0;
             
             // 订阅事件
-            _architecture.RegisterEvent<HttpStateEvent>(e =>
+            _architecture.RegisterEvent<HttpStatusUpdateEvent>(e =>
             {
                 if (e.IsLoading) _loadingEvents++;
                 Debug.Log($"[Test] StateEvent: {e.Url} - Loading: {e.IsLoading}");

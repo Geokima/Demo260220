@@ -959,7 +959,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06cc5794a0e7a433b8ed5c31b0a6ece4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fontSize: 15
+  fontSize: 13
 --- !u!114 &1835507682
 MonoBehaviour:
   m_ObjectHideFlags: 0

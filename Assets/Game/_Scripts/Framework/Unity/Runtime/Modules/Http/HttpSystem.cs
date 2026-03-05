@@ -156,7 +156,7 @@ namespace Framework.Modules.Http
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _cts.Token);
 
             // 发送开始事件，外部可监听此事件处理Loading UI
-            this.SendEvent(new HttpStateEvent { Url = url, IsLoading = true });
+            this.SendEvent(new HttpStatusUpdateEvent { Url = url, IsLoading = true });
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             string fullUrl = url.StartsWith("http") ? url : $"{BaseUrl?.TrimEnd('/')}/{url?.TrimStart('/')}";
@@ -180,7 +180,7 @@ namespace Framework.Modules.Http
 
                     if (isSuccess)
                     {
-                        this.SendEvent(new HttpStateEvent { Url = url, IsLoading = false });
+                        this.SendEvent(new HttpStatusUpdateEvent { Url = url, IsLoading = false });
                         return request;
                     }
 
@@ -195,7 +195,7 @@ namespace Framework.Modules.Http
                     }
 
                     this.SendEvent(new HttpErrorEvent { Url = url, StatusCode = request.responseCode, Error = request.error });
-                    this.SendEvent(new HttpStateEvent { Url = url, IsLoading = false });
+                    this.SendEvent(new HttpStatusUpdateEvent { Url = url, IsLoading = false });
                     return request;
                 }
                 catch (Exception ex)
@@ -214,7 +214,7 @@ namespace Framework.Modules.Http
                         continue;
                     }
 
-                    this.SendEvent(new HttpStateEvent { Url = url, IsLoading = false });
+                    this.SendEvent(new HttpStatusUpdateEvent { Url = url, IsLoading = false });
                     throw new HttpRequestException($"Request failed after {MaxRetry} retries, {ex.Message}");
                 }
             }
