@@ -898,6 +898,8 @@ GameObject:
   - component: {fileID: 1835507679}
   - component: {fileID: 1835507681}
   - component: {fileID: 1835507682}
+  - component: {fileID: 1835507683}
+  - component: {fileID: 1835507684}
   m_Layer: 0
   m_Name: Tester
   m_TagString: Untagged
@@ -974,6 +976,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _externalUrl: https://httpbin.org/get
   _localUrl: /login
+--- !u!114 &1835507683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1835507676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f089568545b4fd546887e6428e03c4fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1835507684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1835507676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd2b88d00b1b9bd4f93a297cbec7cf23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1841401271
 GameObject:
   m_ObjectHideFlags: 0

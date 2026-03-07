@@ -1,12 +1,4 @@
 [
-  {
-    "SceneGroup": "Main",
-    "AssetFullPath": "Assets/Game/GameRes/Scene/SceneMain.unity",
-    "BGMId": null
-  },
-  {
-    "SceneGroup": "Login",
-    "AssetFullPath": "Assets/Game/GameRes/Scene/SceneLogin.unity",
-    "BGMId": null
-  }
+    { "SceneGroup": "Main", "AssetFullPath": "Assets/Game/GameRes/Scene/SceneMain.unity", "BGMId": null },
+    { "SceneGroup": "Login", "AssetFullPath": "Assets/Game/GameRes/Scene/SceneLogin.unity", "BGMId": null }
 ]

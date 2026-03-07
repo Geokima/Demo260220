@@ -104,6 +104,9 @@ namespace Framework
                 system.Init();
 
             arch._inited = true;
+
+            foreach (var system in systems)
+                system.PostInit();
         }
 
         protected virtual void RegisterModule()
@@ -303,6 +306,7 @@ namespace Framework
     public interface ISystem : ISystemAware, IModelAware, IEventSender, IEventReceiver
     {
         void Init();
+        void PostInit();
         void Deinit();
     }
 
@@ -342,6 +346,7 @@ namespace Framework
     {
         public IArchitecture Architecture { get; set; }
         public virtual void Init() { }
+        public virtual void PostInit() { }
         public virtual void Deinit() { }
     }
 

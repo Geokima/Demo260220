@@ -288,51 +288,6 @@ namespace Game.Tests
             this.SendCommand(new GetInventoryCommand());
         }
 
-        [Button("添加生命药水(x5)", "背包")]
-        private void TestAddItem()
-        {
-            Debug.Log("<color=green>▶ 添加生命药水 (1001 x5)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            this.SendCommand(new AddItemCommand { ItemId = 1001, Amount = 5, Bind = false });
-        }
-
-        [Button("添加魔法药水(x3)", "背包")]
-        private void TestAddItem2()
-        {
-            Debug.Log("<color=green>▶ 添加魔法药水 (1002 x3)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            this.SendCommand(new AddItemCommand { ItemId = 1002, Amount = 3, Bind = false });
-        }
-
-        [Button("添加绑定强化石(x10)", "背包")]
-        private void TestAddBindItem()
-        {
-            Debug.Log("<color=green>▶ 添加绑定强化石 (1003 x10)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            this.SendCommand(new AddItemCommand { ItemId = 1003, Amount = 10, Bind = true });
-        }
-
         [Button("使用第一个物品", "背包")]
         private void TestUseFirstItem()
         {
@@ -381,6 +336,18 @@ namespace Game.Tests
             var firstItem = allItems[0];
             Debug.Log($"移除: {firstItem.Uid} (ID:{firstItem.ItemId})");
             this.SendCommand(new RemoveItemCommand { Uid = firstItem.Uid, Amount = 1 });
+        }
+
+        [Button("打印背包数据", "背包")]
+        private void PrintInventory()
+        {
+            var inventoryModel = this.GetModel<InventoryModel>();
+            var items = inventoryModel.GetAllItems();
+            Debug.Log($"<color=cyan>=== 背包数据 ({items.Count}个物品) ===</color>");
+            foreach (var item in items)
+            {
+                Debug.Log($"  UID:{item.Uid}, ItemId:{item.ItemId}, Count:{item.Count}");
+            }
         }
 
         #endregion
@@ -439,7 +406,7 @@ namespace Game.Tests
 
         private void OnItemUsed(ItemUsedEvent e)
         {
-            var effectInfo = e.Effects != null && e.Effects.Count > 0 ? e.Effects[0].EffectId : "none";
+            var effectInfo = e.Effects != null && e.Effects.Count > 0 ? e.Effects[0].EffectId.ToString() : "none";
             Debug.Log($"<color=cyan>✓ 使用物品</color> UID:{e.Uid} 数量:{e.Amount} 效果:{effectInfo}");
         }
 
@@ -722,27 +689,28 @@ namespace Game.Tests
             {
                 var itemNameWidth = itemWidth - 110;
                 var actionBtnWidth = 50;
+                var itemHeight = 30;
                 foreach (var item in allItems)
                 {
                     var config = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
                     var itemName = config?.Name ?? $"ID:{item.ItemId}";
                     var displayText = $"{itemName} x{item.Count}";
 
-                    if (GUI.Button(new Rect(0, y, itemNameWidth, 24), displayText, _flatBtnStyle))
+                    if (GUI.Button(new Rect(0, y, itemNameWidth, itemHeight), displayText, _flatBtnStyle))
                     {
                     }
 
-                    if (GUI.Button(new Rect(itemNameWidth + 5, y, actionBtnWidth, 24), "使用", _flatBtnStyle))
+                    if (GUI.Button(new Rect(itemNameWidth + 5, y, actionBtnWidth, itemHeight), "使用", _flatBtnStyle))
                     {
                         this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
                     }
 
-                    if (GUI.Button(new Rect(itemNameWidth + actionBtnWidth + 10, y, actionBtnWidth, 24), "丢弃", _flatBtnStyle))
+                    if (GUI.Button(new Rect(itemNameWidth + actionBtnWidth + 10, y, actionBtnWidth, itemHeight), "丢弃", _flatBtnStyle))
                     {
                         this.SendCommand(new RemoveItemCommand { Uid = item.Uid, Amount = 1 });
                     }
 
-                    y += 28;
+                    y += itemHeight + 4;
                 }
             }
             else
@@ -752,48 +720,19 @@ namespace Game.Tests
             }
             y += 10;
 
-            // 操作按钮（扁平样式）
-            var btnWidth = (itemWidth - 10) / 2;
+            // 操作按钮
+            var btnWidth = itemWidth;
             var btnHeight2 = 28f;
 
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "+100 钻石", _flatBtnStyle))
+            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "添加金币礼包", _flatBtnStyle))
             {
-            }
-            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "+500 金币", _flatBtnStyle))
-            {
+                this.SendCommand(new AddItemCommand { ItemId = 1003, Amount = 1 });
             }
             y += btnHeight2 + 8;
 
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "+100 经验", _flatBtnStyle))
+            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "添加体力药水", _flatBtnStyle))
             {
-            }
-            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "+20 体力", _flatBtnStyle))
-            {
-            }
-            y += btnHeight2 + 8;
-
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "1钻石→100金币", _flatBtnStyle))
-            {
-            }
-            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "添加药水", _flatBtnStyle))
-            {
-                this.SendCommand(new AddItemCommand { ItemId = 1001, Amount = 1, Bind = false });
-            }
-            y += btnHeight2 + 8;
-
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "查询背包", _flatBtnStyle))
-            {
-                this.SendCommand(new GetInventoryCommand());
-            }
-            if (GUI.Button(new Rect(btnWidth + 10, y, btnWidth, btnHeight2), "发送公告", _flatBtnStyle))
-            {
-                TestSendAnnouncement();
-            }
-            y += btnHeight2 + 8;
-
-            if (GUI.Button(new Rect(0, y, itemWidth, btnHeight2), "<color=red>强制踢掉自己 (WS测试)</color>", _flatBtnStyle))
-            {
-                TestKickSelf();
+                this.SendCommand(new AddItemCommand { ItemId = 1004, Amount = 1 });
             }
             y += btnHeight2 + 8;
 

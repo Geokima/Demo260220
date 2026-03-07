@@ -26,5 +26,8 @@ namespace Game.Consts
         /// <summary>物品更新</summary>
         public const string InventoryUpdate = "inventory_update";
 
+        /// <summary>邮件更新</summary>
+        public const string MailUpdate = "mail_update";
+
     }
 }

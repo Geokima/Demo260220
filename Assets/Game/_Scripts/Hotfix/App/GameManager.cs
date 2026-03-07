@@ -5,10 +5,13 @@ using Framework.Modules.Scene;
 using Game.Auth;
 using Game.Player;
 using Game.Inventory;
+using Game.Mail;
+using Game.Shop;
 using Game.Procedures;
-using UnityEngine;
 using Game.Gateways;
 using Game.Effect;
+using Game.Task;
+using UnityEngine;
 
 namespace Game
 {
@@ -43,6 +46,12 @@ namespace Game
                 architecture.RegisterSystem(new PlayerSyncer());
                 architecture.RegisterSystem(new InventoryService());
                 architecture.RegisterSystem(new InventorySyncer());
+                architecture.RegisterSystem(new MailService());
+                architecture.RegisterSystem(new MailSyncer());
+                architecture.RegisterSystem(new ShopService());
+                architecture.RegisterSystem(new ShopSyncer());
+                architecture.RegisterSystem(new TaskService());
+                architecture.RegisterSystem(new TaskSyncer());
 
                 // System
                 architecture.RegisterSystem(new EffectSystem());
@@ -51,6 +60,8 @@ namespace Game
                 architecture.RegisterModel(new AccountModel());
                 architecture.RegisterModel(new PlayerModel());
                 architecture.RegisterModel(new InventoryModel());
+                architecture.RegisterModel(new MailModel());
+                architecture.RegisterModel(new TaskModel());
             };
 
             LaunchGame();

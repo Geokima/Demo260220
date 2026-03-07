@@ -1,48 +1,18 @@
 [
-    {
-      "Id": 1001,
-      "Name": "体力消耗器",
-      "Type": "Consumable",
-      "Description": "消耗50点体力",
-      "Icon": "Items/Potions/EnergyPotion",
-      "MaxStack": 99,
-      "EffectId": 13
-    },
-    {
-      "Id": 1002,
-      "Name": "金币消耗器",
-      "Type": "Consumable",
-      "Description": "消耗100金币",
-      "Icon": "Items/Box/GoldBox",
-      "MaxStack": 99,
-      "EffectId": 14
-    },
-    {
-      "Id": 1003,
-      "Name": "金币礼包",
-      "Type": "Consumable",
-      "Description": "获得500金币",
-      "Icon": "Items/Box/GoldBox",
-      "MaxStack": 99,
-      "EffectId": 11
-    },
-    {
-      "Id": 1004,
-      "Name": "体力药水",
-      "Type": "Consumable",
-      "Description": "恢复50点体力",
-      "Icon": "Items/Potions/EnergyPotion",
-      "MaxStack": 99,
-      "EffectId": 12
-    },
-    {
-      "Id": 2001,
-      "Name": "铁剑",
-      "Type": "Weapon",
-      "Description": "基础近战武器",
-      "Icon": "Items/Weapons/IronSword",
-      "Attack": 15,
-      "Durability": 100,
-      "Rarity": "Common"
-    }
+    { "Id": 1001, "Name": "体力消耗器", "Type": "Consumable", "Description": "消耗50点体力", "Icon": "Items/Potions/EnergyPotion", "MaxStack": 99, "EffectId": 13 },
+    { "Id": 1002, "Name": "金币消耗器", "Type": "Consumable", "Description": "消耗100金币", "Icon": "Items/Box/GoldBox", "MaxStack": 99, "EffectId": 14 },
+    { "Id": 1003, "Name": "金币礼包", "Type": "Consumable", "Description": "获得500金币", "Icon": "Items/Box/GoldBox", "MaxStack": 99, "EffectId": 11 },
+    { "Id": 1004, "Name": "体力药水", "Type": "Consumable", "Description": "恢复50点体力", "Icon": "Items/Potions/EnergyPotion", "MaxStack": 99, "EffectId": 12 },
+    { "Id": 1005, "Name": "小经验包", "Type": "Consumable", "Description": "获得100经验", "Icon": "Items/Box/ExpBox", "MaxStack": 99, "EffectId": 101 },
+    { "Id": 1006, "Name": "大经验包", "Type": "Consumable", "Description": "获得500经验", "Icon": "Items/Box/ExpBox", "MaxStack": 99, "EffectId": 102 },
+    { "Id": 3001, "Name": "材料1", "Type": "Material", "Description": "基础材料", "Icon": "Items/Materials/Mat1", "MaxStack": 999 },
+    { "Id": 3002, "Name": "材料2", "Type": "Material", "Description": "普通材料", "Icon": "Items/Materials/Mat2", "MaxStack": 999 },
+    { "Id": 3003, "Name": "材料3", "Type": "Material", "Description": "高级材料", "Icon": "Items/Materials/Mat3", "MaxStack": 999 },
+    { "Id": 3004, "Name": "材料4", "Type": "Material", "Description": "稀有材料", "Icon": "Items/Materials/Mat4", "MaxStack": 999 },
+    { "Id": 3005, "Name": "材料5", "Type": "Material", "Description": "珍贵材料", "Icon": "Items/Materials/Mat5", "MaxStack": 999 },
+    { "Id": 3006, "Name": "材料6", "Type": "Material", "Description": "稀有材料", "Icon": "Items/Materials/Mat6", "MaxStack": 999 },
+    { "Id": 3007, "Name": "材料7", "Type": "Material", "Description": "珍贵材料", "Icon": "Items/Materials/Mat7", "MaxStack": 999 },
+    { "Id": 3008, "Name": "材料8", "Type": "Material", "Description": "史诗材料", "Icon": "Items/Materials/Mat8", "MaxStack": 999 },
+    { "Id": 3009, "Name": "材料9", "Type": "Material", "Description": "传说材料", "Icon": "Items/Materials/Mat9", "MaxStack": 999 },
+    { "Id": 3010, "Name": "材料10", "Type": "Material", "Description": "至宝材料", "Icon": "Items/Materials/Mat10", "MaxStack": 999 }
 ]

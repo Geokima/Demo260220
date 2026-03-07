@@ -8,6 +8,9 @@ namespace Game.DTOs
     [Serializable]
     public class PlayerData
     {
+        [JsonProperty("username")]
+        public string Username { get; set; }
+
         [JsonProperty("diamond")]
         public int Diamond { get; set; }
 

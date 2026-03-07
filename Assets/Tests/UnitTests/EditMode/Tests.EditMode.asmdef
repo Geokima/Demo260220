@@ -7,7 +7,9 @@
         "UniTask",
         "YooAsset",
         "Hotfix",
-        "Framework.Common"
+        "Framework.Common",
+        "DOTween.Modules",
+        "Framework.Unity"
     ],
     "includePlatforms": [
         "Editor"

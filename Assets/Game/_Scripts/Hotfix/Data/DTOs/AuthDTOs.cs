@@ -13,6 +13,9 @@ namespace Game.DTOs
 
         [JsonProperty("password")]
         public string Password { get; set; }
+
+        [JsonProperty("userId")]
+        public int UserId { get; set; }
     }
 
     [Serializable]

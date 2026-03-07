@@ -23,7 +23,7 @@ namespace Game.DTOs
     public class ItemEffect
     {
         [JsonProperty("effectId")]
-        public string EffectId;
+        public int EffectId;
 
         [JsonProperty("params")]
         public Dictionary<string, string> Params;
@@ -40,7 +40,8 @@ namespace Game.DTOs
         DROP = 2,       // 掉落获得
         USE = 3,        // 使用消耗
         BUY = 4,        // 购买获得
-        TASK = 5        // 任务奖励
+        TASK = 5,       // 任务奖励
+        MAIL = 6        // 邮件奖励
     }
 
     [Serializable]
@@ -51,6 +52,9 @@ namespace Game.DTOs
 
         [JsonProperty("maxSlots")]
         public int MaxSlots;
+
+        [JsonProperty("revision")]
+        public long Revision;
     }
 
     [Serializable]
@@ -67,9 +71,13 @@ namespace Game.DTOs
 
         [JsonProperty("reason")]
         public InventorySyncReason Reason;
+
+        [JsonProperty("revision")]
+        public long Revision;
     }
 
-    public class InventoryResponse : BaseResponse<InventoryData> { }
+    public class GetInventoryResponse : BaseResponse<InventoryData> { }
+    public class InventoryResponse : BaseResponse<InventorySyncData> { }
 
     #endregion
 
