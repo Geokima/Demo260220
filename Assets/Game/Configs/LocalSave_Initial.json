@@ -1,0 +1,44 @@
+{
+  "Players": {
+    "1001": {
+      "Username": "test",
+      "Diamond": 0,
+      "Gold": 0,
+      "Exp": 0,
+      "Energy": 100,
+      "LastEnergyRecoverTime": 0,
+      "ServerTime": 0
+    },
+    "1002": {
+      "Username": "admin",
+      "Diamond": 0,
+      "Gold": 0,
+      "Exp": 0,
+      "Energy": 100,
+      "LastEnergyRecoverTime": 0,
+      "ServerTime": 0
+    }
+  },
+  "Inventories": {
+    "1001": {
+      "Items": [],
+      "MaxSlots": 50
+    },
+    "1002": {
+      "Items": [],
+      "MaxSlots": 50
+    }
+  },
+  "Mails": {
+    "1001": {
+      "Mails": [],
+      "UnreadCount": 0
+    },
+    "1002": {
+      "Mails": [],
+      "UnreadCount": 0
+    }
+  },
+  "BroadcastMails": [],
+  "ReadBroadcastMailIds": {}
+}

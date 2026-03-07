@@ -1,0 +1,54 @@
+{
+  "tasks": [
+    {
+      "taskId": "daily_001",
+      "type": "daily",
+      "title": "使用物品5次",
+      "description": "在任意场景中使用任意物品5次",
+      "condition": {
+        "type": "item_use",
+        "target": 5,
+        "params": {}
+      },
+      "rewards": [
+        {"type": "currency", "id": "gold", "amount": 100},
+        {"type": "item", "id": "exp_potion", "amount": 1}
+      ],
+      "sortOrder": 1,
+      "available": true
+    },
+    {
+      "taskId": "daily_002", 
+      "type": "daily",
+      "title": "每日登录",
+      "description": "登录游戏即可完成",
+      "condition": {
+        "type": "login",
+        "target": 1,
+        "params": {}
+      },
+      "rewards": [
+        {"type": "currency", "id": "gold", "amount": 50}
+      ],
+      "sortOrder": 2,
+      "available": true
+    },
+    {
+      "taskId": "mainline_001",
+      "type": "mainline", 
+      "title": "主线任务：新手引导",
+      "description": "完成新手引导流程",
+      "condition": {
+        "type": "tutorial_complete",
+        "target": 1,
+        "params": {}
+      },
+      "rewards": [
+        {"type": "currency", "id": "gold", "amount": 500},
+        {"type": "item", "id": "rare_weapon", "amount": 1}
+      ],
+      "sortOrder": 1,
+      "available": true
+    }
+  ]
+}
