@@ -23,6 +23,7 @@ namespace Game.Consts
 
         ShopItemNotFound = 600,
         ShopLimitReached = 601,
-        ShopRefreshLimitReached = 602
+        ShopRefreshLimitReached = 602,
+        ShopItemExpired = 603
     }
 }

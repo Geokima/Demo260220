@@ -49,6 +49,11 @@ namespace Game.Gateways
             if (config == null)
                 return new ShopBuyResponse { Code = (int)ErrorCode.ShopItemNotFound, Msg = "Item not found" };
 
+            // 0. 时间校验 (服务端硬核防作弊：防止通过直接发包购买过期或未上架物品)
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (config.StartTime > now || (config.EndTime > 0 && config.EndTime <= now))
+                return new ShopBuyResponse { Code = (int)ErrorCode.ShopItemExpired, Msg = "Item is not available currently" };
+
             // 1. 限购校验
             if (!ctx.Db.CanPurchase(ctx.UserId, req.ShopItemId, req.Count, config))
                 return new ShopBuyResponse { Code = (int)ErrorCode.ShopLimitReached, Msg = "Purchase limit reached" };
@@ -113,9 +118,9 @@ namespace Game.Gateways
         public static List<ShopItemData> GenerateFixedShop(int userId, string shopType, List<ShopItemConfig> configs, Dictionary<int, int> dailyHistory, Dictionary<int, int> permanentHistory)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            // 只要 ShopType 匹配即可支持各种固定商店（如 Fixed, Event1, EventSpecial 等）
+            // 只要 ShopType 匹配即支持各种商店；若 EndTime 为 0 代表永不过期
             var validConfigs = configs
-                .Where(c => c.ShopType == shopType && c.StartTime <= now && c.EndTime > now)
+                .Where(c => c.ShopType == shopType && c.StartTime <= now && (c.EndTime <= 0 || c.EndTime > now))
                 .OrderBy(c => c.Id)
                 .ToList();
 

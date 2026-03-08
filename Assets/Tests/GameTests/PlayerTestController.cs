@@ -9,16 +9,34 @@ using Game.Player;
 using Game.Mission;
 using UnityEngine;
 using System.Collections.Generic;
+using Game.Procedures;
+using Game.Mail;
 
 namespace Game.Tests
 {
-    public class TestController : MonoBehaviour, IController
+    public class PlayerTestController : MonoBehaviour, IController
     {
         public IArchitecture Architecture { get; set; } = GameArchitecture.Instance;
 
-        private void Start()
+        private void Awake()
         {
+            Architecture.RegisterEvent<PreloadCompleteEvent>(OnPreloadComplete);
             RegisterEvents();
+        }
+
+        private void OnDestroy()
+        {
+            Architecture.UnregisterEvent<PreloadCompleteEvent>(OnPreloadComplete);
+        }
+
+        private void OnPreloadComplete(PreloadCompleteEvent e)
+        {
+            var accountModel = this.GetModel<AccountModel>();
+            if (accountModel != null && accountModel.IsLoggedIn)
+            {
+                BindDataPanel();
+                this.SendCommand(new GetMailListCommand());
+            }
         }
 
         private void RegisterEvents()
@@ -26,6 +44,10 @@ namespace Game.Tests
             this.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);
             this.RegisterEvent<InventorySyncEvent>(OnInventorySync);
             this.RegisterEvent<ItemUsedEvent>(OnItemUsed);
+        }
+
+        private void Start()
+        {
         }
 
         #region Resource Buttons
@@ -76,7 +98,6 @@ namespace Game.Tests
 
         #region GUI Panel Logic
 
-        private bool _showPanel = true;
         private bool _isDirty = true;
         private Rect _panelRect = new Rect(20, 100, 320, 480);
         private Vector2 _scrollPosition;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Framework;
@@ -8,6 +9,7 @@ using Game.Config;
 using Game.Consts;
 using Game.DTOs;
 using Game.Gateways;
+using Game.Procedures;
 using UnityEngine;
 
 namespace Game.Tests
@@ -32,9 +34,28 @@ namespace Game.Tests
         private string _lastMsg = "";
         private bool _isLoading = false;
 
+        /// <summary> 初始事件监听注册 </summary>
         private void Awake()
         {
             _initialized = false;
+            // 弃用 Awake/Start 盲刷，改为精准监听加载完成事件
+            Architecture.RegisterEvent<PreloadCompleteEvent>(OnPreloadComplete);
+        }
+
+        private void OnDestroy()
+        {
+            Architecture.UnregisterEvent<PreloadCompleteEvent>(OnPreloadComplete);
+        }
+
+        private void Start()
+        {
+            // 如果脚本挂载时加载已完成，Start 时主动触发一次
+            RefreshAvailableShopTypes(); 
+        }
+
+        private void OnPreloadComplete(PreloadCompleteEvent e)
+        {
+            RefreshAvailableShopTypes();
         }
 
         private void InitGUIStyles()
@@ -94,24 +115,29 @@ namespace Game.Tests
             }
         }
 
+        /// <summary> 动态从配置表中探测“当前时间段内有效”的商店分类 </summary>
         private void RefreshAvailableShopTypes()
         {
-            try
+            var configSystem = this.GetSystem<IConfigSystem>();
+            var sheet = configSystem?.GetSheet<ShopItemConfig>();
+            if (sheet != null)
             {
-                var configSystem = this.GetSystem<IConfigSystem>();
-                var allConfigs = configSystem?.GetSheet<ShopItemConfig>()?.All();
-                if (allConfigs != null)
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                // 核心修复：前端也要同步时间过滤，避免显示早已过期或未到时间的商店页签
+                var types = sheet.All()
+                    .Where(c => c.StartTime <= now && (c.EndTime <= 0 || c.EndTime > now))
+                    .Select(c => c.ShopType)
+                    .Distinct()
+                    .ToList();
+
+                if (types.Count > 0)
                 {
-                    _allShopTypes = allConfigs.Select(c => c.ShopType).Distinct().ToList();
+                    _allShopTypes = types;
+                    return;
                 }
             }
-            catch { }
-
-            if (_allShopTypes.Count == 0)
-            {
-                _allShopTypes.Add(ShopType.Fixed);
-                _allShopTypes.Add(ShopType.Random);
-            }
+            
+            _allShopTypes = new List<string>();
         }
 
         private void OnGUI()
@@ -120,6 +146,12 @@ namespace Game.Tests
                 InitGUIStyles();
 
             if (GameArchitecture.Instance == null) return;
+
+            // 懒加载：如果开启了面板但类型列表还是空的，尝试重新探测（处理配置异步加载延迟）
+            if (_showPanel && (_allShopTypes == null || _allShopTypes.Count == 0))
+            {
+                RefreshAvailableShopTypes();
+            }
 
             var accountModel = this.GetModel<AccountModel>();
             if (accountModel == null || !accountModel.IsLoggedIn) return;
@@ -130,6 +162,7 @@ namespace Game.Tests
             }
         }
 
+        /// <summary> 渲染商店窗口 </summary>
         private void DrawShopWindow(int windowId)
         {
             GUILayout.BeginVertical();
@@ -141,12 +174,19 @@ namespace Game.Tests
                 _currentTabIndex = GUILayout.SelectionGrid(_currentTabIndex, _allShopTypes.ToArray(), 3, _flatBtnStyle);
             }
 
+            if (_allShopTypes.Count == 0)
+            {
+                GUILayout.Label("<color=red>未探测到任何商店类型，请检查配置或尝试按 F2 重新开启</color>", _labelStyle);
+                GUILayout.EndVertical();
+                return;
+            }
+
             if (_currentTabIndex >= _allShopTypes.Count) _currentTabIndex = 0;
-            string currentType = _allShopTypes.Count > 0 ? _allShopTypes[_currentTabIndex] : ShopType.Fixed;
+            string currentType = _allShopTypes[_currentTabIndex];
 
             GUILayout.Space(10);
             
-            ShopListData currentData = _shopCache.GetValueOrDefault(currentType);
+            _shopCache.TryGetValue(currentType, out var currentData);
 
             if (currentData == null)
             {
@@ -162,18 +202,16 @@ namespace Game.Tests
                 GUILayout.FlexibleSpace();
                 if (currentType == ShopType.Random && currentData.CanRefresh)
                 {
-                    if (GUILayout.Button("手动刷新", _flatBtnStyle, GUILayout.Width(80)))
+                    if (GUILayout.Button("刷新随机商店", _flatBtnStyle, GUILayout.Width(100)))
                     {
                         RefreshShopInternal(currentType);
                     }
                 }
-                if (GUILayout.Button("强制刷新列表", _flatBtnStyle, GUILayout.Width(100)))
+                if (GUILayout.Button("强制同步", _flatBtnStyle, GUILayout.Width(80)))
                 {
                     LoadShopInternal(currentType);
                 }
                 GUILayout.EndHorizontal();
-
-                GUILayout.Space(5);
 
                 _scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
 
@@ -183,23 +221,17 @@ namespace Game.Tests
 
                     var discountStr = item.Discount < 1f ? $"<color=red>[{item.Discount * 10:F1}折]</color> " : "";
                     var itemName = GetItemName(item.ItemId);
-                    GUILayout.Label($"<color=white>{discountStr}</color><color=yellow>{itemName}</color> <color=white>x{item.ItemCount}</color>", _labelStyle);
+                    GUILayout.Label($"<color=white>{discountStr}</color><color=yellow>{itemName}</color> <color=#999>x{item.ItemCount}</color>", _labelStyle);
                     
                     var priceColor = item.PriceType == CurrencyType.Gold ? "#FFD700" : "#00BFFF";
                     GUILayout.Label($"价格: <color={priceColor}>{item.PriceType} {item.Price}</color>", _labelStyle);
 
-                    if (item.OriginalPrice > item.Price)
-                    {
-                        GUILayout.Label($"<color=gray><s>原价: {item.OriginalPrice}</s></color>", _labelStyle);
-                    }
-
                     var limitStr = item.LimitCount > 0 ? $" / {item.LimitCount}" : " (不限)";
-                    GUILayout.Label($"限购: <color=#32CD32>{item.PurchasedCount}</color>{limitStr}", _labelStyle);
+                    GUILayout.Label($"累计购买: <color=#32CD32>{item.PurchasedCount}</color>{limitStr}", _labelStyle);
 
-                    GUILayout.BeginHorizontal();
                     if (item.CanBuy)
                     {
-                        if (GUILayout.Button("购买", _flatBtnStyle, GUILayout.Width(100), GUILayout.Height(25)))
+                        if (GUILayout.Button("购买", _flatBtnStyle, GUILayout.Width(80), GUILayout.Height(25)))
                         {
                             BuyItemInternal(item.ShopItemId, currentType);
                         }
@@ -207,13 +239,12 @@ namespace Game.Tests
                     else
                     {
                         GUI.enabled = false;
-                        GUILayout.Button("售罄/上限", GUILayout.Width(100), GUILayout.Height(25));
+                        GUILayout.Button("售罄", GUILayout.Width(80), GUILayout.Height(25));
                         GUI.enabled = true;
                     }
-                    GUILayout.EndHorizontal();
 
                     GUILayout.EndVertical();
-                    GUILayout.Space(3);
+                    GUILayout.Space(2);
                 }
 
                 GUILayout.EndScrollView();
@@ -221,7 +252,6 @@ namespace Game.Tests
 
             if (!string.IsNullOrEmpty(_lastMsg))
             {
-                GUILayout.Space(5);
                 GUILayout.Label(_lastMsg, _labelStyle);
             }
 
