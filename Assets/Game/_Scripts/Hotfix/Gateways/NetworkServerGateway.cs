@@ -35,20 +35,31 @@ namespace Game.Gateways
         {
             try
             {
-                string json = JsonConvert.SerializeObject(request);
-
                 var accountModel = this.GetModel<AccountModel>();
-                if (accountModel.IsLoggedIn && !json.Contains("\"token\""))
+
+                // 统一 Token 注入逻辑 (不再使用原始的字符串搜索判断)
+                if (accountModel.IsLoggedIn && request is BaseRequest baseReq)
                 {
-                    var jObj = JObject.Parse(json);
-                    jObj["token"] = accountModel.Token.Value;
-                    json = jObj.ToString(Formatting.None);
+                    if (string.IsNullOrEmpty(baseReq.Token))
+                    {
+                        baseReq.Token = accountModel.Token.Value;
+                    }
                 }
 
+                string json = JsonConvert.SerializeObject(request);
                 string result = await _httpSystem.PostAsync(path, json);
+                
                 if (string.IsNullOrEmpty(result)) return null;
 
-                return JsonConvert.DeserializeObject<TResponse>(result);
+                var response = JsonConvert.DeserializeObject<TResponse>(result);
+                
+                // 自动化错误审计
+                if (response is ResponseBase baseRes && baseRes.Code != 0)
+                {
+                    Debug.LogWarning($"[NetworkServerGateway] API Error: {path} | Code: {baseRes.Code} | Message: {baseRes.Message}");
+                }
+
+                return response;
             }
             catch (Exception ex)
             {

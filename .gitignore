@@ -78,7 +78,9 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # VSCode Extensions
-.VSCoderCounter
+/.VSCodeCounter
+/.codebuddy
+/.agent
 
 # YooAsset
 /Bundles
@@ -88,4 +90,3 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-/.VSCodeCounter

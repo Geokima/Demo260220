@@ -1,4 +1,5 @@
 using System;
+using Game.Base;
 using Newtonsoft.Json;
 
 namespace Game.DTOs
@@ -6,7 +7,7 @@ namespace Game.DTOs
     #region Login
 
     [Serializable]
-    public class LoginRequest
+    public class LoginRequest : BaseRequest
     {
         [JsonProperty("username")]
         public string Username { get; set; }
@@ -41,7 +42,7 @@ namespace Game.DTOs
     #region Register
 
     [Serializable]
-    public class RegisterRequest
+    public class RegisterRequest : BaseRequest
     {
         [JsonProperty("username")]
         public string Username { get; set; }
@@ -64,10 +65,8 @@ namespace Game.DTOs
     #region Logout
 
     [Serializable]
-    public class LogoutRequest
+    public class LogoutRequest : BaseRequest
     {
-        [JsonProperty("token")]
-        public string Token { get; set; }
     }
 
     [Serializable]

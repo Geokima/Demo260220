@@ -14,6 +14,7 @@ namespace Game.Config
         public float Discount { get; set; }
         public int Weight { get; set; }
         public int LimitCount { get; set; }
+        public int ResetType { get; set; } // 0: None, 1: Daily
         public long StartTime { get; set; }
         public long EndTime { get; set; }
     }

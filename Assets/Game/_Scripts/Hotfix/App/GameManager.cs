@@ -1,7 +1,6 @@
 using Framework.Modules.Http;
 using Framework.Modules.Network;
 using Framework.Modules.Procedure;
-using Framework.Modules.Scene;
 using Game.Auth;
 using Game.Player;
 using Game.Inventory;
@@ -10,7 +9,7 @@ using Game.Shop;
 using Game.Procedures;
 using Game.Gateways;
 using Game.Effect;
-using Game.Task;
+using Game.Mission;
 using UnityEngine;
 
 namespace Game
@@ -50,8 +49,8 @@ namespace Game
                 architecture.RegisterSystem(new MailSyncer());
                 architecture.RegisterSystem(new ShopService());
                 architecture.RegisterSystem(new ShopSyncer());
-                architecture.RegisterSystem(new TaskService());
-                architecture.RegisterSystem(new TaskSyncer());
+                architecture.RegisterSystem(new MissionService());
+                architecture.RegisterSystem(new MissionSyncer());
 
                 // System
                 architecture.RegisterSystem(new EffectSystem());
@@ -61,7 +60,7 @@ namespace Game
                 architecture.RegisterModel(new PlayerModel());
                 architecture.RegisterModel(new InventoryModel());
                 architecture.RegisterModel(new MailModel());
-                architecture.RegisterModel(new TaskModel());
+                architecture.RegisterModel(new MissionModel());
             };
 
             LaunchGame();

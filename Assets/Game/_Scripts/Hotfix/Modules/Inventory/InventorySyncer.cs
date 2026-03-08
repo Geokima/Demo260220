@@ -71,13 +71,9 @@ namespace Game.Inventory
         /// </summary>
         private void UpdateInventoryWithSyncData(InventorySyncData syncData)
         {
-            var model = this.GetModel<InventoryModel>();
-            
             // 1. 让 Model 按照"真相绝对值"对齐数据 (O(1) 性能，只更新变动的格子)
             // 2. 检查 SyncDiff 返回值，只有当数据真正发生变化时才发送事件
-            bool hasChanged = model.SyncDiff(syncData);
-            
-            if (hasChanged)
+            if (this.GetModel<InventoryModel>().SyncDiff(syncData))
             {
                 // 3. 发送全局同步事件，通知 UI 和其他业务层
                 this.SendEvent(new InventorySyncEvent 
@@ -86,10 +82,6 @@ namespace Game.Inventory
                 });
 
                 Debug.Log($"[InventorySync] 业务对齐成功. 来源:{syncData.Reason}, 变动:{syncData.ChangedItems?.Count ?? 0}, 移除:{syncData.RemovedUids?.Count ?? 0}");
-            }
-            else
-            {
-                Debug.Log($"[InventorySync] 数据未发生变化，跳过事件发送. 来源:{syncData.Reason}, Revision:{syncData.Revision}");
             }
         }
     }

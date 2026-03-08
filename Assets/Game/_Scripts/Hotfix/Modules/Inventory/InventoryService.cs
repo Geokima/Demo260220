@@ -47,7 +47,7 @@ namespace Game.Inventory
         {
             Debug.Log("[InventoryService] 请求获取全量背包...");
 
-            var response = await NetworkClient.PostAsync<GetInventoryResponse>("/inventory/get");
+            var response = await ServerGateway.PostAsync<GetInventoryResponse>("/inventory/get");
 
             if (response != null && response.Code == 0)
             {
@@ -71,7 +71,7 @@ namespace Game.Inventory
         {
             Debug.Log($"[InventoryService] 申请添加物品: {itemId}, 数量: {amount}");
 
-            var response = await NetworkClient.PostAsync<object, InventoryResponse>("/inventory/add",
+            var response = await ServerGateway.PostAsync<object, InventoryResponse>("/inventory/add",
                 new AddItemRequest { ItemId = itemId, Amount = amount });
 
             if (response != null && response.Code == 0)
@@ -97,7 +97,7 @@ namespace Game.Inventory
         {
             Debug.Log($"[InventoryService] 申请移除物品: {uid}, 数量: {amount}");
 
-            var response = await NetworkClient.PostAsync<object, InventoryResponse>("/inventory/remove",
+            var response = await ServerGateway.PostAsync<object, InventoryResponse>("/inventory/remove",
                 new RemoveItemRequest { Uid = uid, Amount = amount });
 
             if (response != null && response.Code == 0)
@@ -121,7 +121,7 @@ namespace Game.Inventory
         {
             Debug.Log($"[InventoryService] 申请使用物品: {uid}");
 
-            var response = await NetworkClient.PostAsync<UseItemRequest, UseItemResponse>("/inventory/use", 
+            var response = await ServerGateway.PostAsync<UseItemRequest, UseItemResponse>("/inventory/use", 
                 new UseItemRequest { Uid = uid, Amount = amount, Params = parameters });
 
             if (response != null && response.Code == 0)

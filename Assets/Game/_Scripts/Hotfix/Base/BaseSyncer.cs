@@ -10,14 +10,14 @@ namespace Game.Base
     {
         private readonly List<(string msgType, Action<JToken> handler)> _registeredHandlers = new List<(string, Action<JToken>)>();
 
-        protected IServerGateway NetworkClient => this.GetSystem<IServerGateway>();
+        protected IServerGateway ServerGateway => this.GetSystem<IServerGateway>();
 
         /// <summary>
         /// 注册消息监听，并在 Deinit 时自动清理
         /// </summary>
         protected void RegisterWsHandler(string msgType, Action<JToken> handler)
         {
-            NetworkClient.RegisterWsHandler(msgType, handler);
+            ServerGateway.RegisterWsHandler(msgType, handler);
             _registeredHandlers.Add((msgType, handler));
         }
 
@@ -26,7 +26,7 @@ namespace Game.Base
             // 自动清理所有已注册的监听
             foreach (var (msgType, handler) in _registeredHandlers)
             {
-                NetworkClient.UnregisterWsHandler(msgType, handler);
+                ServerGateway.UnregisterWsHandler(msgType, handler);
             }
             _registeredHandlers.Clear();
 

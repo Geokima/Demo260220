@@ -7,56 +7,43 @@ namespace Game.Mail
     public class MailModel : AbstractModel
     {
         public BindableDictionary<string, MailData> Mails = new();
-        // 增量维护的未读数，UI 直接访问 .Value
         public BindableProperty<int> UnreadCount = new(0);
         public BindableProperty<long> Revision = new(0);
 
-        // 补回：TestController 需要的查询接口
-        public List<MailData> GetAllMails()
-        {
-            return new List<MailData>(Mails.Values);
-        }
+        public List<MailData> GetAllMails() => new List<MailData>(Mails.Values);
 
-        public MailData GetMail(string mailId) => Mails.TryGetValue(mailId, out var mail) ? mail : null;
-
-        // 核心同步逻辑：对标背包系统，处理增量包
         public bool SyncDiff(MailSyncData data)
         {
-            if (data == null || (data.Revision > 0 && data.Revision <= Revision.Value)) 
-                return false;
+            // 严格对齐 Inv 逻辑：版本号必须大于当前版本
+            if (data == null || data.Revision <= Revision.Value) return false;
 
-            // 处理删除
+            // 1. 处理删除：直接 Remove
             if (data.RemovedIds != null)
             {
                 foreach (var id in data.RemovedIds)
                 {
-                    if (Mails.TryGetValue(id, out var mail))
-                    {
-                        if (!mail.IsRead) UnreadCount.Value--;
-                        Mails.Remove(id);
-                    }
+                    Mails.Remove(id);
                 }
             }
 
-            // 处理变动
+            // 2. 处理变动：直接赋值覆盖（这是字典同步的最稳做法）
             if (data.ChangedMails != null)
             {
                 foreach (var mail in data.ChangedMails)
                 {
-                    if (Mails.TryGetValue(mail.MailId, out var oldMail))
-                    {
-                        if (oldMail.IsRead != mail.IsRead)
-                            UnreadCount.Value += mail.IsRead ? -1 : 1;
-                        Mails[mail.MailId] = mail;
-                    }
-                    else
-                    {
-                        Mails[mail.MailId] = mail;
-                        if (!mail.IsRead) UnreadCount.Value++;
-                    }
+                    Mails[mail.MailId] = mail;
                 }
             }
 
+            // 3. 重新计算未读数（而不是加加减减，这样最不会错）
+            int unread = 0;
+            foreach (var m in Mails.Values)
+            {
+                if (!m.IsRead) unread++;
+            }
+            UnreadCount.Value = unread;
+
+            // 4. 强制同步版本号
             Revision.Value = data.Revision;
             return true;
         }
@@ -64,16 +51,18 @@ namespace Game.Mail
         public void SyncAll(MailListData data)
         {
             Mails.Clear();
-            int unread = 0;
             if (data?.Mails != null)
             {
                 foreach (var mail in data.Mails)
                 {
                     Mails[mail.MailId] = mail;
-                    if (!mail.IsRead) unread++;
                 }
             }
+            
+            int unread = 0;
+            foreach (var m in Mails.Values) if (!m.IsRead) unread++;
             UnreadCount.Value = unread;
+            
             Revision.Value = data?.Revision ?? 0;
         }
 

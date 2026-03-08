@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Game.DTOs
+namespace Game.Base
 {
     /// <summary>
     /// 基础响应结构

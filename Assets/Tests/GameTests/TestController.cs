@@ -1,13 +1,14 @@
 using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Config;
-using Framework.Utils;
 using Game.Auth;
 using Game.Config;
 using Game.DTOs;
 using Game.Inventory;
 using Game.Player;
+using Game.Mission;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Game.Tests
 {
@@ -15,834 +16,192 @@ namespace Game.Tests
     {
         public IArchitecture Architecture { get; set; } = GameArchitecture.Instance;
 
-        #region 生命周期
-
-        private void Awake()
-        {
-            // GUI样式在OnGUI中延迟初始化
-        }
-
-        private void OnEnable()
-        {
-            // 重新激活时重置GUI样式，强制重新初始化
-            _panelStyle = null;
-        }
-
         private void Start()
         {
             RegisterEvents();
         }
 
-        #endregion
-
-        #region 本地体力恢复计算
-
-        private long _lastLocalRecoverTime = 0;
-
-        private void Update()
-        {
-            // 本地计算体力恢复（每10秒1点）
-            if (GameArchitecture.Instance != null)
-            {
-                var playerModel = this.GetModel<PlayerModel>();
-                var accountModel = this.GetModel<AccountModel>();
-                if (playerModel != null && accountModel != null && accountModel.IsLoggedIn)
-                {
-                    var currentTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    if (_lastLocalRecoverTime == 0)
-                    {
-                        _lastLocalRecoverTime = currentTime;
-                    }
-
-                    long maxEnergy = playerModel.GetMaxEnergy();
-                    if (playerModel.Energy.Value < maxEnergy)
-                    {
-                        long elapsed = currentTime - _lastLocalRecoverTime;
-                        if (elapsed >= PlayerModel.EnergyRecoverInterval)
-                        {
-                            int recoverPoints = (int)(elapsed / PlayerModel.EnergyRecoverInterval);
-                            int newEnergy = System.Math.Min(playerModel.Energy.Value + recoverPoints, (int)maxEnergy);
-                            playerModel.Energy.Value = newEnergy;
-                            _lastLocalRecoverTime = currentTime;
-                            Debug.Log($"[TestController] 本地体力恢复: +{recoverPoints} → {newEnergy}/{maxEnergy}");
-                        }
-                    }
-                    else
-                    {
-                        _lastLocalRecoverTime = currentTime;
-                    }
-                }
-            }
-        }
-
-        #endregion
-
-        #region 事件注册
-
         private void RegisterEvents()
         {
             this.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);
-            this.RegisterEvent<LoginFailedEvent>(OnLoginFailed);
-            this.RegisterEvent<RegisterSuccessEvent>(OnRegisterSuccess);
-            this.RegisterEvent<RegisterFailedEvent>(OnRegisterFailed);
-            
-            // 核心增量同步事件
             this.RegisterEvent<InventorySyncEvent>(OnInventorySync);
-            
             this.RegisterEvent<ItemUsedEvent>(OnItemUsed);
-            this.RegisterEvent<ItemOperationFailedEvent>(OnItemOperationFailed);
+        }
+
+        #region Resource Buttons
+
+        [Button("增加金币(+1000)", "GM")]
+        private void AddGoldGM() => SendAddItem(1, 1000);
+
+        [Button("增加钻石(+100)", "GM")]
+        private void AddDiamondGM() => SendAddItem(2, 100);
+
+        [Button("添加金币礼包(1003)", "GM")]
+        private void AddItem1003() => SendAddItem(1003, 1);
+
+        [Button("增加经验(+100)", "GM")]
+        private void AddExpGM() { Debug.Log("经验模拟需通过任务或特定道具发放"); }
+
+        private void SendAddItem(int itemId, int amount)
+        {
+            var accountModel = this.GetModel<AccountModel>();
+            if (!accountModel.IsLoggedIn) { Debug.LogWarning("请先登录"); return; }
+            this.SendCommand(new AddItemCommand { ItemId = itemId, Amount = amount });
         }
 
         #endregion
 
-        #region 登录测试
-
-        [Button("测试账号", "登录")]
-        private void TestLogin()
-        {
-            Debug.Log("<color=cyan>▶ 登录测试账号 (test)</color>");
-            this.SendCommand(new LoginCommand { Username = "test", Password = "123" });
-        }
-
-        [Button("管理员账号", "登录")]
-        private void TestLoginAdmin()
-        {
-            Debug.Log("<color=cyan>▶ 登录管理员账号 (admin)</color>");
-            this.SendCommand(new LoginCommand { Username = "admin", Password = "123" });
-        }
-
-        #endregion
-
-        #region 资源测试
-
-        [Button("查询服务器资源", "资源")]
-        private void TestGetResources()
-        {
-            Debug.Log("<color=yellow>▶ 查询服务器资源</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var resourceService = this.GetSystem<PlayerService>();
-            GetResourcesAsync(resourceService).Forget();
-        }
-
-        [Button("增加钻石(+100)", "资源")]
-        private void TestAddDiamond()
-        {
-            Debug.Log("<color=green>▶ 增加钻石 (+100)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var resourcesModel = this.GetModel<PlayerModel>();
-            Debug.Log($"当前: <color=white>{resourcesModel.Diamond.Value}</color>");
-        }
-
-        [Button("花费钻石(-50)", "资源")]
-        private void TestSpendDiamond()
-        {
-            Debug.Log("<color=orange>▶ 花费钻石 (-50)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var resourcesModel = this.GetModel<PlayerModel>();
-            Debug.Log($"当前: <color=white>{resourcesModel.Diamond.Value}</color>");
-        }
-
-        [Button("增加金币(+500)", "资源")]
-        private void TestAddGold()
-        {
-            Debug.Log("<color=green>▶ 增加金币 (+500)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var resourcesModel = this.GetModel<PlayerModel>();
-            Debug.Log($"当前: <color=white>{resourcesModel.Gold.Value}</color>");
-        }
-
-        [Button("花费金币(-200)", "资源")]
-        private void TestSpendGold()
-        {
-            Debug.Log("<color=orange>▶ 花费金币 (-200)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var resourcesModel = this.GetModel<PlayerModel>();
-            Debug.Log($"当前: <color=white>{resourcesModel.Gold.Value}</color>");
-        }
-
-        [Button("增加经验(+100)", "资源")]
-        private void TestAddExp()
-        {
-            Debug.Log("<color=green>▶ 增加经验 (+100)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var playerModel = this.GetModel<PlayerModel>();
-            Debug.Log($"当前: <color=white>经验{playerModel.Exp.Value} 等级{playerModel.Level.Value}</color>");
-        }
-
-        [Button("增加体力(+20)", "资源")]
-        private void TestAddEnergy()
-        {
-            Debug.Log("<color=green>▶ 增加体力 (+20)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var playerModel = this.GetModel<PlayerModel>();
-            var maxEnergy = playerModel.GetMaxEnergy();
-            Debug.Log($"当前: <color=white>{playerModel.Energy.Value}/{maxEnergy}</color>");
-        }
-
-        [Button("消耗体力(-10)", "资源")]
-        private void TestSpendEnergy()
-        {
-            Debug.Log("<color=orange>▶ 消耗体力 (-10)</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var playerModel = this.GetModel<PlayerModel>();
-            var maxEnergy = playerModel.GetMaxEnergy();
-            Debug.Log($"当前: <color=white>{playerModel.Energy.Value}/{maxEnergy}</color>");
-        }
-
-        [Button("查询状态", "资源")]
-        private void TestQueryStatus()
-        {
-            Debug.Log("<color=yellow>▶ 查询玩家状态</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var playerModel = this.GetModel<PlayerModel>();
-            var maxEnergy = playerModel.GetMaxEnergy();
-            var (curExp, maxExp) = playerModel.GetLevelExpProgress(playerModel.Exp.Value);
-
-            Debug.Log($"<color=cyan>玩家状态</color>");
-            Debug.Log($"  等级: <color=white>{playerModel.Level.Value}</color>");
-            Debug.Log($"  经验: <color=white>{curExp}</color> / {maxExp} (当前等级)");
-            Debug.Log($"  体力: <color=white>{playerModel.Energy.Value}</color> / {maxEnergy}");
-            Debug.Log($"  钻石: <color=cyan>{playerModel.Diamond.Value}</color>");
-            Debug.Log($"  金币: <color=yellow>{playerModel.Gold.Value}</color>");
-        }
-
-        #endregion
-
-        #region 背包测试
-
-        [Button("查询背包", "背包")]
-        private void TestGetInventory()
-        {
-            Debug.Log("<color=yellow>▶ 查询背包</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            this.SendCommand(new GetInventoryCommand());
-        }
-
-        [Button("使用第一个物品", "背包")]
-        private void TestUseFirstItem()
-        {
-            Debug.Log("<color=cyan>▶ 使用第一个物品</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var inventoryModel = this.GetModel<InventoryModel>();
-            var allItems = inventoryModel.GetAllItems();
-            if (allItems.Count == 0)
-            {
-                Debug.LogWarning("<color=red>背包为空!</color>");
-                return;
-            }
-
-            var firstItem = allItems[0];
-            Debug.Log($"使用: {firstItem.Uid} (ID:{firstItem.ItemId})");
-            this.SendCommand(new UseItemCommand { Uid = firstItem.Uid, Amount = 1 });
-        }
-
-        [Button("移除第一个物品", "背包")]
-        private void TestRemoveFirstItem()
-        {
-            Debug.Log("<color=orange>▶ 移除第一个物品</color>");
-
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn)
-            {
-                Debug.LogWarning("<color=red>请先登录!</color>");
-                return;
-            }
-
-            var inventoryModel = this.GetModel<InventoryModel>();
-            var allItems = inventoryModel.GetAllItems();
-            if (allItems.Count == 0)
-            {
-                Debug.LogWarning("<color=red>背包为空!</color>");
-                return;
-            }
-
-            var firstItem = allItems[0];
-            Debug.Log($"移除: {firstItem.Uid} (ID:{firstItem.ItemId})");
-            this.SendCommand(new RemoveItemCommand { Uid = firstItem.Uid, Amount = 1 });
-        }
-
-        [Button("打印背包数据", "背包")]
-        private void PrintInventory()
-        {
-            var inventoryModel = this.GetModel<InventoryModel>();
-            var items = inventoryModel.GetAllItems();
-            Debug.Log($"<color=cyan>=== 背包数据 ({items.Count}个物品) ===</color>");
-            foreach (var item in items)
-            {
-                Debug.Log($"  UID:{item.Uid}, ItemId:{item.ItemId}, Count:{item.Count}");
-            }
-        }
-
-        #endregion
-
-        #region 事件回调
+        #region Event Callbacks
 
         private void OnLoginSuccess(LoginSuccessEvent e)
         {
             Debug.Log($"<color=green>✓ 登录成功</color> UserId:{e.UserId}");
             BindDataPanel();
-            _isDirty = true; // 强制刷新缓存
-        }
-
-        private void OnLoginFailed(LoginFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 登录失败: {e.Error}</color>");
-            _loginError = e.Error;
-        }
-
-        private void OnRegisterSuccess(RegisterSuccessEvent e)
-        {
-            Debug.Log($"<color=green>✓ 注册成功</color> UserId:{e.UserId}");
-            _loginError = "注册成功，请登录";
-            _isRegisterMode = false;
-        }
-
-        private void OnRegisterFailed(RegisterFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 注册失败: {e.Error}</color>");
-            _loginError = e.Error;
+            _isDirty = true;
         }
 
         private void OnInventorySync(InventorySyncEvent e)
         {
-            var data = e.SyncData;
-            Debug.Log($"<color=green>✓ 背包同步 [{data.Reason}]</color> 变动:{data.ChangedItems?.Count ?? 0} 移除:{data.RemovedUids?.Count ?? 0}");
-            
-            if (data.ChangedItems != null)
-            {
-                foreach (var item in data.ChangedItems)
-                {
-                    var itemConfig = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
-                    var itemName = itemConfig?.Name ?? $"物品{item.ItemId}";
-                    Debug.Log($"  - [更新] {itemName} x{item.Count}");
-                }
-            }
-            
-            if (data.RemovedUids != null)
-            {
-                foreach (var uid in data.RemovedUids)
-                {
-                    Debug.Log($"  - [物理移除] UID: {uid}");
-                }
-            }
+            Debug.Log($"<color=green>✓ 背包同步: {e.SyncData.Reason}</color>");
+            _isDirty = true;
         }
 
         private void OnItemUsed(ItemUsedEvent e)
         {
-            var effectInfo = e.Effects != null && e.Effects.Count > 0 ? e.Effects[0].EffectId.ToString() : "none";
-            Debug.Log($"<color=cyan>✓ 使用物品</color> UID:{e.Uid} 数量:{e.Amount} 效果:{effectInfo}");
-        }
-
-        private void OnItemOperationFailed(ItemOperationFailedEvent e)
-        {
-            Debug.Log($"<color=red>✗ 物品操作失败: {e.Reason}</color>");
-        }
-
-        private async void TestSendAnnouncement()
-        {
-            string message = "这是来自 GM 面板的测试公告 " + System.DateTime.Now.ToString("HH:mm:ss");
-            Debug.Log($"<color=cyan>▶ 发送测试公告: {message}</color>");
-
-            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.IHttpSystem>();
-            string url = "http://localhost:8080/admin/announce";
-            string json = "{\"message\":\"" + message + "\"}";
-
-            var result = await httpSystem.PostAsync(url, json);
-            if (result != null)
-                Debug.Log("<color=green>✓ 公告发送成功</color>");
-            else
-                Debug.LogError("✗ 公告发送失败");
-        }
-
-        private async void TestKickSelf()
-        {
-            var accountModel = this.GetModel<AccountModel>();
-            if (!accountModel.IsLoggedIn) return;
-
-            int userId = accountModel.UserId.Value;
-            Debug.Log($"<color=red>▶ 正在请求强制下线 UID: {userId}</color>");
-
-            var httpSystem = GameArchitecture.Instance.GetSystem<Framework.Modules.Http.IHttpSystem>();
-            string url = "http://localhost:8080/admin/kick";
-            string json = "{\"userId\":" + userId + ", \"reason\":\"GM面板测试强制下线\"}";
-
-            var result = await httpSystem.PostAsync(url, json);
-            if (result != null)
-                Debug.Log("<color=green>✓ 强制下线请求已发送</color>");
-            else
-                Debug.LogError("✗ 强制下线请求失败");
-        }
-
-        private async UniTaskVoid GetResourcesAsync(PlayerService resourceService)
-        {
-            var response = await resourceService.GetResourcesAsync();
-            if (response != null && response.Code == 0)
-            {
-                var data = response.Data;
-                Debug.Log($"<color=green>✓</color> 钻石:<color=cyan>{data.Diamond}</color> 金币:<color=yellow>{data.Gold}</color>");
-            }
-            else
-            {
-                Debug.LogError("<color=red>✗ 查询失败</color>");
-            }
+            Debug.Log($"<color=cyan>✓ 使用物品成功</color> UID:{e.Uid}");
+            _isDirty = true;
         }
 
         #endregion
 
-        #region OnGUI 数据面板
+        #region GUI Panel Logic
 
         private bool _showPanel = true;
         private bool _isDirty = true;
-        private Rect _panelRect = new Rect(Screen.width - 330, Screen.height - 310, 320, 300);
+        private Rect _panelRect = new Rect(20, 100, 320, 480);
         private Vector2 _scrollPosition;
 
-        private int _cachedLevel;
-        private int _cachedExp;
-        private int _cachedEnergy;
-        private int _cachedDiamond;
-        private int _cachedGold;
-        private int _cachedItemCount;
-
+        private int _cachedLevel, _cachedExp, _cachedEnergy, _cachedDiamond, _cachedGold, _cachedItemCount;
         private bool _isDataPanelBound = false;
 
         private void BindDataPanel()
         {
-            if (_isDataPanelBound) return;
-            if (GameArchitecture.Instance == null) return;
-
+            if (_isDataPanelBound || GameArchitecture.Instance == null) return;
             var playerModel = this.GetModel<PlayerModel>();
             var inventoryModel = this.GetModel<InventoryModel>();
             if (playerModel == null || inventoryModel == null) return;
 
             _isDataPanelBound = true;
-
-            playerModel.Level.Register(v => _isDirty = true);
-            playerModel.Exp.Register(v => _isDirty = true);
-            playerModel.Energy.Register(v => _isDirty = true);
-            playerModel.Diamond.Register(v => _isDirty = true);
-            playerModel.Gold.Register(v => _isDirty = true);
-            inventoryModel.MaxSlots.Register(v => _isDirty = true);
-            
-            // 嵌套绑定：字典增减
-            inventoryModel.Slots.OnAdd.Register((k, v) => 
-            {
-                _isDirty = true;
-                v.Register(data => _isDirty = true); // 绑定格子内部数值变化
-            });
-            inventoryModel.Slots.OnRemove.Register((k, v) => _isDirty = true);
-            inventoryModel.Slots.OnClear.Register(() => _isDirty = true);
-            
-            // 初次绑定现有格子的数值监听
-            foreach (var slot in inventoryModel.Slots.Values)
-            {
-                slot.Register(data => _isDirty = true);
-            }
+            playerModel.Level.Register(_ => _isDirty = true);
+            playerModel.Exp.Register(_ => _isDirty = true);
+            playerModel.Energy.Register(_ => _isDirty = true);
+            playerModel.Diamond.Register(_ => _isDirty = true);
+            playerModel.Gold.Register(_ => _isDirty = true);
+            inventoryModel.Revision.Register(_ => _isDirty = true);
         }
 
         private void OnGUI()
         {
-            // 延迟初始化GUI样式
-            if (_panelStyle == null)
-                InitGUIStyles();
-
-            // 显示按钮（当面板关闭时，显示在右下角）
-            if (!_showPanel)
-            {
-                if (GUI.Button(new Rect(Screen.width - 120, Screen.height - 40, 110, 30), "显示数据面板", _flatBtnStyle))
-                    _showPanel = true;
-            }
-
-            if (!_showPanel) return;
-
-            if (GameArchitecture.Instance == null) return;
-
+            SetupStyles();
             var accountModel = this.GetModel<AccountModel>();
-
-            // 未登录显示登录面板（居中，不可拖动）
-            if (accountModel != null && !accountModel.IsLoggedIn)
-            {
-                var loginRect = new Rect((Screen.width - 320) / 2, (Screen.height - 300) / 2, 320, 300);
-                GUI.Window(1, loginRect, DrawLoginWindow, "", _panelStyle);
+            if (accountModel == null || !accountModel.IsLoggedIn) {
+                DrawLoginBox();
                 return;
             }
 
-            if (_isDirty)
-            {
-                _isDirty = false;
-                var playerModel = this.GetModel<PlayerModel>();
-                var inventoryModel = this.GetModel<InventoryModel>();
-
-                // 检查模型是否可用
-                if (playerModel == null || inventoryModel == null)
-                    return;
-
-                _cachedLevel = playerModel.Level.Value;
-                _cachedExp = playerModel.Exp.Value;
-                _cachedEnergy = playerModel.Energy.Value;
-                _cachedDiamond = playerModel.Diamond.Value;
-                _cachedGold = playerModel.Gold.Value;
-                _cachedItemCount = inventoryModel.GetAllItems().Count;
-            }
-
-            // 可拖动窗口
-            _panelRect = GUI.Window(1, _panelRect, DrawPanelWindow, "", _panelStyle);
+            if (_isDirty) RefreshCachedStats();
+            _panelRect = GUI.Window(1, _panelRect, DrawStatsWindow, "玩家调试面板 (F1查看/隐藏)", _windowStyle);
         }
 
-        private string _loginUsername = "";
-        private string _loginPassword = "";
-        private bool _isRegisterMode = false;
-        private string _loginError = "";
-
-        private void DrawLoginWindow(int windowId)
+        private void RefreshCachedStats()
         {
-            var title = _isRegisterMode ? "注册账号" : "账号登录";
-            GUI.Label(new Rect(0, 0, _panelRect.width, 30), title, _titleStyle);
+            _isDirty = false;
+            var playerModel = this.GetModel<PlayerModel>();
+            var inventoryModel = this.GetModel<InventoryModel>();
+            if (playerModel == null) return;
 
-            var margin = 15;
-            var fieldWidth = _panelRect.width - margin * 2;
-            var fieldHeight = 32;
-            var y = 45;
-
-            // 账号输入
-            GUI.Label(new Rect(margin, y, fieldWidth, 18), "账号", _labelStyle);
-            y += 20;
-            _loginUsername = GUI.TextField(new Rect(margin, y, fieldWidth, fieldHeight), _loginUsername, _flatTextFieldStyle);
-            y += fieldHeight + 12;
-
-            // 密码输入
-            GUI.Label(new Rect(margin, y, fieldWidth, 18), "密码", _labelStyle);
-            y += 20;
-            _loginPassword = GUI.PasswordField(new Rect(margin, y, fieldWidth, fieldHeight), _loginPassword, '*', _flatTextFieldStyle);
-            y += fieldHeight + 15;
-
-            // 错误提示（固定空间，避免布局跳动）
-            var errorColor = string.IsNullOrEmpty(_loginError) ? "<color=gray> </color>" : $"<color=red>{_loginError}</color>";
-            GUI.Label(new Rect(margin, y, fieldWidth, 20), errorColor, _labelStyle);
-            y += 25;
-
-            // 主按钮
-            var btnHeight = 38;
-            var btnText = _isRegisterMode ? "注 册" : "登 录";
-            if (GUI.Button(new Rect(margin, y, fieldWidth, btnHeight), btnText, _flatBtnStyle))
-            {
-                if (string.IsNullOrEmpty(_loginUsername) || string.IsNullOrEmpty(_loginPassword))
-                {
-                    _loginError = "账号密码不能为空";
-                }
-                else
-                {
-                    _loginError = "";
-                    if (_isRegisterMode)
-                        this.SendCommand(new RegisterCommand { Username = _loginUsername, Password = _loginPassword });
-                    else
-                        this.SendCommand(new LoginCommand { Username = _loginUsername, Password = _loginPassword });
-                }
-            }
-            y += btnHeight + 15;
-
-            // 切换模式（文字链接样式）
-            var switchText = _isRegisterMode ? "<color=#66AAFF>已有账号? 去登录</color>" : "<color=#66AAFF>没有账号? 去注册</color>";
-            if (GUI.Button(new Rect(margin, y, fieldWidth, 22), switchText, _labelStyle))
-            {
-                _isRegisterMode = !_isRegisterMode;
-                _loginError = "";
-            }
-            // 登录窗口不可拖动
+            _cachedLevel = playerModel.Level.Value;
+            _cachedExp = playerModel.Exp.Value;
+            _cachedEnergy = playerModel.Energy.Value;
+            _cachedDiamond = playerModel.Diamond.Value;
+            _cachedGold = playerModel.Gold.Value;
+            _cachedItemCount = inventoryModel.GetAllItems().Count;
         }
 
-        private void DrawPanelWindow(int windowId)
+        private void DrawStatsWindow(int id)
         {
-            var playerModelRef = this.GetModel<PlayerModel>();
-            var inventoryModelRef = this.GetModel<InventoryModel>();
+            GUILayout.BeginVertical();
+            GUILayout.Space(10);
+            
+            var playerModel = this.GetModel<PlayerModel>();
+            var (curExp, maxExp) = playerModel.GetLevelExpProgress(_cachedExp);
+            float expPct = (float)curExp / maxExp;
 
-            // 检查架构是否初始化
-            if (playerModelRef == null || inventoryModelRef == null)
+            Label("等级", _cachedLevel.ToString(), "#FFD700");
+            Label("经验", $"{curExp}/{maxExp} ({expPct:P1})", "#00CED1");
+            Label("体力", $"{_cachedEnergy}/{playerModel.GetMaxEnergy()}", "#FF6347");
+            Label("钻石", _cachedDiamond.ToString(), "#00BFFF");
+            Label("金币", _cachedGold.ToString(), "#FFD700");
+            Label("背包", $"{_cachedItemCount} Items", "#32CD32");
+
+            GUILayout.Space(10);
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(200));
+            var inventoryModel = this.GetModel<InventoryModel>();
+            foreach (var item in inventoryModel.GetAllItems())
             {
-                GUI.Label(new Rect(10, 30, 250, 50), "<color=red>框架未初始化...</color>", _labelStyle);
-                GUI.DragWindow(new Rect(0, 0, _panelRect.width, 25));
-                return;
+                var cfg = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
+                GUILayout.BeginHorizontal("box");
+                GUILayout.Label(cfg?.Name ?? $"Item:{item.ItemId}", GUILayout.Width(120));
+                GUILayout.Label($"x{item.Count}");
+                if (GUILayout.Button("使用", GUILayout.Width(50))) this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
+                GUILayout.EndHorizontal();
             }
+            GUILayout.EndScrollView();
 
-            // 标题栏（扁平风格）
-            GUI.Label(new Rect(0, 0, _panelRect.width, 30), "玩家数据", _titleStyle);
+            if (GUILayout.Button("退出登录", GUILayout.Height(30))) this.SendCommand(new LogoutCommand());
 
-            // 内容区域（留出底部按钮空间）
-            var contentWidth = _panelRect.width - 20;
-            var contentRect = new Rect(10, 35, contentWidth, _panelRect.height - 75);
-            _scrollPosition = GUI.BeginScrollView(contentRect, _scrollPosition, new Rect(0, 0, contentWidth - 20, 350));
-
-            float y = 0;
-            var lineHeight = 22f;
-            var itemWidth = contentWidth - 30;
-
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#FFD700>等级:</color> {_cachedLevel}", _labelStyle);
-            y += lineHeight;
-
-            // 显示当前等级的经验进度
-            var (curExp, maxExp) = playerModelRef.GetLevelExpProgress(_cachedExp);
-            var expPercent = (float)curExp / maxExp * 100;
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#00CED1>经验:</color> {curExp} / {maxExp} ({expPercent:F1}%)", _labelStyle);
-            y += lineHeight;
-
-            GUI.Box(new Rect(0, y, itemWidth, 10), "", _barBgStyle);
-            GUI.Box(new Rect(0, y, itemWidth * expPercent / 100, 10), "", _expBarStyle);
-            y += 15;
-
-            var maxEnergy = playerModelRef.GetMaxEnergy();
-            var energyPercent = (float)_cachedEnergy / maxEnergy * 100;
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#FF6347>体力:</color> {_cachedEnergy} / {maxEnergy}", _labelStyle);
-            y += lineHeight;
-
-            GUI.Box(new Rect(0, y, itemWidth, 10), "", _barBgStyle);
-            GUI.Box(new Rect(0, y, itemWidth * energyPercent / 100, 10), "", _energyBarStyle);
-            y += 20;
-
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#00BFFF>钻石:</color> {_cachedDiamond}", _labelStyle);
-            y += lineHeight;
-
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#FFD700>金币:</color> {_cachedGold}", _labelStyle);
-            y += lineHeight;
-
-            GUI.Label(new Rect(0, y, itemWidth, lineHeight), $"<color=#32CD32>背包:</color> {_cachedItemCount} 格", _labelStyle);
-            y += lineHeight + 10;
-
-            // 物品列表显示
-            var allItems = inventoryModelRef.GetAllItems();
-            if (allItems.Count > 0)
-            {
-                var itemNameWidth = itemWidth - 110;
-                var actionBtnWidth = 50;
-                var itemHeight = 30;
-                foreach (var item in allItems)
-                {
-                    var config = this.GetSystem<IConfigSystem>().Get<ItemConfig>(item.ItemId);
-                    var itemName = config?.Name ?? $"ID:{item.ItemId}";
-                    var displayText = $"{itemName} x{item.Count}";
-
-                    if (GUI.Button(new Rect(0, y, itemNameWidth, itemHeight), displayText, _flatBtnStyle))
-                    {
-                    }
-
-                    if (GUI.Button(new Rect(itemNameWidth + 5, y, actionBtnWidth, itemHeight), "使用", _flatBtnStyle))
-                    {
-                        this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
-                    }
-
-                    if (GUI.Button(new Rect(itemNameWidth + actionBtnWidth + 10, y, actionBtnWidth, itemHeight), "丢弃", _flatBtnStyle))
-                    {
-                        this.SendCommand(new RemoveItemCommand { Uid = item.Uid, Amount = 1 });
-                    }
-
-                    y += itemHeight + 4;
-                }
-            }
-            else
-            {
-                GUI.Label(new Rect(0, y, itemWidth, lineHeight), "<color=gray>背包为空</color>", _labelStyle);
-                y += lineHeight;
-            }
-            y += 10;
-
-            // 操作按钮
-            var btnWidth = itemWidth;
-            var btnHeight2 = 28f;
-
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "添加金币礼包", _flatBtnStyle))
-            {
-                this.SendCommand(new AddItemCommand { ItemId = 1003, Amount = 1 });
-            }
-            y += btnHeight2 + 8;
-
-            if (GUI.Button(new Rect(0, y, btnWidth, btnHeight2), "添加体力药水", _flatBtnStyle))
-            {
-                this.SendCommand(new AddItemCommand { ItemId = 1004, Amount = 1 });
-            }
-            y += btnHeight2 + 8;
-
-            GUI.EndScrollView();
-
-            // 关闭按钮（扁平样式）
-            var closeStyle = new GUIStyle(_flatBtnStyle);
-            closeStyle.fontSize = 14;
-            closeStyle.normal.background = MakeTex(2, 2, new Color(0.3f, 0.3f, 0.3f, 0.5f));
-            closeStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 1f);
-            closeStyle.hover.background = MakeTex(2, 2, new Color(0.9f, 0.2f, 0.2f, 1f));
-            closeStyle.hover.textColor = Color.white;
-            closeStyle.active.background = MakeTex(2, 2, new Color(0.7f, 0.15f, 0.15f, 1f));
-            if (GUI.Button(new Rect(_panelRect.width - 32, 2, 28, 28), "×", closeStyle))
-            {
-                _showPanel = false;
-            }
-
-            // 退出登录按钮（扁平样式，红色警示）
-            var logoutStyle = new GUIStyle(_flatBtnStyle);
-            logoutStyle.normal.background = MakeTex(2, 2, new Color(0.8f, 0.2f, 0.2f, 1f));
-            logoutStyle.hover.background = MakeTex(2, 2, new Color(0.9f, 0.3f, 0.3f, 1f));
-            logoutStyle.active.background = MakeTex(2, 2, new Color(0.7f, 0.15f, 0.15f, 1f));
-            if (GUI.Button(new Rect(10, _panelRect.height - 45, _panelRect.width - 20, 35), "退出登录", logoutStyle))
-            {
-                this.SendCommand(new LogoutCommand());
-                _isDataPanelBound = false;
-            }
-
-            // 使窗口可拖动
-            GUI.DragWindow(new Rect(0, 0, _panelRect.width, 25));
+            GUILayout.EndVertical();
+            GUI.DragWindow();
         }
 
-        private GUIStyle _panelStyle;
-        private GUIStyle _titleStyle;
-        private GUIStyle _labelStyle;
-        private GUIStyle _barBgStyle;
-        private GUIStyle _expBarStyle;
-        private GUIStyle _energyBarStyle;
-        private GUIStyle _closeBtnStyle;
-        private GUIStyle _flatBtnStyle;
-        private GUIStyle _flatTextFieldStyle;
-
-        private void InitGUIStyles()
+        private void Label(string key, string val, string color)
         {
-            _panelStyle = new GUIStyle(GUI.skin.window);
-            _panelStyle.normal.background = MakeTex(280, 200, new Color(0.15f, 0.15f, 0.15f, 0.95f));
-            _panelStyle.active.background = _panelStyle.normal.background;
-
-            _titleStyle = new GUIStyle(GUI.skin.label);
-            _titleStyle.fontSize = 14;
-            _titleStyle.fontStyle = FontStyle.Bold;
-            _titleStyle.normal.textColor = new Color(0.8f, 0.9f, 1f);
-            _titleStyle.alignment = TextAnchor.MiddleCenter;
-
-            _labelStyle = new GUIStyle(GUI.skin.label);
-            _labelStyle.fontSize = 12;
-            _labelStyle.richText = true;
-
-            _barBgStyle = new GUIStyle(GUI.skin.box);
-            _barBgStyle.normal.background = MakeTex(2, 2, new Color(0.2f, 0.2f, 0.2f, 1f));
-
-            _expBarStyle = new GUIStyle(GUI.skin.box);
-            _expBarStyle.normal.background = MakeTex(2, 2, new Color(0.2f, 0.8f, 0.9f, 1f));
-
-            _energyBarStyle = new GUIStyle(GUI.skin.box);
-            _energyBarStyle.normal.background = MakeTex(2, 2, new Color(1f, 0.4f, 0.3f, 1f));
-
-            _closeBtnStyle = new GUIStyle(GUI.skin.button);
-            _closeBtnStyle.fontSize = 16;
-            _closeBtnStyle.fontStyle = FontStyle.Bold;
-            _closeBtnStyle.normal.textColor = Color.red;
-
-            // 扁平按钮样式
-            _flatBtnStyle = new GUIStyle(GUI.skin.button);
-            _flatBtnStyle.fontSize = 13;
-            _flatBtnStyle.fontStyle = FontStyle.Bold;
-            _flatBtnStyle.alignment = TextAnchor.MiddleCenter;
-            _flatBtnStyle.normal.background = MakeTex(2, 2, new Color(0.2f, 0.6f, 1f, 1f));
-            _flatBtnStyle.normal.textColor = Color.white;
-            _flatBtnStyle.hover.background = MakeTex(2, 2, new Color(0.3f, 0.7f, 1f, 1f));
-            _flatBtnStyle.hover.textColor = Color.white;
-            _flatBtnStyle.active.background = MakeTex(2, 2, new Color(0.15f, 0.5f, 0.9f, 1f));
-            _flatBtnStyle.active.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-            _flatBtnStyle.border = new RectOffset(0, 0, 0, 0);
-            _flatBtnStyle.padding = new RectOffset(10, 10, 8, 8);
-
-            // 扁平输入框样式
-            _flatTextFieldStyle = new GUIStyle(GUI.skin.textField);
-            _flatTextFieldStyle.fontSize = 13;
-            _flatTextFieldStyle.normal.background = MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f, 1f));
-            _flatTextFieldStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-            _flatTextFieldStyle.hover.background = MakeTex(2, 2, new Color(0.2f, 0.2f, 0.2f, 1f));
-            _flatTextFieldStyle.hover.textColor = Color.white;
-            _flatTextFieldStyle.focused.background = MakeTex(2, 2, new Color(0.25f, 0.25f, 0.25f, 1f));
-            _flatTextFieldStyle.focused.textColor = Color.white;
-            _flatTextFieldStyle.border = new RectOffset(0, 0, 0, 0);
-            _flatTextFieldStyle.padding = new RectOffset(10, 10, 8, 8);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(key, GUILayout.Width(60));
+            GUILayout.Label($"<color={color}>{val}</color>");
+            GUILayout.EndHorizontal();
         }
 
-        private Texture2D MakeTex(int width, int height, Color col)
+        private string _u = "test", _p = "123";
+        private void DrawLoginBox()
         {
-            Color[] pix = new Color[width * height];
-            for (int i = 0; i < pix.Length; i++) pix[i] = col;
-            Texture2D result = new Texture2D(width, height);
-            result.SetPixels(pix);
-            result.Apply();
-            return result;
+            Rect r = new Rect((Screen.width-200)/2, (Screen.height-150)/2, 200, 150);
+            GUI.Box(r, "测试登录", _windowStyle);
+            _u = GUI.TextField(new Rect(r.x+20, r.y+40, 160, 25), _u);
+            _p = GUI.PasswordField(new Rect(r.x+20, r.y+75, 160, 25), _p, '*');
+            if (GUI.Button(new Rect(r.x+20, r.y+110, 160, 25), "登 录")) this.SendCommand(new LoginCommand { Username = _u, Password = _p });
+        }
+
+        private GUIStyle _windowStyle;
+        private void SetupStyles()
+        {
+            if (_windowStyle != null) return;
+            _windowStyle = new GUIStyle(GUI.skin.window);
+            _windowStyle.richText = true;
         }
 
         #endregion
+
+        public T GetModel<T>() where T : class, IModel => GameArchitecture.Instance.GetModel<T>();
+        public T GetSystem<T>() where T : class, ISystem => GameArchitecture.Instance.GetSystem<T>();
+        public void SendCommand<T>(T command) where T : ICommand => GameArchitecture.Instance.SendCommand(this, command);
+        public void SendEvent<T>(T @event) where T : struct, IEvent => GameArchitecture.Instance.SendEvent(this, @event);
+    }
+
+    // 简易按钮属性
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class ButtonAttribute : System.Attribute {
+        public string Name; public string Category;
+        public ButtonAttribute(string n, string c) { Name = n; Category = c; }
     }
 }

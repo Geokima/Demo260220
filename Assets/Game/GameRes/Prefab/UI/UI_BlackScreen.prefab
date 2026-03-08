@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 9049706903097605535}
   - component: {fileID: 2766165928335922873}
   - component: {fileID: 5310077759802234810}
-  - component: {fileID: 1676155726214041359}
   - component: {fileID: 6830061350792388521}
+  - component: {fileID: 972278844191517953}
   m_Layer: 5
   m_Name: UI_BlackScreen
   m_TagString: Untagged
@@ -80,21 +80,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &1676155726214041359
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 171279442742214170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fc41cb3b40de0b48bdb5fdaf362bd1a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _layer: 5000
-  _isSingleton: 1
-  _fixedOrder: 1
 --- !u!225 &6830061350792388521
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -107,6 +92,21 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &972278844191517953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 171279442742214170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dac010f552b44244a85778cd786c339, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _layer: 2000
+  _isSingleton: 1
+  _fixedOrder: 0
 --- !u!1 &6464018009628596650
 GameObject:
   m_ObjectHideFlags: 0

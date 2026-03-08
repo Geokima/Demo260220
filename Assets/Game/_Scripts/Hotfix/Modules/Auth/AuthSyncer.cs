@@ -30,7 +30,7 @@ namespace Game.Auth
             accountModel.UserId.Value = response.Data.UserId;
             accountModel.Username.Value = response.Data.Username;
 
-            NetworkClient.WsUrl = response.Data.WsUrl;
+            ServerGateway.WsUrl = response.Data.WsUrl;
 
             Debug.Log($"[AuthSyncer] 账户数据已对齐: {response.Data.Username}");
         }

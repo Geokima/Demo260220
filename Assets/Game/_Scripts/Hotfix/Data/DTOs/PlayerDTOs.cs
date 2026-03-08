@@ -1,4 +1,5 @@
 using System;
+using Game.Base;
 using Newtonsoft.Json;
 
 namespace Game.DTOs

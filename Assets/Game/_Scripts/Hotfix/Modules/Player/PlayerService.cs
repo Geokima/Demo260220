@@ -66,7 +66,7 @@ namespace Game.Player
         {
             Debug.Log("[PlayerService] Starting Login Flow...");
 
-            bool wsConnected = await NetworkClient.ConnectWsAsync();
+            bool wsConnected = await ServerGateway.ConnectWsAsync();
             if (wsConnected)
             {
                 await SendBindTokenAsync();
@@ -88,7 +88,7 @@ namespace Game.Player
 
             Debug.Log("[PlayerService] Sending WS BindToken...");
 
-            NetworkClient.SendWsMessage(NetworkMsgType.BindToken, new { token = accountModel.Token.Value });
+            ServerGateway.SendWsMessage(NetworkMsgType.BindToken, new { token = accountModel.Token.Value });
             await UniTask.Yield();
         }
 
@@ -103,7 +103,7 @@ namespace Game.Player
 
         private async UniTask<PlayerResponse> GetResourcesInternalAsync()
         {
-            var response = await NetworkClient.PostAsync<PlayerResponse>("/resource/get");
+            var response = await ServerGateway.PostAsync<PlayerResponse>("/resource/get");
             return response;
         }
 

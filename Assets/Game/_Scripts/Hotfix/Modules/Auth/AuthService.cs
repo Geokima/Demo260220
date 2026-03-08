@@ -34,7 +34,7 @@ namespace Game.Auth
             try
             {
                 // 1. 发起网络请求 (通过重构后的 NetworkClient)
-                var response = await NetworkClient.PostAsync<LoginRequest, LoginResponse>("/login",
+                var response = await ServerGateway.PostAsync<LoginRequest, LoginResponse>("/login",
                     new LoginRequest { Username = username, Password = password });
 
                 if (response == null)
@@ -100,7 +100,7 @@ namespace Game.Auth
 
             try
             {
-                var response = await NetworkClient.PostAsync<RegisterRequest, RegisterResponse>("/register",
+                var response = await ServerGateway.PostAsync<RegisterRequest, RegisterResponse>("/register",
                     new RegisterRequest { Username = username, Password = password });
 
                 if (response == null)
@@ -148,8 +148,8 @@ namespace Game.Auth
                 Debug.Log("[AuthService] Sending logout request to server...");
                 try
                 {
-                    await NetworkClient.PostAsync<LogoutRequest, object>("/logout", new LogoutRequest { Token = token });
-                    NetworkClient.DisconnectWs();
+                    await ServerGateway.PostAsync<LogoutRequest, object>("/logout", new LogoutRequest { Token = token });
+                    ServerGateway.DisconnectWs();
                 }
                 catch (System.Exception ex)
                 {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Framework;
 using Framework.Modules.Config;
 using Game.Auth;
@@ -15,25 +16,21 @@ namespace Game.Tests
     {
         public IArchitecture Architecture { get; set; } = GameArchitecture.Instance;
 
-        private Rect _panelRect = new Rect(600, 100, 400, 500);
+        private Rect _panelRect = new Rect(600, 100, 420, 550);
         private bool _showPanel = true;
-        private int _currentTab = 0;
-        private string[] _tabs = { "固定商店", "随机商店" };
+        private int _currentTabIndex = 0;
+        private List<string> _allShopTypes = new List<string>();
 
         private GUIStyle _panelStyle;
         private GUIStyle _titleStyle;
         private GUIStyle _flatBtnStyle;
+        private GUIStyle _labelStyle;
         private bool _initialized;
         private Vector2 _scrollPosition;
 
-        private ShopListData _fixedShopData;
-        private ShopListData _randomShopData;
-        private string _pendingMsg = "";
+        private Dictionary<string, ShopListData> _shopCache = new Dictionary<string, ShopListData>();
         private string _lastMsg = "";
         private bool _isLoading = false;
-        private string _pendingLoadShopType = null;
-        private string _pendingRefreshShopType = null;
-        private int _pendingBuyShopItemId = 0;
 
         private void Awake()
         {
@@ -45,23 +42,30 @@ namespace Game.Tests
             _panelStyle = new GUIStyle(GUI.skin.window)
             {
                 fontSize = 14,
-                normal = { background = CreateTex(400, 500, new Color(0.12f, 0.12f, 0.15f, 0.95f)) }
+                normal = { background = CreateTex(420, 550, new Color(0.12f, 0.12f, 0.15f, 0.95f)) }
             };
 
             _titleStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 16,
                 fontStyle = FontStyle.Bold,
-                normal = { textColor = Color.white },
+                normal = { textColor = Color.cyan },
                 alignment = TextAnchor.MiddleCenter
+            };
+
+            _labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                richText = true,
+                normal = { textColor = Color.white }
             };
 
             _flatBtnStyle = new GUIStyle(GUI.skin.button)
             {
                 fontSize = 12,
-                normal = { background = CreateTex(2, 2, new Color(0.25f, 0.4f, 0.55f, 1f)) },
-                hover = { background = CreateTex(2, 2, new Color(0.35f, 0.5f, 0.65f, 1f)) },
-                active = { background = CreateTex(2, 2, new Color(0.2f, 0.35f, 0.5f, 1f)) }
+                normal = { background = CreateTex(2, 2, new Color(0.2f, 0.35f, 0.5f, 1f)), textColor = Color.white },
+                hover = { background = CreateTex(2, 2, new Color(0.3f, 0.45f, 0.6f, 1f)) },
+                active = { background = CreateTex(2, 2, new Color(0.15f, 0.3f, 0.45f, 1f)) }
             };
 
             _initialized = true;
@@ -86,30 +90,27 @@ namespace Game.Tests
             if (Input.GetKeyDown(KeyCode.F2))
             {
                 _showPanel = !_showPanel;
+                if (_showPanel) RefreshAvailableShopTypes();
             }
-
-            ProcessPendingActions();
         }
 
-        private void ProcessPendingActions()
+        private void RefreshAvailableShopTypes()
         {
-            if (_pendingLoadShopType != null)
+            try
             {
-                var shopType = _pendingLoadShopType;
-                _pendingLoadShopType = null;
-                LoadShopInternal(shopType);
+                var configSystem = this.GetSystem<IConfigSystem>();
+                var allConfigs = configSystem?.GetSheet<ShopItemConfig>()?.All();
+                if (allConfigs != null)
+                {
+                    _allShopTypes = allConfigs.Select(c => c.ShopType).Distinct().ToList();
+                }
             }
-            else if (_pendingRefreshShopType != null)
+            catch { }
+
+            if (_allShopTypes.Count == 0)
             {
-                var shopType = _pendingRefreshShopType;
-                _pendingRefreshShopType = null;
-                RefreshShopInternal(shopType);
-            }
-            else if (_pendingBuyShopItemId > 0)
-            {
-                var shopItemId = _pendingBuyShopItemId;
-                _pendingBuyShopItemId = 0;
-                BuyItemInternal(shopItemId);
+                _allShopTypes.Add(ShopType.Fixed);
+                _allShopTypes.Add(ShopType.Random);
             }
         }
 
@@ -132,94 +133,107 @@ namespace Game.Tests
         private void DrawShopWindow(int windowId)
         {
             GUILayout.BeginVertical();
-            GUILayout.Label("商店系统 (F2开关)", _titleStyle);
+            GUILayout.Label("商店系统 (F2开关 | 全类适配)", _titleStyle);
             GUILayout.Space(5);
 
-            _currentTab = GUILayout.SelectionGrid(_currentTab, _tabs, 2, _flatBtnStyle);
-            GUILayout.Space(5);
-
-            var shopType = _currentTab == 0 ? ShopType.Fixed : ShopType.Random;
-            var shopData = _currentTab == 0 ? _fixedShopData : _randomShopData;
-
-            if (shopData == null)
+            if (_allShopTypes.Count > 0)
             {
-                if (GUILayout.Button("加载商店", _flatBtnStyle, GUILayout.Height(30)))
+                _currentTabIndex = GUILayout.SelectionGrid(_currentTabIndex, _allShopTypes.ToArray(), 3, _flatBtnStyle);
+            }
+
+            if (_currentTabIndex >= _allShopTypes.Count) _currentTabIndex = 0;
+            string currentType = _allShopTypes.Count > 0 ? _allShopTypes[_currentTabIndex] : ShopType.Fixed;
+
+            GUILayout.Space(10);
+            
+            ShopListData currentData = _shopCache.GetValueOrDefault(currentType);
+
+            if (currentData == null)
+            {
+                if (GUILayout.Button($"加载 [{currentType}] 商店", _flatBtnStyle, GUILayout.Height(35)))
                 {
-                    _pendingLoadShopType = shopType;
+                    LoadShopInternal(currentType);
                 }
             }
             else
             {
-                GUILayout.Label($"<color=#FFD700>刷新次数: {shopData.RefreshCount}/{shopData.MaxRefreshCount}</color>");
-                if (shopType == ShopType.Random && shopData.CanRefresh)
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"<color=#FFD700>刷新: {currentData.RefreshCount}/{currentData.MaxRefreshCount}</color>", _labelStyle);
+                GUILayout.FlexibleSpace();
+                if (currentType == ShopType.Random && currentData.CanRefresh)
                 {
-                    if (GUILayout.Button("刷新随机商店", _flatBtnStyle, GUILayout.Height(30)))
+                    if (GUILayout.Button("手动刷新", _flatBtnStyle, GUILayout.Width(80)))
                     {
-                        _pendingRefreshShopType = shopType;
+                        RefreshShopInternal(currentType);
                     }
                 }
+                if (GUILayout.Button("强制刷新列表", _flatBtnStyle, GUILayout.Width(100)))
+                {
+                    LoadShopInternal(currentType);
+                }
+                GUILayout.EndHorizontal();
+
                 GUILayout.Space(5);
 
                 _scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
 
-                foreach (var item in shopData.Items)
+                foreach (var item in currentData.Items)
                 {
                     GUILayout.BeginVertical("box");
 
-                    var discountStr = item.Discount < 1f ? $"<color=red>[{item.Discount:P0}]</color> " : "";
+                    var discountStr = item.Discount < 1f ? $"<color=red>[{item.Discount * 10:F1}折]</color> " : "";
                     var itemName = GetItemName(item.ItemId);
-                    GUILayout.Label($"<color=yellow>{discountStr}{itemName} x{item.ItemCount}</color>");
-                    GUILayout.Label($"<color=white>价格: {item.PriceType} {item.Price}</color>");
+                    GUILayout.Label($"<color=white>{discountStr}</color><color=yellow>{itemName}</color> <color=white>x{item.ItemCount}</color>", _labelStyle);
+                    
+                    var priceColor = item.PriceType == CurrencyType.Gold ? "#FFD700" : "#00BFFF";
+                    GUILayout.Label($"价格: <color={priceColor}>{item.PriceType} {item.Price}</color>", _labelStyle);
 
                     if (item.OriginalPrice > item.Price)
                     {
-                        GUILayout.Label($"<color=gray><s>原价: {item.OriginalPrice}</s></color>");
+                        GUILayout.Label($"<color=gray><s>原价: {item.OriginalPrice}</s></color>", _labelStyle);
                     }
 
-                    var limitStr = item.LimitCount > 0 ? $" 限购{item.LimitCount}" : "";
-                    GUILayout.Label($"<color=gray>已购: {item.PurchasedCount}{limitStr}</color>");
+                    var limitStr = item.LimitCount > 0 ? $" / {item.LimitCount}" : " (不限)";
+                    GUILayout.Label($"限购: <color=#32CD32>{item.PurchasedCount}</color>{limitStr}", _labelStyle);
 
                     GUILayout.BeginHorizontal();
                     if (item.CanBuy)
                     {
-                        if (GUILayout.Button("购买", _flatBtnStyle, GUILayout.Width(100)))
+                        if (GUILayout.Button("购买", _flatBtnStyle, GUILayout.Width(100), GUILayout.Height(25)))
                         {
-                            _pendingBuyShopItemId = item.ShopItemId;
+                            BuyItemInternal(item.ShopItemId, currentType);
                         }
                     }
                     else
                     {
-                        GUILayout.Label("<color=red>不可购买</color>");
+                        GUI.enabled = false;
+                        GUILayout.Button("售罄/上限", GUILayout.Width(100), GUILayout.Height(25));
+                        GUI.enabled = true;
                     }
                     GUILayout.EndHorizontal();
 
                     GUILayout.EndVertical();
-                    GUILayout.Space(5);
+                    GUILayout.Space(3);
                 }
 
                 GUILayout.EndScrollView();
-
-                if (GUILayout.Button("刷新商店", _flatBtnStyle, GUILayout.Height(30)))
-                {
-                    _pendingLoadShopType = shopType;
-                }
             }
 
             if (!string.IsNullOrEmpty(_lastMsg))
             {
                 GUILayout.Space(5);
-                GUILayout.Label(_lastMsg);
+                GUILayout.Label(_lastMsg, _labelStyle);
             }
 
             GUILayout.EndVertical();
-
             GUI.DragWindow(new Rect(0, 0, _panelRect.width, 25));
         }
 
         private async void LoadShopInternal(string shopType)
         {
+            if (_isLoading) return;
             _isLoading = true;
-            _lastMsg = "加载中...";
+            _lastMsg = "<color=gray>正在获取网络数据...</color>";
 
             try
             {
@@ -228,16 +242,12 @@ namespace Game.Tests
 
                 if (resp.Code == 0)
                 {
-                    if (shopType == ShopType.Fixed)
-                        _fixedShopData = resp.Data;
-                    else
-                        _randomShopData = resp.Data;
-
-                    _lastMsg = "<color=green>加载成功</color>";
+                    _shopCache[shopType] = resp.Data;
+                    _lastMsg = $"<color=green>加载 [{shopType}] 成功</color>";
                 }
                 else
                 {
-                    _lastMsg = $"<color=red>加载失败: {resp.Msg}</color>";
+                    _lastMsg = $"<color=red>错误: {resp.Msg}</color>";
                 }
             }
             catch (System.Exception e)
@@ -252,8 +262,9 @@ namespace Game.Tests
 
         private async void RefreshShopInternal(string shopType)
         {
+            if (_isLoading) return;
             _isLoading = true;
-            _lastMsg = "刷新中...";
+            _lastMsg = "<color=gray>正在请求刷新...</color>";
 
             try
             {
@@ -262,12 +273,8 @@ namespace Game.Tests
 
                 if (resp.Code == 0)
                 {
-                    if (shopType == ShopType.Fixed)
-                        _fixedShopData = resp.Data;
-                    else
-                        _randomShopData = resp.Data;
-
-                    _lastMsg = "<color=green>刷新成功</color>";
+                    _shopCache[shopType] = resp.Data;
+                    _lastMsg = "<color=green>随机商店刷新完毕</color>";
                 }
                 else
                 {
@@ -284,24 +291,11 @@ namespace Game.Tests
             }
         }
 
-        private string GetItemName(int itemId)
+        private async void BuyItemInternal(int shopItemId, string currentShopType)
         {
-            try
-            {
-                var configSystem = this.GetSystem<IConfigSystem>();
-                var itemConfig = configSystem?.Get<ItemConfig>(itemId);
-                return itemConfig?.Name ?? $"物品{itemId}";
-            }
-            catch
-            {
-                return $"物品{itemId}";
-            }
-        }
-
-        private async void BuyItemInternal(int shopItemId)
-        {
+            if (_isLoading) return;
             _isLoading = true;
-            _lastMsg = "购买中...";
+            _lastMsg = "<color=gray>购买处理中...</color>";
 
             try
             {
@@ -310,9 +304,10 @@ namespace Game.Tests
 
                 if (resp.Code == 0)
                 {
-                    _lastMsg = "<color=green>购买成功</color>";
-                    var shopType = _currentTab == 0 ? ShopType.Fixed : ShopType.Random;
-                    _pendingLoadShopType = shopType;
+                    _lastMsg = "<color=green>购买成功！</color>";
+                    // 推送会自动更新模型，但测试面板通常需要立即同步 DTO 状态
+                    if (resp.Data.ShopSync != null)
+                        _shopCache[currentShopType] = resp.Data.ShopSync;
                 }
                 else
                 {
@@ -321,7 +316,7 @@ namespace Game.Tests
             }
             catch (System.Exception e)
             {
-                _lastMsg = $"<color=red>异常: {e.Message}</color>";
+                _lastMsg = $"<color=red>系统异常: {e.Message}</color>";
             }
             finally
             {
@@ -329,9 +324,21 @@ namespace Game.Tests
             }
         }
 
+        private string GetItemName(int itemId)
+        {
+            try
+            {
+                var configSystem = this.GetSystem<IConfigSystem>();
+                var itemConfig = configSystem?.Get<ItemConfig>(itemId);
+                return itemConfig?.Name ?? $"ID:{itemId}";
+            }
+            catch
+            {
+                return $"ID:{itemId}";
+            }
+        }
+
         public T GetModel<T>() where T : class, IModel => GameArchitecture.Instance.GetModel<T>();
         public T GetSystem<T>() where T : class, ISystem => GameArchitecture.Instance.GetSystem<T>();
-        public void SendCommand<T>(T command) where T : ICommand => GameArchitecture.Instance.SendCommand(this, command);
-        public void SendEvent<T>(T @event) where T : struct, IEvent => GameArchitecture.Instance.SendEvent(this, @event);
     }
 }

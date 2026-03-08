@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Base;
 using Newtonsoft.Json;
 
 namespace Game.DTOs

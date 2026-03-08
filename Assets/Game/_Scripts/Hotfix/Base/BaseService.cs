@@ -8,7 +8,7 @@ namespace Game.Base
     /// </summary>
     public abstract class BaseService : AbstractSystem
     {
-        protected IServerGateway NetworkClient => this.GetSystem<IServerGateway>();
+        protected IServerGateway ServerGateway => this.GetSystem<IServerGateway>();
 
         /// <summary>
         /// 获取指定类型的 Syncer

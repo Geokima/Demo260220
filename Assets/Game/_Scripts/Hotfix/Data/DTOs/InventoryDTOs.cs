@@ -1,11 +1,27 @@
 using System;
 using System.Collections.Generic;
+using Game.Base;
 using Newtonsoft.Json;
+using UnityEngine.Serialization;
 
 namespace Game.DTOs
 {
     #region Item
 
+    [Serializable]
+    public class ObtainItem
+    {
+        [JsonProperty("type")]
+        public string Type; // item / currency / product??
+        [JsonProperty("itemId")]
+        public int ItemId;      // 101, 2001...
+        [JsonProperty("count")]
+        public int Count;
+
+        [JsonProperty("expireTime")]
+        public long ExpireTime;
+    }
+    
     [Serializable]
     public class ItemData
     {
@@ -17,6 +33,9 @@ namespace Game.DTOs
 
         [JsonProperty("count")]
         public int Count;
+
+        [JsonProperty("expireTime")]
+        public long ExpireTime;
     }
 
     [Serializable]
@@ -40,7 +59,7 @@ namespace Game.DTOs
         DROP = 2,       // 掉落获得
         USE = 3,        // 使用消耗
         BUY = 4,        // 购买获得
-        TASK = 5,       // 任务奖励
+        MISSION = 5,    // 任务奖励
         MAIL = 6        // 邮件奖励
     }
 
@@ -84,7 +103,7 @@ namespace Game.DTOs
     #region UseItem
 
     [Serializable]
-    public class UseItemRequest
+    public class UseItemRequest : BaseRequest
     {
         [JsonProperty("uid")]
         public string Uid;
@@ -103,7 +122,7 @@ namespace Game.DTOs
     #region AddItem
 
     [Serializable]
-    public class AddItemRequest
+    public class AddItemRequest : BaseRequest
     {
         [JsonProperty("itemId")]
         public int ItemId;
@@ -117,7 +136,7 @@ namespace Game.DTOs
     #region RemoveItem
 
     [Serializable]
-    public class RemoveItemRequest
+    public class RemoveItemRequest : BaseRequest
     {
         [JsonProperty("uid")]
         public string Uid;
