@@ -32,53 +32,27 @@ namespace Game.Effect
 
             Register("AddGold", (p) =>
             {
-                if (int.TryParse(p.GetValueOrDefault("gold", "0"), out var gold) && gold > 0)
-                {
-                    var playerModel = this.GetModel<PlayerModel>();
-                    playerModel.Gold.Value += gold;
-                    Debug.Log($"[EffectSystem] 增加金币: {gold}, 当前金币: {playerModel.Gold.Value}");
-                }
+                Debug.Log($"[EffectSystem] <color=yellow>表现：飞金币特效</color>");
             });
 
             Register("AddEnergy", (p) =>
             {
-                if (int.TryParse(p.GetValueOrDefault("energy", "0"), out var energy) && energy > 0)
-                {
-                    var playerModel = this.GetModel<PlayerModel>();
-                    int maxEnergy = playerModel.GetMaxEnergy();
-                    playerModel.Energy.Value = Mathf.Min(playerModel.Energy.Value + energy, maxEnergy);
-                    Debug.Log($"[EffectSystem] 恢复体力: {energy}, 当前体力: {playerModel.Energy.Value}/{maxEnergy}");
-                }
-            });
-
-            Register("SpendEnergy", (p) =>
-            {
-                if (int.TryParse(p.GetValueOrDefault("energy", "0"), out var energy) && energy > 0)
-                {
-                    var playerModel = this.GetModel<PlayerModel>();
-                    playerModel.Energy.Value = Mathf.Max(playerModel.Energy.Value - energy, 0);
-                    Debug.Log($"[EffectSystem] 消耗体力: {energy}, 当前体力: {playerModel.Energy.Value}");
-                }
-            });
-
-            Register("SpendGold", (p) =>
-            {
-                if (int.TryParse(p.GetValueOrDefault("gold", "0"), out var gold) && gold > 0)
-                {
-                    var playerModel = this.GetModel<PlayerModel>();
-                    playerModel.Gold.Value = Mathf.Max(playerModel.Gold.Value - gold, 0);
-                    Debug.Log($"[EffectSystem] 消耗金币: {gold}, 当前金币: {playerModel.Gold.Value}");
-                }
+                Debug.Log($"[EffectSystem] <color=orange>表现：心跳恢复特效</color>");
             });
 
             Register("AddExp", (p) =>
             {
-                if (int.TryParse(p.GetValueOrDefault("exp", "0"), out var exp) && exp > 0)
-                {
-                    var playerModel = this.GetModel<PlayerModel>();
-                    playerModel.Exp.Value += exp;
-                    Debug.Log($"[EffectSystem] 增加经验: {exp}, 当前经验: {playerModel.Exp.Value}");
-                }
+                Debug.Log($"[EffectSystem] <color=cyan>表现：经验条上涨特效</color>");
+            });
+
+            Register("SpendEnergy", (p) =>
+            {
+                Debug.Log($"[EffectSystem] <color=red>表现：体力减少特效</color>");
+            });
+
+            Register("SpendGold", (p) =>
+            {
+                Debug.Log($"[EffectSystem] <color=red>表现：金币减少特效</color>");
             });
         }
 
@@ -97,9 +71,12 @@ namespace Game.Effect
             }
 
             var configParams = JsonConvert.DeserializeObject<Dictionary<string, string>>(config.Params ?? "{}");
-            foreach (var kv in serverParams)
+            if (serverParams != null)
             {
-                configParams[kv.Key] = kv.Value;
+                foreach (var kv in serverParams)
+                {
+                    configParams[kv.Key] = kv.Value;
+                }
             }
 
             if (_handlers.TryGetValue(config.Type, out var handler))

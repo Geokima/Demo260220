@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using Framework;
 
 namespace Game.Mail
@@ -6,7 +7,7 @@ namespace Game.Mail
     {
         public override void Execute(object sender)
         {
-            this.GetSystem<MailService>().RequestGetMailList();
+            this.GetSystem<MailService>().RequestGetMailList().Forget();
         }
     }
 

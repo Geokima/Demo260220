@@ -127,12 +127,14 @@ namespace Game.Inventory
             if (response != null && response.Code == 0)
             {
                 Debug.Log($"[InventoryService] 物品使用成功: {uid}");
-                if (response.Data != null && response.Data.Count > 0)
+                if (response.Data?.Effects != null)
                 {
-                    foreach (var effect in response.Data)
+                    foreach (var effect in response.Data.Effects)
                         this.GetSystem<EffectSystem>().Execute(effect.EffectId, effect.Params);
                 }
-                this.SendEvent(new ItemUsedEvent { Uid = uid, Amount = amount, Effects = response.Data });
+                
+                // 暂时兼容旧事件，如果需要的话可以重构事件类
+                this.SendEvent(new ItemUsedEvent { Uid = uid, Amount = amount, Effects = response.Data.Effects });
             }
             else
             {

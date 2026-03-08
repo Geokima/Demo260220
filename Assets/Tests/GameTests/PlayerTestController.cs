@@ -174,7 +174,13 @@ namespace Game.Tests
                 GUILayout.BeginHorizontal("box");
                 GUILayout.Label(cfg?.Name ?? $"Item:{item.ItemId}", GUILayout.Width(120));
                 GUILayout.Label($"x{item.Count}");
-                if (GUILayout.Button("使用", GUILayout.Width(50))) this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
+                
+                // 只有类型为消耗品时才显示使用按钮
+                if (cfg != null && cfg.Type == "Consumable")
+                {
+                    if (GUILayout.Button("使用", GUILayout.Width(50))) this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
+                }
+                
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndScrollView();

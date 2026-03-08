@@ -198,12 +198,6 @@ namespace Game.Gateways
             return true;
         }
 
-        public bool UseItem(int userId, string uid, int count, out ItemData updatedItem, out List<ItemEffect> effects)
-        {
-            effects = new List<ItemEffect>();
-            bool success = RemoveItem(userId, uid, count, out updatedItem, out _);
-            return success;
-        }
         #endregion
 
         #region Mail
@@ -278,7 +272,7 @@ namespace Game.Gateways
                 }
                 else
                 {
-                    if (AddItem(userId, reward.ItemId, reward.Count, out var item, out _, reward.ExpireTime))
+                    if (AddItem(userId, reward.ItemId, reward.Count, out var item, out _))
                     {
                         result.RealChangedItems.Add(item);
                         result.ObtainedItems.Add(reward);

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Game.Base;
 using Game.Consts;
 using Game.DTOs;
+using Game.Config;
+using System.Linq;
 using UnityEngine;
 
 namespace Game.Gateways
@@ -94,31 +96,53 @@ namespace Game.Gateways
 
         public static UseItemResponse HandleUseItem(ServerContext ctx, UseItemRequest req)
         {
-            if (req == null || string.IsNullOrEmpty(req.Uid))
+            if (req == null || string.IsNullOrEmpty(req.Uid) || req.Amount <= 0)
                 return new UseItemResponse { Code = (int)ErrorCode.InvalidParams, Msg = "请求无效" };
 
-            ctx.Db.UseItem(ctx.UserId, req.Uid, req.Amount, out var updatedItem, out var effects);
+            // 1. 基础校验
+            var inventory = ctx.Db.GetInventory(ctx.UserId);
+            var itemData = inventory.Items?.ToList().Find(i => i.Uid == req.Uid);
+            if (itemData == null)
+                return new UseItemResponse { Code = (int)ErrorCode.ItemNotFound, Msg = "物品不存在" };
+
+            var config = ctx.Configs.Get<ItemConfig>(itemData.ItemId);
+            if (config == null || config.Type != "Consumable") 
+                return new UseItemResponse { Code = (int)ErrorCode.Failed, Msg = "该物品不可使用" };
+
+            // 2. 扣除消耗
+            if (!ctx.Db.RemoveItem(ctx.UserId, req.Uid, req.Amount, out var updatedItem, out _))
+                return new UseItemResponse { Code = (int)ErrorCode.ItemCountInsufficient, Msg = "物品数量不足" };
+
             ctx.Db.IncrementInventoryRevision(ctx.UserId);
+
+            // 3. 执行效果（由处理器负责修改数据库并产生奖励）
+            EffectProcessor.Execute(ctx, config.EffectId, req.Amount, req.Params, out var obtainedItems, out var playerChanged);
+
+            // 4. 下发同步包
+            if (playerChanged)
+            {
+                var player = ctx.Db.GetPlayer(ctx.UserId);
+                ctx.DirectPushAction?.Invoke(ctx.UserId, NetworkMsgType.PlayerSync, player);
+            }
 
             var syncData = new InventorySyncData
             {
                 ChangedItems = updatedItem != null ? new List<ItemData> { updatedItem } : null,
-                RemovedUids = (updatedItem == null && string.IsNullOrEmpty(req.Uid) == false) ? new List<string> { req.Uid } : null, // 修正此处逻辑
+                RemovedUids = updatedItem == null ? new List<string> { req.Uid } : null,
                 Reason = InventorySyncReason.USE,
                 Revision = ctx.Db.GetInventory(ctx.UserId).Revision
             };
-            
-            // 如果物品扣完了，uid 记得放入 RemovedUids
-            if (updatedItem == null) 
-                syncData.RemovedUids = new List<string> { req.Uid };
-            
             ctx.DirectPushAction?.Invoke(ctx.UserId, NetworkMsgType.InventoryUpdate, syncData);
 
             return new UseItemResponse
             {
                 Code = 0,
                 Msg = "Success",
-                Data = effects
+                Data = new UseItemResponseData
+                {
+                    ObtainedItems = obtainedItems,
+                    Effects = new List<ItemEffect> { new ItemEffect { EffectId = config.EffectId, Params = req.Params } }
+                }
             };
         }
     }

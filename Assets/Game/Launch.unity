@@ -310,7 +310,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -597,12 +597,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1009298423}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1038354990}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1038354988
 GameObject:
@@ -634,6 +634,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1009298425}
   - {fileID: 1493402745}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -895,9 +896,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1835507678}
   - component: {fileID: 1835507680}
-  - component: {fileID: 1835507679}
   - component: {fileID: 1835507681}
   - component: {fileID: 1835507682}
+  - component: {fileID: 1835507685}
   - component: {fileID: 1835507683}
   - component: {fileID: 1835507684}
   m_Layer: 0
@@ -922,18 +923,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1835507679
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1835507676}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58438b85426644c78842b5be783dd658, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1835507680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -998,6 +987,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd2b88d00b1b9bd4f93a297cbec7cf23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1835507685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1835507676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 020719db21f02e546af9512e6df82297, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1841401271
@@ -1373,4 +1374,3 @@ SceneRoots:
   - {fileID: 1841401274}
   - {fileID: 1038354990}
   - {fileID: 1835507678}
-  - {fileID: 1009298425}

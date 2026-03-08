@@ -20,7 +20,7 @@ namespace Game.Gateways
     {
         #region Fields
 
-        private const float MAIL_TEST_INTERVAL = 30f;
+        private const float MAIL_TEST_INTERVAL = 10f;
         private LocalDatabase _database;
         private IConfigSystem _configSystem;
         
@@ -87,6 +87,9 @@ namespace Game.Gateways
             ctx.Db.CheckAllStatusReset(userId);
 
             // 2. 路由分发 (转发至各业务控制器)
+            var tokenStr = (request is BaseRequest br) ? br.Token : "N/A";
+            Debug.Log($"[LocalServerGateway] <color=cyan>Request -> {path}</color> | User: {userId} | Token: {tokenStr}");
+            
             object result = path switch
             {
                 // Auth
