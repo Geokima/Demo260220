@@ -8,8 +8,6 @@ using Framework.Modules.Res;
 using Framework.Modules.Scene;
 using Framework.Modules.Timer;
 using Framework.Modules.UI;
-using Framework.Unity.Runtime;
-using UnityEngine;
 
 namespace Game
 {

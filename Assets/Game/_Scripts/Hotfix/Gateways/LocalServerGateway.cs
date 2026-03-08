@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Config;
@@ -8,10 +7,7 @@ using Framework.Modules.Network;
 using Framework.Modules.Timer;
 using Game.Auth;
 using Game.Base;
-using Game.Consts;
-using Game.Config;
 using Game.DTOs;
-using Game.Gateways;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -42,6 +38,7 @@ namespace Game.Gateways
         public override void Init()
         {
             _database = new LocalDatabase();
+            // TODO 有空剥离框架配置加载器
             _configSystem = this.GetSystem<IConfigSystem>();
             _database.Init(_configSystem);
         }
@@ -126,7 +123,7 @@ namespace Game.Gateways
             };
 
             Debug.Log($"[LocalServerGateway] Route: {path} | User: {userId}");
-            await UniTask.Delay(10);
+            await UniTask.CompletedTask;
             return result as TResponse;
         }
 

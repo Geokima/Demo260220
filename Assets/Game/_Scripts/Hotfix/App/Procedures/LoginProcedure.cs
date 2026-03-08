@@ -1,9 +1,7 @@
 using Framework.Modules.Procedure;
 using Framework.Modules.Scene;
 using Framework.Modules.UI;
-using Game.Auth;
 using Game.Scene;
-using UnityEngine;
 
 namespace Game.Procedures
 {

@@ -8,9 +8,7 @@ using System.Collections.Generic;
 
 namespace Game.Inventory
 {
-    /// <summary>
-    /// 背包同步器 - 负责接收服务器推送的数据差异包并同步到模型
-    /// </summary>
+    /// <summary> 背包同步器 - 负责接收服务器推送的数据差异包并同步到模型 </summary>
     public class InventorySyncer : BaseSyncer
     {
         public override void Init()
@@ -20,9 +18,7 @@ namespace Game.Inventory
             RegisterWsHandler(NetworkMsgType.InventoryUpdate, OnInventorySyncReceived);
         }
 
-        /// <summary>
-        /// 登录或重连成功后，同步全量背包响应包
-        /// </summary>
+        /// <summary> 登录或重连成功后，同步全量背包响应包 </summary>
         public void SyncGetInventoryResponse(GetInventoryResponse response)
         {
             if (response == null || response.Code != 0 || response.Data == null) return;
@@ -42,9 +38,7 @@ namespace Game.Inventory
             }
         }
 
-        /// <summary>
-        /// 处理操作后的增量同步响应
-        /// </summary>
+        /// <summary> 处理操作后的增量同步响应 </summary>
         public void SyncInventoryResponse(InventoryResponse response)
         {
             if (response == null || response.Code != 0 || response.Data == null) return;
@@ -53,22 +47,18 @@ namespace Game.Inventory
             UpdateInventoryWithSyncData(response.Data);
         }
 
-        /// <summary>
-        /// 收到服务器推送的 Json 包逻辑
-        /// </summary>
+        /// <summary> 收到服务器推送的 Json 包逻辑 </summary>
         private void OnInventorySyncReceived(JToken data)
         {
-            Debug.Log($"[InventorySync] 收到增量同步包: {data}");
             var syncData = data.ToObject<InventorySyncData>();
             if (syncData != null)
             {
+                Debug.Log($"[InventorySync] 收到推送增量同步包. Reason: {syncData.Reason}, Rev: {syncData.Revision}");
                 UpdateInventoryWithSyncData(syncData);
             }
         }
 
-        /// <summary>
-        /// 驱动 Model 更新并分发全局同步事件
-        /// </summary>
+        /// <summary> 驱动 Model 更新并分发全局同步事件 </summary>
         private void UpdateInventoryWithSyncData(InventorySyncData syncData)
         {
             // 1. 让 Model 按照"真相绝对值"对齐数据 (O(1) 性能，只更新变动的格子)

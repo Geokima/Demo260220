@@ -5,6 +5,7 @@ using Framework;
 using Framework.Modules.Http;
 using Framework.Modules.Network;
 using Game.Auth;
+using Game.Base;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;

@@ -80,7 +80,8 @@ crashlytics-build.properties
 # VSCode Extensions
 /.VSCodeCounter
 /.codebuddy
-/.agent
+/.agent/
+.db/
 
 # YooAsset
 /Bundles

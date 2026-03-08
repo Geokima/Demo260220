@@ -39,7 +39,10 @@ namespace Game.Gateways
 
         public LocalDatabase()
         {
-            _savePath = Path.Combine(Application.persistentDataPath, "local_db.json");
+            // 将存档存放在项目目录下的 .db 文件夹中，方便查阅和排除 AppData 路径干扰
+            var dbDir = Path.Combine(Directory.GetCurrentDirectory(), ".db");
+            if (!Directory.Exists(dbDir)) Directory.CreateDirectory(dbDir);
+            _savePath = Path.Combine(dbDir, "local_db.json");
         }
 
         public void Init(IConfigSystem configSystem)
