@@ -271,7 +271,7 @@ namespace Framework
 
     public static class IEventReceiverExtensions
     {
-        public static void RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
+        public static IUnregister RegisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
             self.Architecture.RegisterEvent(onEvent);
 
         public static void UnregisterEvent<T>(this IEventReceiver self, Action<T> onEvent) where T : new() =>
@@ -794,3 +794,41 @@ namespace Framework
 
     #endregion
 }
+#if UNITY_2017_1_OR_NEWER
+namespace Framework
+{
+    using UnityEngine;
+
+    public static class UnRegisterExtension
+    {
+        public static IUnregister UnRegisterWhenGameObjectDestroyed(this IUnregister self, GameObject gameObject)
+        {
+            var trigger = gameObject.GetComponent<UnRegisterOnDestroyTrigger>();
+            if (trigger == null)
+                trigger = gameObject.AddComponent<UnRegisterOnDestroyTrigger>();
+            
+            trigger.AddUnregister(self);
+            return self;
+        }
+    }
+
+    internal class UnRegisterOnDestroyTrigger : MonoBehaviour
+    {
+        private readonly List<IUnregister> _unregisters = new List<IUnregister>();
+
+        public void AddUnregister(IUnregister unregister)
+        {
+            _unregisters.Add(unregister);
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var unregister in _unregisters)
+            {
+                unregister.Unregister();
+            }
+            _unregisters.Clear();
+        }
+    }
+}
+#endif

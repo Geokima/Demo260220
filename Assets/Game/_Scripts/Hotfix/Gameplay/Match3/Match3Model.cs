@@ -1,42 +1,38 @@
-using Game.Shared.Logic.Match3;
 using Framework;
+using Game.Match3.Logic;
+using System.Collections.Generic;
+using Game.DTOs;
 
-namespace Game.Gameplay.Match3
+namespace Game.Match3
 {
     public class Match3Model : AbstractModel
     {
-        public BindableProperty<int> Score = new BindableProperty<int>();
-        public BindableProperty<int> RemainingTurns = new BindableProperty<int>();
+        public BindableProperty<int> Score = new BindableProperty<int>(0);
+        public BindableProperty<int> RemainingTurns = new BindableProperty<int>(0);
+        public BindableProperty<bool> IsBusy = new BindableProperty<bool>(false);
+
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public Match3CellType[,] Grid { get; set; }
+
+        public Dictionary<Match3CellType, int> TargetCounts = new Dictionary<Match3CellType, int>();
         
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public Match3CellType[,] Grid { get; private set; }
+        public int RandomSeed { get; set; }
+        public List<Match3SwapAction> ActionHistory = new List<Match3SwapAction>();
 
-        public override void Init()
-        {
-            Score.Value = 0;
-            RemainingTurns.Value = 0;
-        }
+        public override void Init() { }
 
-        public void InitGrid(int width, int height)
+        public void Reset(int width, int height, int turns, int seed)
         {
             Width = width;
             Height = height;
-            Grid = new Match3CellType[width, height];
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    Grid[x, y] = Match3CellType.None;
-                }
-            }
-        }
-
-        public void Clear()
-        {
+            RemainingTurns.Value = turns;
             Score.Value = 0;
-            RemainingTurns.Value = 0;
-            Grid = null;
+            RandomSeed = seed;
+            IsBusy.Value = false;
+            Grid = new Match3CellType[width, height];
+            ActionHistory.Clear();
+            TargetCounts.Clear();
         }
     }
 }

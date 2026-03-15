@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Framework;
-using Game.Shared.Logic.Match3;
+using Game.Match3.Logic;
+using Game.Match3;
+using Game.Gameplay.Common;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using Framework.Modules.Routine;
 
 namespace Game.Gameplay.Match3
 {
@@ -21,7 +22,11 @@ namespace Game.Gameplay.Match3
         private Match3Model _model;
         private Dictionary<(int, int), GameObject> _cellViews = new Dictionary<(int, int), GameObject>();
 
-        public IArchitecture GetArchitecture() => Match3Architecture.Interface;
+        public IArchitecture Architecture 
+        { 
+            get => Match3Architecture.Instance; 
+            set { } 
+        }
 
         private void Start()
         {
@@ -65,7 +70,7 @@ namespace Game.Gameplay.Match3
             // 创建交换动画序列
             var seq = new SequenceRoutine();
             // ... 添加具体的移动 Routine
-            await seq.PlayAsync();
+            await seq.RunAsync();
         }
 
         private async UniTaskVoid OnSwapFail(Match3SwapFailEvent e)
@@ -77,15 +82,15 @@ namespace Game.Gameplay.Match3
         private async UniTaskVoid OnMatch(Match3MatchEvent e)
         {
             var parallel = new ParallelRoutine();
-            // ... 遍历 e.MatchedCells 添加所有的消除动画
-            await parallel.PlayAsync();
+            // ... 遍历 e.Matches 添加所有的消除动画
+            await parallel.RunAsync();
         }
 
         private async UniTaskVoid OnRefill(Match3RefillEvent e)
         {
             var parallel = new ParallelRoutine();
             // ... 遍历 e.Falls 添加所有的掉落动画
-            await parallel.PlayAsync();
+            await parallel.RunAsync();
         }
 
         private Vector3 GetWorldPosition(int x, int y)

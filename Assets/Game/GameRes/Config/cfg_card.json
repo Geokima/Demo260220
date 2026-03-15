@@ -1,0 +1,65 @@
+﻿[
+  {
+    "Id": 1001,
+    "Name": "Strike",
+    "Desc": "Deal {0} damage.",
+    "Cost": 1,
+    "TargetType": "SingleEnemy",
+    "Effects": [
+      { "Type": "Damage", "Value": 6 }
+    ]
+  },
+  {
+    "Id": 1002,
+    "Name": "Defend",
+    "Desc": "Gain {0} block.",
+    "Cost": 1,
+    "TargetType": "Self",
+    "Effects": [
+      { "Type": "Block", "Value": 5 }
+    ]
+  },
+  {
+    "Id": 1003,
+    "Name": "Bash",
+    "Desc": "Deal {0} damage. Apply {1} Vulnerable.",
+    "Cost": 2,
+    "TargetType": "SingleEnemy",
+    "Effects": [
+      { "Type": "Damage", "Value": 8 },
+      { "Type": "ApplyBuff", "StringId": "Vulnerable", "Value": 2 }
+    ]
+  },
+  {
+    "Id": 1004,
+    "Name": "Iron Wave",
+    "Desc": "Deal {0} damage. Gain {1} block.",
+    "Cost": 1,
+    "TargetType": "SingleEnemy",
+    "Effects": [
+      { "Type": "Damage", "Value": 5 },
+      { "Type": "Block", "Value": 5 }
+    ]
+  },
+  {
+    "Id": 1005,
+    "Name": "Inflame",
+    "Desc": "Gain {0} Strength.",
+    "Cost": 2,
+    "TargetType": "Self",
+    "Effects": [
+      { "Type": "ApplyBuff", "StringId": "Strength", "Value": 2 }
+    ]
+  },
+  {
+    "Id": 1006,
+    "Name": "Shrug It Off",
+    "Desc": "Gain {0} block. Draw {1} card.",
+    "Cost": 1,
+    "TargetType": "Self",
+    "Effects": [
+      { "Type": "Block", "Value": 8 },
+      { "Type": "DrawCard", "Value": 1 }
+    ]
+  }
+]

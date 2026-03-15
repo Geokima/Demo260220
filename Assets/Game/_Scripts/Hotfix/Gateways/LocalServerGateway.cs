@@ -121,6 +121,10 @@ namespace Game.Gateways
                 "/shop/list" => ShopController.HandleGetShopList(ctx, request as ShopListRequest),
                 "/shop/buy" => ShopController.HandleBuy(ctx, request as ShopBuyRequest),
                 "/shop/refresh" => ShopController.HandleRefresh(ctx, request as ShopRefreshRequest),
+
+                // Match3
+                "/match3/start" => Match3Controller.HandleStartStage(ctx, request as StartMatch3Request),
+                "/match3/finish" => Match3Controller.HandleFinishStage(ctx, request as FinishMatch3Request),
                 
                 _ => throw new Exception($"[LocalServerGateway] 404 Not Found: {path}")
             };

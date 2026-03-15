@@ -1,40 +1,33 @@
-using Framework;
 using System.Collections.Generic;
-using Game.Shared.Logic.Match3;
+using Game.Match3.Logic;
 
-namespace Game.Gameplay.Match3
+namespace Game.Match3
 {
-    /// <summary> 棋盘初始化完成事件 </summary>
-    public struct Match3BoardInitializedEvent : IEvent { }
+    public struct Match3BoardInitializedEvent { }
 
-    /// <summary> 交换成功事件 </summary>
-    public struct Match3SwapSuccessEvent : IEvent
+    public struct Match3SwapSuccessEvent
     {
         public int X1, Y1, X2, Y2;
     }
 
-    /// <summary> 交换失败/回退事件 </summary>
-    public struct Match3SwapFailEvent : IEvent
+    public struct Match3SwapFailEvent
     {
         public int X1, Y1, X2, Y2;
     }
 
-    /// <summary> 匹配消除事件（含消除列表） </summary>
-    public struct Match3MatchEvent : IEvent
+    public struct Match3MatchEvent
     {
-        public List<List<Match3CellData>> MatchedCells;
+        public List<MatchResult> Matches;
     }
 
-    /// <summary> 下落与补位事件 </summary>
-    public struct Match3RefillEvent : IEvent
+    public struct Match3RefillEvent
     {
         public List<FallInfo> Falls;
     }
 
-    /// <summary> 玩法关卡结束事件 </summary>
-    public struct Match3GameOverEvent : IEvent
+    public struct Match3GameOverEvent
     {
         public bool IsWin;
-        public int FinalScore;
+        public int Score;
     }
 }

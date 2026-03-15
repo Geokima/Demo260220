@@ -1,6 +1,6 @@
 using Framework;
 
-namespace Game.Gameplay.Match3
+namespace Game.Match3
 {
     /// <summary>
     /// 三消子架构容器
@@ -8,13 +8,13 @@ namespace Game.Gameplay.Match3
     /// </summary>
     public class Match3Architecture : Architecture<Match3Architecture>
     {
-        protected override void Init()
+        protected override void RegisterModule()
         {
             // 注册三消专属模型
             this.RegisterModel(new Match3Model());
             
             // 注册三消专属服务（系统）
-            this.RegisterSystem(new Match3Service());
+            this.RegisterSystem<IMatch3Service>(new Match3Service());
         }
     }
 }

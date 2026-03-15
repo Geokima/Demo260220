@@ -11,6 +11,7 @@ using Game.Gateways;
 using Game.Effect;
 using Game.Mission;
 using UnityEngine;
+using Framework.Modules.UI;
 
 namespace Game
 {
@@ -80,6 +81,11 @@ namespace Game
             procedureSystem.RegisterProcedure(new PreloadProcedure());
             procedureSystem.RegisterProcedure(new LoginProcedure());
             procedureSystem.RegisterProcedure(new MainProcedure());
+
+            // UI 渲染模式
+            var uiSystem = GameArchitecture.Instance.GetSystem<IUISystem>();
+            uiSystem.CanvasRoot.renderMode = RenderMode.ScreenSpaceCamera;
+            uiSystem.CanvasRoot.worldCamera = Camera.main;
 
             // 启动流程
             var procedure = GameArchitecture.Instance.GetSystem<IProcedureSystem>();
