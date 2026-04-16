@@ -73,17 +73,19 @@ namespace Game.Gameplay.Demo1.UI
             Gizmos.matrix = rt.localToWorldMatrix;
 
             float unit = _cellWidth + _spacing;
+            float originX = -rt.rect.width * rt.pivot.x;
+            float centerY = -rt.rect.height * rt.pivot.y + _padding.y + _cellHeight * 0.5f;
             for (int i = 0; i < cap; i++)
             {
-                float xMin = _padding.x + i * unit;
+                float xMin = originX + _padding.x + i * unit;
                 float centerX = xMin + _cellWidth * 0.5f;
 
                 bool occupied = occ != null && i >= 0 && i < occ.Length && occ[i];
                 Gizmos.color = occupied ? new Color(1f, 0.35f, 0.35f, 0.12f) : new Color(0.2f, 0.8f, 1f, 0.08f);
-                Gizmos.DrawCube(new Vector3(centerX, 0f, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
+                Gizmos.DrawCube(new Vector3(centerX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
 
                 Gizmos.color = occupied ? new Color(1f, 0.35f, 0.35f, 0.8f) : new Color(0.2f, 0.8f, 1f, 0.8f);
-                Gizmos.DrawWireCube(new Vector3(centerX, 0f, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
+                Gizmos.DrawWireCube(new Vector3(centerX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
             }
 
             Gizmos.matrix = oldMatrix;

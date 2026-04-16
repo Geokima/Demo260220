@@ -10,8 +10,6 @@ namespace Game.Gameplay.Demo1.UI
 
         public virtual int Priority => 0;
         public abstract bool CanAccept(UIDragPayload payload, PointerEventData eventData);
-        public virtual void Preview(UIDragPayload payload, PointerEventData eventData) { }
-        public virtual void CancelPreview(UIDragPayload payload) { }
         public abstract bool Accept(UIDragPayload payload, PointerEventData eventData);
 
         public static IReadOnlyList<UIDropZoneBase> ActiveZones => _activeZones;

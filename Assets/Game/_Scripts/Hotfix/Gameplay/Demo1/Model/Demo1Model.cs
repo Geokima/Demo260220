@@ -50,6 +50,37 @@ namespace Game.Gameplay.Demo1
 
         public override void Init()
         {
+            CurrentHP.Value = 100;
+            MaxHP.Value = 100;
+            CurrentShield.Value = 0;
+            Prestige.Value = Demo1Const.MaxPrestige;
+            PlayerPoison.Value = 0;
+
+            EnemyHP.Value = 100;
+            EnemyMaxHP.Value = 100;
+            EnemyShield.Value = 0;
+            EnemyPoison.Value = 0;
+
+            Gold.Value = 10;
+            GoldPerRound.Value = Demo1Const.DefaultGoldPerRound;
+            Level.Value = 1;
+            Exp.Value = 0;
+            MaxSlotCount.Value = Demo1Const.InitialSlots;
+
+            Day.Value = 1;
+            Round.Value = 1;
+            Progress.Value = 0;
+            CurrentRoundPhase.Value = RoundPhase.Choose;
+            CurrentRoundEvent.Value = RoundEventType.None;
+
+            CurrentSceneMode.Value = SceneMode.Selection;
+            VisualLockCount.Value = 0;
+            VisualLockReason.Value = string.Empty;
+
+            ActiveSlots.Clear();
+            BenchCards.Clear();
+            UpperSlots.Clear();
+            Skills.Clear();
         }
     }
 }

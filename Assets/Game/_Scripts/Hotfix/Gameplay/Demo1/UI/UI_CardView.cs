@@ -1,6 +1,5 @@
 using System;
 using Framework;
-using Game.Gameplay.Demo1;
 using Game.Gameplay.Demo1.UI.Widget;
 using UnityEngine;
 using UnityEngine.EventSystems;

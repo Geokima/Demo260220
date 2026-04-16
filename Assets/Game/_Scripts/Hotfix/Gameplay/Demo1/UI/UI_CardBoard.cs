@@ -28,10 +28,44 @@ namespace Game.Gameplay.Demo1.UI
 
         public void SetCapacity(int capacity)
         {
-            SetCapacityInternal(capacity);
+            int targetCapacity = Mathf.Clamp(capacity, MinCapacity, MaxCapacity);
+            if (_items.Count > 0 && targetCapacity < _capacity)
+                targetCapacity = _capacity;
+
+            if (targetCapacity == _capacity)
+                return;
+
+            int oldCapacity = _capacity;
+            SetCapacityInternal(targetCapacity);
+
+            int deltaCapacity = _capacity - oldCapacity;
+            if (deltaCapacity > 0)
+                ApplyCapacityShift(deltaCapacity);
 
             PackToFit();
             LayoutAll();
+        }
+
+        private void ApplyCapacityShift(int deltaCapacity)
+        {
+            if (deltaCapacity <= 0)
+                return;
+
+            if (_items.Count == 0)
+                return;
+
+            int shift = deltaCapacity / 2;
+            if (shift == 0)
+                return;
+
+            for (int i = 0; i < _items.Count; i++)
+            {
+                var item = _items[i];
+                if (item == null)
+                    continue;
+
+                item.StartIndex += shift;
+            }
         }
 
         public void SetDraggable(bool draggable)
@@ -52,23 +86,28 @@ namespace Game.Gameplay.Demo1.UI
             if (!_draggable)
                 UIDragManager.Instance.CancelCurrentDrag();
         }
-        
+        [Button]
+        public void UpdateCapcityToMax()
+        {
+            SetCapacity(MaxCapacity);
+        }
+
         [Button]
         public void TestAddCard()
         {
-            AddCard(new CardModel(new CardData{Name = _items.Count.ToString(), Size = 1 }));
+            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 1 }));
         }
 
         [Button]
         public void TestAddCardMid()
         {
-            AddCard(new CardModel(new CardData{Name = _items.Count.ToString(), Size = 2 }));
+            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 2 }));
         }
 
         [Button]
         public void TestAddCardLarge()
         {
-            AddCard(new CardModel(new CardData{Name = _items.Count.ToString(), Size = 3 }));
+            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 3 }));
         }
 
         public UI_CardView AddCard(CardModel model, int? startIndex = null)
@@ -93,7 +132,7 @@ namespace Game.Gameplay.Demo1.UI
             float cardWidth = item.WidthInCells * _cellWidth + (item.WidthInCells - 1) * _spacing;
             float dragCenterX = _padding.x + desiredStart * unit + cardWidth * 0.5f;
 
-            if (!TryApplyOrderedInsert(item, dragCenterX, desiredStart, movingWithinSameBoard: false, apply: true, out _, out _))
+            if (!TryApplyOrderedInsert(item, dragCenterX, desiredStart, apply: true, out _, out _))
             {
                 UnityEngine.Object.Destroy(view.gameObject);
                 return null;
@@ -148,14 +187,6 @@ namespace Game.Gameplay.Demo1.UI
             return RectTransformUtility.RectangleContainsScreenPoint(_rectTransform, eventData.position, eventData.pressEventCamera);
         }
 
-        public override void Preview(UIDragPayload payload, PointerEventData eventData)
-        {
-        }
-
-        public override void CancelPreview(UIDragPayload payload)
-        {
-        }
-
         public override bool Accept(UIDragPayload payload, PointerEventData eventData)
         {
             if (!CanAccept(payload, eventData))
@@ -197,9 +228,8 @@ namespace Game.Gameplay.Demo1.UI
             if (float.IsNaN(dragCenterX))
                 return false;
 
-            bool movingWithinSameBoard = !isNewItem && view.OwnerZone == this;
             int desiredStart = GetStartIndexFromCenterX(dragCenterX, widthInCells);
-            if (!TryApplyOrderedInsert(item, dragCenterX, desiredStart, movingWithinSameBoard, apply: true, out _, out _))
+            if (!TryApplyOrderedInsert(item, dragCenterX, desiredStart, apply: true, out _, out _))
                 return false;
 
             if (view.OwnerZone is UI_CardBoard oldBoard && oldBoard != this)
@@ -213,6 +243,7 @@ namespace Game.Gameplay.Demo1.UI
             return true;
         }
 
+        // 将“拖拽卡牌中心点的 local X”换算成“左侧起始格子索引”，并做边界夹紧
         private int GetStartIndexFromCenterX(float centerX, int widthInCells)
         {
             float unit = _cellWidth + _spacing;
@@ -221,13 +252,7 @@ namespace Game.Gameplay.Demo1.UI
             return Mathf.Clamp(desiredStart, 0, _capacity - widthInCells);
         }
 
-        private int GetStartIndexFromLeftX(float leftX, int widthInCells)
-        {
-            float unit = _cellWidth + _spacing;
-            int desiredStart = Mathf.RoundToInt((leftX - _padding.x) / unit);
-            return Mathf.Clamp(desiredStart, 0, _capacity - widthInCells);
-        }
-
+        // 根据 item 的 StartIndex / WidthInCells 计算它在面板坐标系中的中心点 X
         private float GetCenterX(CardItem item)
         {
             float unit = _cellWidth + _spacing;
@@ -236,11 +261,11 @@ namespace Game.Gameplay.Demo1.UI
             return itemStartX + itemWidth * 0.5f;
         }
 
+        // 按“拖拽中心点 X”决定插入位置，然后尝试求出所有卡牌在不重叠前提下的 StartIndex；apply=true 时会把结果写回 _items
         private bool TryApplyOrderedInsert(
             CardItem dragging,
             float dragCenterX,
             int desiredStart,
-            bool movingWithinSameBoard,
             bool apply,
             out List<CardItem> ordered,
             out Dictionary<CardItem, int> resultStarts)
@@ -314,12 +339,31 @@ namespace Game.Gameplay.Demo1.UI
 
             int[] solvedStarts = null;
             bool solved = false;
-            for (int dragStart = desiredStart; dragStart >= 0; dragStart--)
+            int maxStart = _capacity - dragWidth;
+            int maxOffset = Mathf.Max(desiredStart, maxStart - desiredStart);
+            for (int offset = 0; offset <= maxOffset; offset++)
             {
-                if (SimulateAt(dragStart, out solvedStarts))
+                int left = desiredStart - offset;
+                if (left >= 0)
                 {
-                    solved = true;
-                    break;
+                    if (SimulateAt(left, out solvedStarts))
+                    {
+                        solved = true;
+                        break;
+                    }
+                }
+
+                if (offset == 0)
+                    continue;
+
+                int right = desiredStart + offset;
+                if (right <= maxStart)
+                {
+                    if (SimulateAt(right, out solvedStarts))
+                    {
+                        solved = true;
+                        break;
+                    }
                 }
             }
 
@@ -341,6 +385,7 @@ namespace Game.Gameplay.Demo1.UI
             return true;
         }
 
+        // 按 _items 的 StartIndex / WidthInCells，把所有 UI 卡牌的 RectTransform 尺寸与位置刷新到正确格子
         private void LayoutAll()
         {
             if (_rectTransform == null)
@@ -366,6 +411,7 @@ namespace Game.Gameplay.Demo1.UI
             }
         }
 
+        // 从左到右寻找第一个能放下 widthInCells 的空位（exclude 参与占用排除）
         private int FindFirstFit(int widthInCells, CardItem exclude)
         {
             bool[] occ = BuildOccupancy(exclude);
@@ -377,46 +423,7 @@ namespace Game.Gameplay.Demo1.UI
             return -1;
         }
 
-        private bool TryGetNearestOverlappingItem(int start, int widthInCells, CardItem exclude, float dragCenterX, out CardItem blocker, out float blockerCenterX)
-        {
-            blocker = null;
-            blockerCenterX = 0f;
-
-            if (start < 0 || start + widthInCells > _capacity)
-                return false;
-
-            float unit = _cellWidth + _spacing;
-
-            float bestDist = float.MaxValue;
-            for (int i = 0; i < _items.Count; i++)
-            {
-                var item = _items[i];
-                if (item == null || item.View == null || item == exclude)
-                    continue;
-
-                int a0 = start;
-                int a1 = start + widthInCells - 1;
-                int b0 = item.StartIndex;
-                int b1 = item.StartIndex + item.WidthInCells - 1;
-                bool overlaps = a0 <= b1 && a1 >= b0;
-                if (!overlaps)
-                    continue;
-
-                float itemWidth = item.WidthInCells * _cellWidth + (item.WidthInCells - 1) * _spacing;
-                float itemStartX = _padding.x + item.StartIndex * unit;
-                float centerX = itemStartX + itemWidth * 0.5f;
-                float dist = Mathf.Abs(centerX - dragCenterX);
-                if (dist < bestDist)
-                {
-                    bestDist = dist;
-                    blocker = item;
-                    blockerCenterX = centerX;
-                }
-            }
-
-            return blocker != null;
-        }
-
+        // 把现有卡牌尽量“挤紧”到可放下的区域里：按 StartIndex 排序后，逐个找离原位置最近的空位并占用
         private void PackToFit()
         {
             if (_items.Count == 0)
@@ -439,6 +446,7 @@ namespace Game.Gameplay.Demo1.UI
             }
         }
 
+        // 在占用数组 occ 中，寻找一个能容纳 widthInCells 的空位，且尽量靠近 preferredStart（以距离作为代价）
         private static int FindNearestFreeStart(bool[] occ, int preferredStart, int widthInCells)
         {
             int capacity = occ.Length;
@@ -463,211 +471,7 @@ namespace Game.Gameplay.Demo1.UI
             return bestStart >= 0 ? bestStart : 0;
         }
 
-        private bool TryApplyInsertLayout(CardItem dragging, int desiredStart, out Dictionary<CardItem, int> resultStarts)
-        {
-            if (TryInsertWithDirection(dragging, desiredStart, 1, out resultStarts))
-            {
-                ApplyResult(resultStarts);
-                return true;
-            }
-
-            if (TryInsertWithDirection(dragging, desiredStart, -1, out resultStarts))
-            {
-                ApplyResult(resultStarts);
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool TryInsertWithDirection(CardItem dragging, int desiredStart, int direction, out Dictionary<CardItem, int> resultStarts)
-        {
-            resultStarts = new Dictionary<CardItem, int>();
-
-            if (_capacity <= 0)
-                return false;
-
-            desiredStart = Mathf.Clamp(desiredStart, 0, _capacity - dragging.WidthInCells);
-
-            bool[] occ = new bool[_capacity];
-            CardItem[] owner = new CardItem[_capacity];
-
-            for (int i = 0; i < _items.Count; i++)
-            {
-                var item = _items[i];
-                if (item == null || item.View == null || item == dragging)
-                    continue;
-
-                int start = Mathf.Clamp(item.StartIndex, 0, _capacity - item.WidthInCells);
-                if (!CanMarkRegion(occ, start, item.WidthInCells))
-                    continue;
-
-                MarkRegion(occ, start, item.WidthInCells, true);
-                for (int c = start; c < start + item.WidthInCells; c++)
-                    owner[c] = item;
-
-                resultStarts[item] = start;
-            }
-
-            int safety = 64;
-            while (!IsRegionFree(occ, desiredStart, dragging.WidthInCells))
-            {
-                if (safety-- <= 0)
-                    return false;
-
-                int blockingCell = FindBlockingCell(occ, desiredStart, dragging.WidthInCells, direction);
-                if (blockingCell < 0)
-                    return false;
-
-                var blocker = owner[blockingCell];
-                if (blocker == null)
-                    return false;
-
-                int currentStart = resultStarts.TryGetValue(blocker, out var s) ? s : blocker.StartIndex;
-                MarkRegion(occ, currentStart, blocker.WidthInCells, false);
-                for (int c = currentStart; c < currentStart + blocker.WidthInCells; c++)
-                    owner[c] = null;
-
-                int nextStart = FindNextFreeStart(occ, desiredStart, dragging.WidthInCells, currentStart, blocker.WidthInCells, direction);
-                if (nextStart < 0)
-                    return false;
-
-                MarkRegion(occ, nextStart, blocker.WidthInCells, true);
-                for (int c = nextStart; c < nextStart + blocker.WidthInCells; c++)
-                    owner[c] = blocker;
-
-                resultStarts[blocker] = nextStart;
-            }
-
-            resultStarts[dragging] = desiredStart;
-            return true;
-        }
-
-        private int FindBlockingCell(bool[] occ, int start, int width, int direction)
-        {
-            if (direction >= 0)
-            {
-                for (int i = start + width - 1; i >= start; i--)
-                {
-                    if (occ[i])
-                        return i;
-                }
-                return -1;
-            }
-
-            for (int i = start; i < start + width; i++)
-            {
-                if (occ[i])
-                    return i;
-            }
-            return -1;
-        }
-
-        private bool TryApplyStableMove(CardItem dragging, int newStart)
-        {
-            if (dragging == null || dragging.View == null)
-                return false;
-
-            int width = Mathf.Clamp(dragging.WidthInCells, 1, 3);
-            int oldStart = Mathf.Clamp(dragging.StartIndex, 0, _capacity - width);
-            newStart = Mathf.Clamp(newStart, 0, _capacity - width);
-
-            if (newStart == oldStart)
-                return true;
-
-            var resultStarts = new Dictionary<CardItem, int>();
-            for (int i = 0; i < _items.Count; i++)
-            {
-                var item = _items[i];
-                if (item == null || item.View == null)
-                    continue;
-                resultStarts[item] = Mathf.Clamp(item.StartIndex, 0, _capacity - Mathf.Clamp(item.WidthInCells, 1, 3));
-            }
-
-            int oldEnd = oldStart + width - 1;
-            int newEnd = newStart + width - 1;
-
-            int affectedStart;
-            int affectedEnd;
-            int delta;
-            if (newStart < oldStart)
-            {
-                affectedStart = newStart;
-                affectedEnd = oldStart - 1;
-                delta = width;
-            }
-            else
-            {
-                affectedStart = oldEnd + 1;
-                affectedEnd = newEnd;
-                delta = -width;
-            }
-
-            if (affectedStart <= affectedEnd)
-            {
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    var item = _items[i];
-                    if (item == null || item.View == null || item == dragging)
-                        continue;
-
-                    int itemWidth = Mathf.Clamp(item.WidthInCells, 1, 3);
-                    int itemStart = Mathf.Clamp(item.StartIndex, 0, _capacity - itemWidth);
-                    int itemEnd = itemStart + itemWidth - 1;
-                    bool intersects = itemStart <= affectedEnd && itemEnd >= affectedStart;
-                    if (intersects)
-                        resultStarts[item] = itemStart + delta;
-                }
-            }
-
-            resultStarts[dragging] = newStart;
-
-            bool[] occ = new bool[_capacity];
-            foreach (var kv in resultStarts)
-            {
-                var item = kv.Key;
-                int itemWidth = Mathf.Clamp(item.WidthInCells, 1, 3);
-                int start = kv.Value;
-                if (start < 0 || start > _capacity - itemWidth)
-                    return false;
-                if (!IsRegionFree(occ, start, itemWidth))
-                    return false;
-                MarkRegion(occ, start, itemWidth, true);
-            }
-
-            ApplyResult(resultStarts);
-            return true;
-        }
-
-        private int FindNextFreeStart(bool[] occ, int forbiddenStart, int forbiddenWidth, int fromStart, int width, int direction)
-        {
-            if (direction >= 0)
-            {
-                for (int start = fromStart + 1; start <= _capacity - width; start++)
-                {
-                    if (IsRegionFreeWithForbidden(occ, start, width, forbiddenStart, forbiddenWidth))
-                        return start;
-                }
-                return -1;
-            }
-
-            for (int start = fromStart - 1; start >= 0; start--)
-            {
-                if (start > _capacity - width)
-                    continue;
-
-                if (IsRegionFreeWithForbidden(occ, start, width, forbiddenStart, forbiddenWidth))
-                    return start;
-            }
-            return -1;
-        }
-
-        private void ApplyResult(Dictionary<CardItem, int> resultStarts)
-        {
-            foreach (var kv in resultStarts)
-                kv.Key.StartIndex = kv.Value;
-        }
-
+        // 根据当前 _items 生成占用表：occ[i]=true 表示该格已被占用（exclude 不计入占用）
         private bool[] BuildOccupancy(CardItem exclude)
         {
             bool[] occ = new bool[_capacity];
@@ -718,86 +522,151 @@ namespace Game.Gameplay.Demo1.UI
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, centerScreenPos, cam, out var localCenter))
                 return;
 
-            float centerX = localCenter.x + rt.rect.width * rt.pivot.x;
+            float originX = -rt.rect.width * rt.pivot.x;
+            float centerY = -rt.rect.height * rt.pivot.y + _padding.y + _cellHeight * 0.5f;
+            float centerXPivot = localCenter.x;
+            float centerXLeft = centerXPivot - originX;
 
             int widthInCells = Mathf.Clamp(payload.WidthInCells, 1, 3);
-            int desiredStart = GetStartIndexFromCenterX(centerX, widthInCells);
-
-            CardItem draggingItem = null;
-            for (int i = 0; i < _items.Count; i++)
-            {
-                if (_items[i].View == payload.View)
-                {
-                    draggingItem = _items[i];
-                    break;
-                }
-            }
-
-            bool movingWithinSameBoard = draggingItem != null && payload.View.OwnerZone == this;
-            if (draggingItem == null)
-                draggingItem = new CardItem(payload.View, widthInCells);
-            else
-                draggingItem.WidthInCells = widthInCells;
-
-            if (!TryApplyOrderedInsert(draggingItem, centerX, desiredStart, movingWithinSameBoard, apply: false, out var ordered, out var starts))
-                return;
-
-            if (!starts.TryGetValue(draggingItem, out int predictedStart))
-                return;
+            int desiredStart = GetStartIndexFromCenterX(centerXLeft, widthInCells);
 
             var oldMatrix = Gizmos.matrix;
             Gizmos.matrix = rt.localToWorldMatrix;
-
-            Gizmos.color = new Color(0.25f, 1f, 0.35f, 0.9f);
-            Gizmos.DrawLine(new Vector3(centerX, -_cellHeight * 0.6f, 0f), new Vector3(centerX, _cellHeight * 0.6f, 0f));
 
             float unit = _cellWidth + _spacing;
             float dragWidth = widthInCells * _cellWidth + (widthInCells - 1) * _spacing;
 
             int desiredEnd = desiredStart + widthInCells - 1;
-            int predictedEnd = predictedStart + widthInCells - 1;
 
-            float desiredStartX = _padding.x + desiredStart * unit;
+            float desiredStartX = originX + _padding.x + desiredStart * unit;
             float desiredEndX = desiredStartX + dragWidth;
-            float predictedStartX = _padding.x + predictedStart * unit;
-            float predictedEndX = predictedStartX + dragWidth;
 
+            void DrawItemFill(int startIndex, int itemWidthInCells, Color fill)
+            {
+                itemWidthInCells = Mathf.Clamp(itemWidthInCells, 1, 3);
+                startIndex = Mathf.Clamp(startIndex, 0, _capacity - itemWidthInCells);
+
+                float w = itemWidthInCells * _cellWidth + (itemWidthInCells - 1) * _spacing;
+                float x0 = originX + _padding.x + startIndex * unit;
+                float cx = x0 + w * 0.5f;
+
+                Gizmos.color = fill;
+                Gizmos.DrawCube(new Vector3(cx, centerY, 0f), new Vector3(w, _cellHeight, 0.01f));
+            }
+
+            // 1) Drag center line (always)
+            Gizmos.color = new Color(0.25f, 1f, 0.35f, 0.9f);
+            Gizmos.DrawLine(new Vector3(centerXPivot, centerY - _cellHeight * 0.6f, 0f), new Vector3(centerXPivot, centerY + _cellHeight * 0.6f, 0f));
+
+            // 2) All cards left/right of insertion point (always)
+            var orderedCurrent = _items
+                .Where(i => i != null && i.View != null && i.View != payload.View)
+                .OrderBy(i => i.StartIndex)
+                .ToList();
+
+            int insertIndex = orderedCurrent.Count;
+            for (int i = 0; i < orderedCurrent.Count; i++)
+            {
+                if (GetCenterX(orderedCurrent[i]) > centerXLeft)
+                {
+                    insertIndex = i;
+                    break;
+                }
+            }
+
+            var leftFill = new Color(0.05f, 0.7f, 1f, 0.16f);
+            var rightFill = new Color(1f, 0.15f, 0.85f, 0.16f);
+
+            for (int i = 0; i < orderedCurrent.Count; i++)
+            {
+                var item = orderedCurrent[i];
+                if (item == null)
+                    continue;
+
+                var fill = i < insertIndex ? leftFill : rightFill;
+                DrawItemFill(item.StartIndex, item.WidthInCells, fill);
+            }
+
+            // Desired position outline (always)
             Gizmos.color = new Color(0.7f, 0.7f, 0.7f, 0.85f);
-            Gizmos.DrawWireCube(new Vector3(desiredStartX + dragWidth * 0.5f, 0f, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
+            Gizmos.DrawWireCube(new Vector3(desiredStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
             Gizmos.color = new Color(0.7f, 0.7f, 0.7f, 0.6f);
-            Gizmos.DrawLine(new Vector3(desiredStartX, -_cellHeight * 0.55f, 0f), new Vector3(desiredStartX, _cellHeight * 0.55f, 0f));
-            Gizmos.DrawLine(new Vector3(desiredEndX, -_cellHeight * 0.55f, 0f), new Vector3(desiredEndX, _cellHeight * 0.55f, 0f));
+            Gizmos.DrawLine(new Vector3(desiredStartX, centerY - _cellHeight * 0.55f, 0f), new Vector3(desiredStartX, centerY + _cellHeight * 0.55f, 0f));
+            Gizmos.DrawLine(new Vector3(desiredEndX, centerY - _cellHeight * 0.55f, 0f), new Vector3(desiredEndX, centerY + _cellHeight * 0.55f, 0f));
 
-            Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.18f);
-            Gizmos.DrawCube(new Vector3(predictedStartX + dragWidth * 0.5f, 0f, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
-            Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.85f);
-            Gizmos.DrawWireCube(new Vector3(predictedStartX + dragWidth * 0.5f, 0f, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
-            Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.6f);
-            Gizmos.DrawLine(new Vector3(predictedStartX, -_cellHeight * 0.55f, 0f), new Vector3(predictedStartX, _cellHeight * 0.55f, 0f));
-            Gizmos.DrawLine(new Vector3(predictedEndX, -_cellHeight * 0.55f, 0f), new Vector3(predictedEndX, _cellHeight * 0.55f, 0f));
+            // 3) Predicted position (only when solvable)
+            bool hasPrediction = false;
+            int predictedStart = -1;
+            int predictedEnd = -1;
+            {
+                CardItem draggingItem = null;
+                for (int i = 0; i < _items.Count; i++)
+                {
+                    if (_items[i].View == payload.View)
+                    {
+                        draggingItem = _items[i];
+                        break;
+                    }
+                }
+
+                if (draggingItem == null)
+                    draggingItem = new CardItem(payload.View, widthInCells);
+                else
+                    draggingItem.WidthInCells = widthInCells;
+
+                if (TryApplyOrderedInsert(draggingItem, centerXLeft, desiredStart, apply: false, out _, out var starts)
+                    && starts.TryGetValue(draggingItem, out predictedStart))
+                {
+                    hasPrediction = true;
+                    predictedEnd = predictedStart + widthInCells - 1;
+
+                    float predictedStartX = originX + _padding.x + predictedStart * unit;
+                    float predictedEndX = predictedStartX + dragWidth;
+
+                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.18f);
+                    Gizmos.DrawCube(new Vector3(predictedStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
+                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.85f);
+                    Gizmos.DrawWireCube(new Vector3(predictedStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
+                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.6f);
+                    Gizmos.DrawLine(new Vector3(predictedStartX, centerY - _cellHeight * 0.55f, 0f), new Vector3(predictedStartX, centerY + _cellHeight * 0.55f, 0f));
+                    Gizmos.DrawLine(new Vector3(predictedEndX, centerY - _cellHeight * 0.55f, 0f), new Vector3(predictedEndX, centerY + _cellHeight * 0.55f, 0f));
+                }
+            }
 
             for (int c = desiredStart; c <= desiredEnd; c++)
             {
-                float cellX = _padding.x + c * unit + _cellWidth * 0.5f;
+                float cellX = originX + _padding.x + c * unit + _cellWidth * 0.5f;
                 Gizmos.color = new Color(0.75f, 0.75f, 0.75f, 0.07f);
-                Gizmos.DrawCube(new Vector3(cellX, 0f, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
+                Gizmos.DrawCube(new Vector3(cellX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
             }
 
-            for (int c = predictedStart; c <= predictedEnd; c++)
+            if (hasPrediction)
             {
-                float cellX = _padding.x + c * unit + _cellWidth * 0.5f;
-                Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.10f);
-                Gizmos.DrawCube(new Vector3(cellX, 0f, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
+                for (int c = predictedStart; c <= predictedEnd; c++)
+                {
+                    float cellX = originX + _padding.x + c * unit + _cellWidth * 0.5f;
+                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.10f);
+                    Gizmos.DrawCube(new Vector3(cellX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
+                }
+            }
+            else
+            {
+                // No solution marker at desired region
+                Gizmos.color = new Color(1f, 0.25f, 0.25f, 0.9f);
+                Gizmos.DrawLine(new Vector3(desiredStartX, centerY - _cellHeight * 0.45f, 0f), new Vector3(desiredEndX, centerY + _cellHeight * 0.45f, 0f));
+                Gizmos.DrawLine(new Vector3(desiredStartX, centerY + _cellHeight * 0.45f, 0f), new Vector3(desiredEndX, centerY - _cellHeight * 0.45f, 0f));
             }
 
             Gizmos.matrix = oldMatrix;
 
 #if UNITY_EDITOR
-            var labelWorld = rt.TransformPoint(new Vector3(_padding.x, _cellHeight * 0.55f, 0f));
-            Handles.Label(labelWorld, $"w:{widthInCells} desired:{desiredStart}-{desiredEnd} predicted:{predictedStart}-{predictedEnd}");
+            var labelWorld = rt.TransformPoint(new Vector3(originX + _padding.x, centerY + _cellHeight * 0.55f, 0f));
+            var predictedText = hasPrediction ? $"{predictedStart}-{predictedEnd}" : "NONE";
+            Handles.Label(labelWorld, $"w:{widthInCells} desired:{desiredStart}-{desiredEnd} insertIndex:{insertIndex}/{orderedCurrent.Count} predicted:{predictedText}");
 #endif
         }
 
+        // 判断给定区间 [start, start+width) 是否在 occ 数组范围内（工具函数，避免越界）
         private static bool CanMarkRegion(bool[] occ, int start, int width)
         {
             if (start < 0 || start + width > occ.Length)
@@ -805,6 +674,7 @@ namespace Game.Gameplay.Demo1.UI
             return true;
         }
 
+        // 将 occ 在区间 [start, start+width) 的占用标记为 value（越界则直接忽略）
         private static void MarkRegion(bool[] occ, int start, int width, bool value)
         {
             if (start < 0 || start + width > occ.Length)
@@ -813,6 +683,7 @@ namespace Game.Gameplay.Demo1.UI
                 occ[i] = value;
         }
 
+        // 判断 occ 在区间 [start, start+width) 是否全为空（未被占用）
         private static bool IsRegionFree(bool[] occ, int start, int width)
         {
             if (start < 0 || start + width > occ.Length)
@@ -825,6 +696,7 @@ namespace Game.Gameplay.Demo1.UI
             return true;
         }
 
+        // 在 IsRegionFree 的基础上，再额外排除与 forbidden 区间的重叠（用于拖拽预测/禁区检测）
         private static bool IsRegionFreeWithForbidden(bool[] occ, int start, int width, int forbiddenStart, int forbiddenWidth)
         {
             if (!IsRegionFree(occ, start, width))

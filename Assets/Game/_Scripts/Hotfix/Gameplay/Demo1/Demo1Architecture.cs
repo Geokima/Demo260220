@@ -1,7 +1,7 @@
 using Framework;
 using Framework.Modules.Procedure;
 using Framework.Modules.Timer;
-using Game.Gameplay.Demo1.Procedure;
+using Game.Gameplay.Demo1.UI;
 
 namespace Game.Gameplay.Demo1
 {
@@ -9,18 +9,10 @@ namespace Game.Gameplay.Demo1
     {
         protected override void RegisterModule()
         {
-            this.RegisterModel(new Demo1Model());
-            this.RegisterSystem<ITimerSystem>(new TimerSystem());
-
-            var procedureSystem = new ProcedureSystem();
-            this.RegisterSystem<IProcedureSystem>(procedureSystem);
-
-            procedureSystem.RegisterProcedure(new SelectionProcedure());
-            procedureSystem.RegisterProcedure(new EventProcedure());
-            procedureSystem.RegisterProcedure(new RewardProcedure());
-            procedureSystem.RegisterProcedure(new GameOverProcedure());
-
-            procedureSystem.Start<SelectionProcedure>();
+            RegisterModel(new Demo1Model());
+            RegisterSystem<ITimerSystem>(new TimerSystem());
+            RegisterSystem<IProcedureSystem>(new ProcedureSystem());
+            RegisterSystem<IScenePanelSystem>(new ScenePanelSystem());
         }
     }
 }

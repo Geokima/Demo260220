@@ -1,5 +1,3 @@
-using Framework;
-
 namespace Game.Gameplay.Demo1
 {
     /// <summary>
@@ -81,72 +79,5 @@ namespace Game.Gameplay.Demo1
         public const int MaxPrestige = 20;
         /// <summary> 胜利所需进度 </summary>
         public const int MaxProgress = 10;
-    }
-
-    public struct Demo1BusyChangedEvent : IEvent
-    {
-        public int LockCount;
-        public bool IsBusy;
-        public SceneMode Mode;
-        public string Reason;
-    }
-
-    public struct Demo1ShopEnterEvent : IEvent
-    {
-    }
-
-    public struct Demo1ShopLeaveEvent : IEvent
-    {
-    }
-
-    public struct Demo1ShopRefreshEvent : IEvent
-    {
-        public int Cost;
-    }
-
-    public struct Demo1BuyResolvedEvent : IEvent
-    {
-        public string CardId;
-        public CardRank Rank;
-        public bool UpgradedExisting;
-        public bool PlacedToBench;
-        public bool PlacedToActive;
-    }
-
-    public struct Demo1RoundAdvancedEvent : IEvent
-    {
-        public int BeforeDay;
-        public int BeforeRound;
-        public int AfterDay;
-        public int AfterRound;
-        public int GoldGain;
-        public int ExpGain;
-        public bool LeveledUp;
-        public int Level;
-        public int MaxSlotCount;
-    }
-
-    public struct Demo1BattleStartedEvent : IEvent
-    {
-    }
-
-    public struct Demo1CardTriggeredEvent : IEvent
-    {
-        public bool IsPlayer;
-        public string CardId;
-        public int Damage;
-        public int Shield;
-        public int PoisonAdd;
-    }
-
-    public struct Demo1PoisonTickEvent : IEvent
-    {
-        public int PlayerPoison;
-        public int EnemyPoison;
-    }
-
-    public struct Demo1BattleEndedEvent : IEvent
-    {
-        public bool PlayerWin;
     }
 }

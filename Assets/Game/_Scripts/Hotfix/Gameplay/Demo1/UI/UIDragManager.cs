@@ -80,17 +80,13 @@ namespace Game.Gameplay.Demo1.UI
 
             var corners = new Vector3[4];
             rt.GetWorldCorners(corners);
-            var leftMidWorld = Vector3.Lerp(corners[0], corners[1], 0.5f);
-            Vector2 leftMidScreen = RectTransformUtility.WorldToScreenPoint(eventData.pressEventCamera, leftMidWorld);
-            Vector2 pointerOffsetFromLeftEdgeScreen = eventData.position - leftMidScreen;
-
             var centerWorld = Vector3.Lerp(corners[0], corners[2], 0.5f);
             Vector2 centerScreen = RectTransformUtility.WorldToScreenPoint(eventData.pressEventCamera, centerWorld);
             Vector2 pointerOffsetFromCenterScreen = eventData.position - centerScreen;
 
             _ctx = new DragContext
             {
-                Payload = new UIDragPayload(view, view.Model, view.WidthInCells, pointerOffsetFromLeftEdgeScreen, pointerOffsetFromCenterScreen),
+                Payload = new UIDragPayload(view, view.Model, view.WidthInCells, pointerOffsetFromCenterScreen),
                 ViewRectTransform = rt,
                 ViewCanvasGroup = cg,
                 OriginalParent = rt.parent as RectTransform,
@@ -138,13 +134,8 @@ namespace Game.Gameplay.Demo1.UI
             var zone = FindBestZone(eventData);
             if (zone != _ctx.CurrentZone)
             {
-                if (_ctx.CurrentZone != null)
-                    _ctx.CurrentZone.CancelPreview(_ctx.Payload);
                 _ctx.CurrentZone = zone;
             }
-
-            if (_ctx.CurrentZone != null)
-                _ctx.CurrentZone.Preview(_ctx.Payload, eventData);
         }
 
         public void EndDrag(PointerEventData eventData)
@@ -158,8 +149,6 @@ namespace Game.Gameplay.Demo1.UI
 
             if (accepted)
             {
-                if (_ctx.CurrentZone != null)
-                    _ctx.CurrentZone.CancelPreview(_ctx.Payload);
                 if (_ctx.ViewCanvasGroup != null)
                     _ctx.ViewCanvasGroup.blocksRaycasts = true;
                 _ctx = null;
@@ -173,9 +162,6 @@ namespace Game.Gameplay.Demo1.UI
         {
             if (_ctx == null)
                 return;
-
-            if (_ctx.CurrentZone != null)
-                _ctx.CurrentZone.CancelPreview(_ctx.Payload);
 
             if (_ctx.ViewRectTransform != null && _ctx.OriginalParent != null)
             {
