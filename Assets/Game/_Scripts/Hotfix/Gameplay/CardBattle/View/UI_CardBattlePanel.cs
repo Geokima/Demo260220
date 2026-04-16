@@ -75,6 +75,7 @@ namespace Game.Gameplay.CardBattle
             
             // 5. 初始同步
             RefreshHand();
+            InitExistingEnemies(); // 适配你手动摆放在场景里的怪物
             
             // 6. 开启队列轮询处理
             _queue.ProcessQueueAsync().Forget();
@@ -87,6 +88,21 @@ namespace Game.Gameplay.CardBattle
         public GameObject CardPrefab;
 
         private List<UI_CardItem> _cardItems = new List<UI_CardItem>();
+
+
+        private void InitExistingEnemies()
+        {
+            // 如果场景里已经摆好了怪物，我们把它们和数据关联起来
+            var enemiesInScene = EnemyContainer.GetComponentsInChildren<UI_EnemyItem>();
+            for (int i = 0; i < enemiesInScene.Length; i++)
+            {
+                if (i < _model.Enemies.Count)
+                {
+                    enemiesInScene[i].SetData(_model.Enemies[i], _battleArch);
+                    Debug.Log($"[UI] 已激活场景中的怪物对象: {enemiesInScene[i].gameObject.name} -> {_model.Enemies[i].Name}");
+                }
+            }
+        }
 
         private void RefreshHand()
         {

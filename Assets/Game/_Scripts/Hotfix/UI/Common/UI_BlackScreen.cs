@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Framework;
 using Framework.Modules.Scene;
@@ -6,12 +7,16 @@ using UnityEngine;
 
 public class UI_BlackScreen : UIPanel
 {
+    public override void OnInit()
+    {
+        this.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete).UnRegisterWhenGameObjectDestroyed(gameObject);
+    }
+    
     public override void OnOpen(object data = null)
     {
         CanvasGroup.alpha = 0;
         CanvasGroup.blocksRaycasts = true;
         DOTween.To(() => CanvasGroup.alpha, x => CanvasGroup.alpha = x, 1, .5f);
-        this.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
     }
 
     public override void OnClose()
@@ -20,17 +25,12 @@ public class UI_BlackScreen : UIPanel
         DOTween.To(() => CanvasGroup.alpha, x => CanvasGroup.alpha = x, 0, .5f).OnComplete(() =>
         {
             CanvasGroup.blocksRaycasts = false;
-            this.UnregisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
         });
     }
 
-    private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
+    private async void OnSceneLoadComplete(SceneLoadCompleteEvent e)
     {
+        await UniTask.Delay(500);
         this.GetSystem<IUISystem>().Close<UI_BlackScreen>();
-    }
-
-    private void OnDestroy()
-    {
-        this.UnregisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Framework.Modules.Res;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static Framework.Logger;
 
@@ -78,6 +77,7 @@ namespace Framework.Modules.UI
         /// <inheritdoc />
         public void Open<T>(object data = null) where T : UIPanel
         {
+            Log($"[UI] Open panel: {typeof(T).Name}");
             var name = typeof(T).Name;
 
             if (_openedPanels.TryGetValue(name, out var panel))
@@ -110,6 +110,7 @@ namespace Framework.Modules.UI
         /// <inheritdoc />
         public void Close<T>() where T : UIPanel
         {
+            Log($"[UI] Close panel: {typeof(T).Name}");
             var name = typeof(T).Name;
             if (!_openedPanels.TryGetValue(name, out var panel)) return;
 
@@ -232,18 +233,18 @@ namespace Framework.Modules.UI
                 LogError($"[UI] Failed to load panel prefab: {name}");
                 return null;
             }
-
-            var obj = UnityEngine.Object.Instantiate(prefab, _layerRoots[prefab.GetComponent<UIPanel>().Layer]);
-            var panel = obj.GetComponent<T>();
-
+            var panel = prefab.GetComponent<T>();
             if (panel == null)
             {
                 LogError($"[UI] Panel component not found on prefab: {name}");
-                UnityEngine.Object.Destroy(obj);
                 return null;
             }
 
+            var obj = UnityEngine.Object.Instantiate(prefab, _layerRoots[panel.Layer]);
+            
+            panel = obj.GetComponent<T>();
             panel.Architecture = Architecture;
+            panel.OnInit();
             return panel;
         }
 

@@ -1,5 +1,9 @@
 using Framework.Modules.Procedure;
+using Framework.Modules.UI;
 using UnityEngine;
+using Game.Scene;
+using Framework.Modules.Scene;
+using Cysharp.Threading.Tasks;
 
 namespace Game.Procedures
 {
@@ -11,12 +15,14 @@ namespace Game.Procedures
 
         public override void OnEnter()
         {
-            Debug.Log("[MainProcedure] OnEnter - 进入主游戏");
+            Architecture.SendCommand(this, new ChangeSceneCommand() { SceneGroup = "Main" });
+            Architecture.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
         }
-
-        public override void OnExit()
+        private async void OnSceneLoadComplete(SceneLoadCompleteEvent e)
         {
-            Debug.Log("[MainProcedure] OnExit");
+            Architecture.UnregisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
+            await UniTask.Delay(1000);
+            Architecture.GetSystem<IUISystem>().Open<UI_MainPanel>();
         }
     }
 }

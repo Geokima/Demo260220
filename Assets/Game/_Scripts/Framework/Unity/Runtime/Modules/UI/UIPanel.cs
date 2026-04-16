@@ -47,6 +47,11 @@ namespace Framework.Modules.UI
         public CanvasGroup CanvasGroup => _canvasGroup ??= GetComponent<CanvasGroup>();
 
         /// <summary>
+        /// 面板初始化时调用
+        /// </summary>
+        public virtual void OnInit() { }
+
+        /// <summary>
         /// 面板打开时调用
         /// </summary>
         /// <param name="data">初始化数据</param>

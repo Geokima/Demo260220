@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dac010f552b44244a85778cd786c339, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _layer: 2000
+  _layer: 5000
   _isSingleton: 1
   _fixedOrder: 0
 --- !u!1 &6464018009628596650

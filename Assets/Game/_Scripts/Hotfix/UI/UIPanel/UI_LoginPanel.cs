@@ -50,7 +50,6 @@ public partial class UI_LoginPanel : UIPanel
     {
         Debug.Log($"Login success: {@event.UserId} {@event.Token}");
         this.GetSystem<IUISystem>().Close<UI_LoginPanel>();
-        this.SendCommand(new ChangeSceneCommand { SceneGroup = "Main" });
     }
 
     private void OnLoginButtonClick()

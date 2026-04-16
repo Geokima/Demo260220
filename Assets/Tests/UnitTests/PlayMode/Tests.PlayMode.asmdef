@@ -7,7 +7,8 @@
         "UniTask",
         "YooAsset",
         "Framework.Common",
-        "Framework.Unity"
+        "Framework.Unity",
+        "Hotfix"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

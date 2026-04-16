@@ -1,7 +1,9 @@
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Framework;
 using Framework.Modules.Config;
 using Framework.Modules.Scene;
+using Framework.Modules.UI;
 using Game.Config;
 using UnityEngine;
 
@@ -15,8 +17,10 @@ namespace Game.Scene
         /// <summary>场景组名称 (对应 SceneConfig.SceneGroup)</summary>
         public string SceneGroup;
 
-        public override void Execute(object sender)
+        public override async void Execute(object sender)
         {
+            this.GetSystem<IUISystem>().Open<UI_BlackScreen>();
+            await UniTask.Delay(500);
             var configSystem = this.GetSystem<IConfigSystem>();
             var sceneSystem = this.GetSystem<ISceneSystem>();
             

@@ -2,6 +2,8 @@ using Framework.Modules.Procedure;
 using Framework.Modules.Scene;
 using Framework.Modules.UI;
 using Game.Scene;
+using Cysharp.Threading.Tasks;
+using Game.Auth;
 
 namespace Game.Procedures
 {
@@ -15,12 +17,20 @@ namespace Game.Procedures
         {
             Architecture.SendCommand(this, new ChangeSceneCommand() { SceneGroup = "Login" });
             Architecture.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
+            Architecture.RegisterEvent<LoginSuccessEvent>(OnLoginSuccess);
         }
 
-        private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
+        private async void OnSceneLoadComplete(SceneLoadCompleteEvent e)
         {
-            Architecture.GetSystem<IUISystem>().Open<UI_LoginPanel>();
             Architecture.UnregisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
+            await UniTask.Delay(1000);
+            Architecture.GetSystem<IUISystem>().Open<UI_LoginPanel>();
+        }
+
+        private void OnLoginSuccess(LoginSuccessEvent e)
+        {
+            Architecture.UnregisterEvent<LoginSuccessEvent>(OnLoginSuccess);
+            Architecture.GetSystem<IProcedureSystem>().ChangeProcedure<MainProcedure>();
         }
     }
 }
