@@ -32,7 +32,6 @@ namespace Game.Gameplay.Demo1
         public BindableProperty<int> Round = new BindableProperty<int>(1);
         public BindableProperty<int> Progress = new BindableProperty<int>(0);
         public BindableProperty<RoundPhase> CurrentRoundPhase = new BindableProperty<RoundPhase>(RoundPhase.Choose);
-        public BindableProperty<RoundEventType> CurrentRoundEvent = new BindableProperty<RoundEventType>(RoundEventType.None);
         #endregion
 
         #region 场景状态
@@ -71,9 +70,8 @@ namespace Game.Gameplay.Demo1
             Round.Value = 1;
             Progress.Value = 0;
             CurrentRoundPhase.Value = RoundPhase.Choose;
-            CurrentRoundEvent.Value = RoundEventType.None;
 
-            CurrentSceneMode.Value = SceneMode.Selection;
+            CurrentSceneMode.Value = SceneMode.None;
             VisualLockCount.Value = 0;
             VisualLockReason.Value = string.Empty;
 

@@ -1,5 +1,6 @@
 using Framework.Modules.Procedure;
 using Game.Gameplay.Demo1.Event;
+using Game.Gameplay.Demo1.System;
 
 namespace Game.Gameplay.Demo1.Procedure
 {
@@ -11,48 +12,19 @@ namespace Game.Gameplay.Demo1.Procedure
             model.CurrentSceneMode.Value = SceneMode.Selection;
             model.CurrentRoundPhase.Value = RoundPhase.Choose;
 
-            if (model.Round.Value == 3 || model.Round.Value == 6)
-            {
-                Architecture.RegisterEvent<EventCompleteEvent>(OnEventComplete);
-            }
-            else
-            {
-                Architecture.RegisterEvent<SelectShopEvent>(OnSelectShop);
-                Architecture.RegisterEvent<SelectWorkEvent>(OnSelectWork);
-                Architecture.RegisterEvent<SelectTreasureEvent>(OnSelectTreasure);
-            }
+            Architecture.RegisterEvent<SelectSceneModeEvent>(OnSelectSceneMode);
         }
 
-        private void OnEventComplete(EventCompleteEvent e)
+        private void OnSelectSceneMode(SelectSceneModeEvent e)
         {
-            UnregisterEvents();
-            Owner.ChangeProcedure<RewardProcedure>();
-        }
-
-        private void OnSelectShop(SelectShopEvent e)
-        {
-            UnregisterEvents();
-            Owner.ChangeProcedure<EventProcedure>();
-        }
-
-        private void OnSelectWork(SelectWorkEvent e)
-        {
-            UnregisterEvents();
-            Owner.ChangeProcedure<EventProcedure>();
-        }
-
-        private void OnSelectTreasure(SelectTreasureEvent e)
-        {
-            UnregisterEvents();
-            Owner.ChangeProcedure<EventProcedure>();
+            var model = Architecture.GetModel<Demo1Model>();
+            model.CurrentSceneMode.Value = e.Mode;
+            ChangeProcedure<EncounterSceneProcedure>();
         }
 
         private void UnregisterEvents()
         {
-            Architecture.UnregisterEvent<SelectShopEvent>(OnSelectShop);
-            Architecture.UnregisterEvent<SelectWorkEvent>(OnSelectWork);
-            Architecture.UnregisterEvent<SelectTreasureEvent>(OnSelectTreasure);
-            Architecture.UnregisterEvent<EventCompleteEvent>(OnEventComplete);
+            Architecture.UnregisterEvent<SelectSceneModeEvent>(OnSelectSceneMode);
         }
 
         public override void OnExit()

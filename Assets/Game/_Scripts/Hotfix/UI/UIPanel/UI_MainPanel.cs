@@ -2,6 +2,8 @@ using UnityEngine;
 using Framework.Modules.UI;
 using DG.Tweening;
 using Framework;
+using Framework.Modules.Procedure;
+using Game.Procedures;
 
 public partial class UI_MainPanel : UIPanel
 {
@@ -15,8 +17,12 @@ public partial class UI_MainPanel : UIPanel
                 Application.Quit();
         });
 
-        BtnTest01.onClick.AddListener(() => this.GetSystem<IUISystem>().Close<UI_MainPanel>());
-        BtnTest02.onClick.AddListener(() => this.GetSystem<IUISystem>().Close<UI_MainPanel>());
+        BtnTest01.onClick.AddListener(() =>
+        {
+            this.GetSystem<IProcedureSystem>().ChangeProcedure<Demo1Procedure>();
+            this.GetSystem<IUISystem>().Close<UI_MainPanel>();
+        });
+        //BtnTest02.onClick.AddListener(() => this.GetSystem<IUISystem>().Close<UI_MainPanel>());
     }
 
     public override void OnOpen(object data = null)

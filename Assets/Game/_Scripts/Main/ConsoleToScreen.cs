@@ -16,11 +16,18 @@ namespace Game.Main
         }
 
         private readonly List<LogEntry> _logs = new();
+        private bool _visible = true;
 
-        public int fontSize = 25;
+        public int fontSize = 12;
 
         void OnEnable() { Application.logMessageReceived += Log; }
         void OnDisable() { Application.logMessageReceived -= Log; }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F11))
+                _visible = !_visible;
+        }
 
         public void Log(string logString, string stackTrace, LogType type)
         {
@@ -49,6 +56,9 @@ namespace Game.Main
 
         void OnGUI()
         {
+            if (!_visible)
+                return;
+
             // 适配分辨率：以 1080p 为基准进行等比缩放
             float scale = Screen.height / 1080f;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
@@ -86,9 +96,9 @@ namespace Game.Main
         {
             return type switch
             {
-                LogType.Error or LogType.Exception or LogType.Assert => "red",
-                LogType.Warning => "yellow",
-                _ => "white"
+                LogType.Error or LogType.Exception or LogType.Assert => "#ff000080",
+                LogType.Warning => "#ffff0080",
+                _ => "#ffffff80"
             };
         }
     }

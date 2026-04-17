@@ -1,10 +1,17 @@
 namespace Game.Gameplay.Demo1.Event
 {
-    public struct SelectShopEvent { }
-    public struct SelectWorkEvent { }
-    public struct SelectTreasureEvent { }
-    public struct SelectBattleEvent { }
+    // 选择遭遇事件
+    public struct SelectSceneModeEvent
+    {
+        public SceneMode Mode { get; set; }
 
-    public struct EventCompleteEvent { }
+        public SelectSceneModeEvent(SceneMode mode)
+        {
+            Mode = mode;
+        }
+    }
+
+    // 退出遭遇事件
+    public struct QuitSceneEvent { }
     public struct CollectRewardEvent { }
 }

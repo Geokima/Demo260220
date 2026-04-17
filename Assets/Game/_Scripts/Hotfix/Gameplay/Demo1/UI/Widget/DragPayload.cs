@@ -1,0 +1,21 @@
+using Game.Gameplay.Demo1;
+using UnityEngine;
+
+namespace Game.Gameplay.Demo1.UI.Widget
+{
+    public sealed class DragPayload
+    {
+        public Widget_CardView View { get; }
+        public CardModel Model { get; }
+        public int WidthInCells { get; }
+        public Vector2 PointerOffsetFromCenterScreen { get; }
+
+        public DragPayload(Widget_CardView view, CardModel model, int widthInCells, Vector2 pointerOffsetFromCenterScreen)
+        {
+            View = view;
+            Model = model;
+            WidthInCells = widthInCells;
+            PointerOffsetFromCenterScreen = pointerOffsetFromCenterScreen;
+        }
+    }
+}

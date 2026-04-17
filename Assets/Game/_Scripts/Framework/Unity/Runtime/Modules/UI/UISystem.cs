@@ -114,8 +114,6 @@ namespace Framework.Modules.UI
             var name = typeof(T).Name;
             if (!_openedPanels.TryGetValue(name, out var panel)) return;
 
-            _openedPanels.Remove(name);
-
             if (panel.Layer == UILayer.Navigation)
             {
                 bool wasTop = _navigationStack.Count > 0 && _navigationStack[^1] == panel;
@@ -150,8 +148,6 @@ namespace Framework.Modules.UI
             bool hasNavigation = false;
             foreach (var panel in panelsToClose)
             {
-                _openedPanels.Remove(panel.GetType().Name);
-
                 if (panel.Layer == UILayer.Navigation)
                 {
                     _navigationStack.Remove(panel);
@@ -186,7 +182,6 @@ namespace Framework.Modules.UI
                         for (int i = _navigationStack.Count - 1; i > index; i--)
                         {
                             var toClose = _navigationStack[i];
-                            _openedPanels.Remove(toClose.GetType().Name);
                             _navigationStack.RemoveAt(i);
                             toClose.OnClose();
                         }

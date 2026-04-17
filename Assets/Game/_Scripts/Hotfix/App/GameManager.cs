@@ -81,6 +81,7 @@ namespace Game
             procedureSystem.RegisterProcedure(new PreloadProcedure());
             procedureSystem.RegisterProcedure(new LoginProcedure());
             procedureSystem.RegisterProcedure(new MainProcedure());
+            procedureSystem.RegisterProcedure(new Demo1Procedure());
 
             // UI 渲染模式
             var uiSystem = GameArchitecture.Instance.GetSystem<IUISystem>();

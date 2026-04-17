@@ -16,8 +16,6 @@ namespace Game.Gameplay.Demo1.Procedure
 
         private void OnCollected(CollectRewardEvent e)
         {
-            UnregisterEvents();
-
             var model = Architecture.GetModel<Demo1Model>();
 
             model.Round.Value++;
@@ -29,27 +27,23 @@ namespace Game.Gameplay.Demo1.Procedure
 
             if (model.Prestige.Value <= 0)
             {
-                Owner.ChangeProcedure<GameOverProcedure>();
+                ChangeProcedure<GameOverProcedure>();
                 return;
             }
 
             if (model.Progress.Value >= Demo1Const.MaxProgress)
             {
-                Owner.ChangeProcedure<GameOverProcedure>();
+                ChangeProcedure<GameOverProcedure>();
                 return;
             }
 
-            Owner.ChangeProcedure<SelectionProcedure>();
+            ChangeProcedure<SelectionProcedure>();
         }
 
-        private void UnregisterEvents()
-        {
-            Architecture.UnregisterEvent<CollectRewardEvent>(OnCollected);
-        }
 
         public override void OnExit()
         {
-            UnregisterEvents();
+            Architecture.UnregisterEvent<CollectRewardEvent>(OnCollected);
         }
     }
 }
