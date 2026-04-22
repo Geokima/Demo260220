@@ -2,7 +2,6 @@ using UnityEngine.UI;
 using Framework.Modules.UI;
 using Game.Gameplay.Demo1.System;
 
-[ScenePanel(Game.Gameplay.Demo1.SceneMode.Selection)]
 public partial class UI_SelectScenePanel : UIPanel
 {
     public Button Btn1;

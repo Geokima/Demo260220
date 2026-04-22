@@ -12,10 +12,17 @@ namespace Game.Gameplay.Demo1.UI.Widget
             if (int.TryParse(text, out int value))
             {
                 Text.text = value.ToString();
-                if (value != 0)
-                    gameObject.SetActive(true);
-                else
-                    gameObject.SetActive(false);
+                gameObject.SetActive(value != 0);
+            }
+            else if (float.TryParse(text, out float floatValue))
+            {
+                Text.text = floatValue.ToString("F1");
+                gameObject.SetActive(floatValue != 0);
+            }
+            else
+            {
+                Text.text = text;
+                gameObject.SetActive(!string.IsNullOrEmpty(text));
             }
         }
     }

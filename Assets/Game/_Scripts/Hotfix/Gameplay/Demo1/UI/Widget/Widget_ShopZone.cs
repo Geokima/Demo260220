@@ -23,6 +23,29 @@ namespace Game.Gameplay.Demo1.UI.Widget
             LayoutAll();
         }
 
+        public void LoadCards(IEnumerable<CardModel> cards)
+        {
+            ClearAllCards();
+            if (cards == null)
+                return;
+
+            foreach (var card in cards)
+            {
+                AddShopCard(card);
+            }
+        }
+
+        public void ClearAllCards()
+        {
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                var view = _items[i].View;
+                if (view != null)
+                    UnityEngine.Object.Destroy(view.gameObject);
+            }
+            _items.Clear();
+        }
+
         public Widget_CardView AddShopCard(CardModel model, int? startIndex = null)
         {
             if (_cardPrefab == null || model == null)
@@ -86,6 +109,14 @@ namespace Game.Gameplay.Demo1.UI.Widget
         private void OnCardClicked(Widget_CardView view)
         {
             if (view == null || view.Model == null)
+                return;
+
+            var purchaseSystem = Demo1Architecture.Instance.GetSystem<IShopPurchaseSystem>();
+            if (purchaseSystem == null)
+                return;
+
+            var result = purchaseSystem.TryBuy(view.Model, out _);
+            if (result != ShopPurchaseResult.Success)
                 return;
 
             OnBuy?.Invoke(view.Model);

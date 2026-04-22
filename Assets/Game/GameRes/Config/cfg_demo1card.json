@@ -1,0 +1,51 @@
+[
+    { "Id": 10001, "Name": "铁剑", "Price": 2, "Size": 1, "Rank": "Bronze", "Type": "Active", "Damage": 5, "MaxCD": 3.0 },
+    { "Id": 20001, "Name": "铁剑", "Price": 4, "Size": 1, "Rank": "Silver", "Type": "Active", "Damage": 10, "MaxCD": 3.0 },
+    { "Id": 30001, "Name": "铁剑", "Price": 8, "Size": 2, "Rank": "Gold", "Type": "Active", "Damage": 15, "MaxCD": 3.0 },
+    { "Id": 40001, "Name": "铁剑", "Price": 16, "Size": 2, "Rank": "Diamond", "Type": "Active", "Damage": 20, "MaxCD": 3.0 },
+
+    { "Id": 10002, "Name": "战斧", "Price": 3, "Size": 2, "Rank": "Bronze", "Type": "Active", "Damage": 15, "MaxCD": 5.0 },
+    { "Id": 20002, "Name": "战斧", "Price": 6, "Size": 2, "Rank": "Silver", "Type": "Active", "Damage": 30, "MaxCD": 5.0 },
+    { "Id": 30002, "Name": "战斧", "Price": 12, "Size": 2, "Rank": "Gold", "Type": "Active", "Damage": 45, "MaxCD": 5.0 },
+    { "Id": 40002, "Name": "战斧", "Price": 24, "Size": 2, "Rank": "Diamond", "Type": "Active", "Damage": 60, "MaxCD": 5.0 },
+
+    { "Id": 10003, "Name": "长弓", "Price": 3, "Size": 1, "Rank": "Bronze", "Type": "Active", "Damage": 8, "MaxCD": 4.0 },
+    { "Id": 20003, "Name": "长弓", "Price": 6, "Size": 1, "Rank": "Silver", "Type": "Active", "Damage": 16, "MaxCD": 4.0 },
+    { "Id": 30003, "Name": "长弓", "Price": 12, "Size": 2, "Rank": "Gold", "Type": "Active", "Damage": 24, "MaxCD": 4.0 },
+    { "Id": 40003, "Name": "长弓", "Price": 24, "Size": 2, "Rank": "Diamond", "Type": "Active", "Damage": 32, "MaxCD": 4.0 },
+
+    { "Id": 10004, "Name": "木盾", "Price": 2, "Size": 1, "Rank": "Bronze", "Type": "Active", "Shield": 4, "MaxCD": 4.0 },
+    { "Id": 20004, "Name": "木盾", "Price": 4, "Size": 1, "Rank": "Silver", "Type": "Active", "Shield": 8, "MaxCD": 4.0 },
+    { "Id": 30004, "Name": "木盾", "Price": 8, "Size": 2, "Rank": "Gold", "Type": "Active", "Shield": 12, "MaxCD": 4.0 },
+    { "Id": 40004, "Name": "木盾", "Price": 16, "Size": 2, "Rank": "Diamond", "Type": "Active", "Shield": 16, "MaxCD": 4.0 },
+
+    { "Id": 10005, "Name": "铁甲", "Price": 4, "Size": 2, "Rank": "Bronze", "Type": "Active", "Shield": 8, "MaxCD": 5.0 },
+    { "Id": 20005, "Name": "铁甲", "Price": 8, "Size": 2, "Rank": "Silver", "Type": "Active", "Shield": 16, "MaxCD": 5.0 },
+    { "Id": 30005, "Name": "铁甲", "Price": 16, "Size": 2, "Rank": "Gold", "Type": "Active", "Shield": 24, "MaxCD": 5.0 },
+    { "Id": 40005, "Name": "铁甲", "Price": 32, "Size": 3, "Rank": "Diamond", "Type": "Active", "Shield": 32, "MaxCD": 5.0 },
+
+    { "Id": 10006, "Name": "治愈法杖", "Price": 2, "Size": 1, "Rank": "Bronze", "Type": "Active", "Cure": 4, "MaxCD": 5.0 },
+    { "Id": 20006, "Name": "治愈法杖", "Price": 4, "Size": 1, "Rank": "Silver", "Type": "Active", "Cure": 8, "MaxCD": 5.0 },
+    { "Id": 30006, "Name": "治愈法杖", "Price": 8, "Size": 2, "Rank": "Gold", "Type": "Active", "Cure": 12, "MaxCD": 5.0 },
+    { "Id": 40006, "Name": "治愈法杖", "Price": 16, "Size": 2, "Rank": "Diamond", "Type": "Active", "Cure": 16, "MaxCD": 5.0 },
+
+    { "Id": 10007, "Name": "毒刃", "Price": 2, "Size": 1, "Rank": "Bronze", "Type": "Active", "Poison": 2, "MaxCD": 4.0 },
+    { "Id": 20007, "Name": "毒刃", "Price": 4, "Size": 1, "Rank": "Silver", "Type": "Active", "Poison": 4, "MaxCD": 4.0 },
+    { "Id": 30007, "Name": "毒刃", "Price": 8, "Size": 2, "Rank": "Gold", "Type": "Active", "Poison": 6, "MaxCD": 4.0 },
+    { "Id": 40007, "Name": "毒刃", "Price": 16, "Size": 2, "Rank": "Diamond", "Type": "Active", "Poison": 8, "MaxCD": 4.0 },
+
+    { "Id": 10008, "Name": "冰霜之刃", "Price": 3, "Size": 1, "Rank": "Bronze", "Type": "Active", "Damage": 3, "Poison": 1, "MaxCD": 4.0 },
+    { "Id": 20008, "Name": "冰霜之刃", "Price": 6, "Size": 1, "Rank": "Silver", "Type": "Active", "Damage": 6, "Poison": 2, "MaxCD": 4.0 },
+    { "Id": 30008, "Name": "冰霜之刃", "Price": 12, "Size": 2, "Rank": "Gold", "Type": "Active", "Damage": 9, "Poison": 3, "MaxCD": 4.0 },
+    { "Id": 40008, "Name": "冰霜之刃", "Price": 24, "Size": 2, "Rank": "Diamond", "Type": "Active", "Damage": 12, "Poison": 4, "MaxCD": 4.0 },
+
+    { "Id": 10009, "Name": "战锤", "Price": 3, "Size": 2, "Rank": "Bronze", "Type": "Active", "Damage": 18, "MaxCD": 6.0 },
+    { "Id": 20009, "Name": "战锤", "Price": 6, "Size": 2, "Rank": "Silver", "Type": "Active", "Damage": 36, "MaxCD": 6.0 },
+    { "Id": 30009, "Name": "战锤", "Price": 12, "Size": 2, "Rank": "Gold", "Type": "Active", "Damage": 54, "MaxCD": 6.0 },
+    { "Id": 40009, "Name": "战锤", "Price": 24, "Size": 3, "Rank": "Diamond", "Type": "Active", "Damage": 72, "MaxCD": 6.0 },
+
+    { "Id": 10010, "Name": "生命护符", "Price": 3, "Size": 1, "Rank": "Bronze", "Type": "Active", "Shield": 2, "Cure": 2, "MaxCD": 5.0 },
+    { "Id": 20010, "Name": "生命护符", "Price": 6, "Size": 1, "Rank": "Silver", "Type": "Active", "Shield": 4, "Cure": 4, "MaxCD": 5.0 },
+    { "Id": 30010, "Name": "生命护符", "Price": 12, "Size": 2, "Rank": "Gold", "Type": "Active", "Shield": 6, "Cure": 6, "MaxCD": 5.0 },
+    { "Id": 40010, "Name": "生命护符", "Price": 24, "Size": 2, "Rank": "Diamond", "Type": "Active", "Shield": 8, "Cure": 8, "MaxCD": 5.0 }
+]

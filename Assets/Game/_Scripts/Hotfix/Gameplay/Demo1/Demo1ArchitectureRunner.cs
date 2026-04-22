@@ -1,38 +1,31 @@
 using Framework;
-using Framework.Modules.Procedure;
-using Game.Gameplay.Demo1.Procedure;
-using Game.Procedures;
+using Framework.Modules.UI;
+using Game.Gameplay.Demo1.System;
 using UnityEngine;
 
 namespace Game.Gameplay.Demo1
 {
     public class Demo1ArchitectureRunner : MonoBehaviour
     {
-        [SerializeField]private bool IsDebug = true;
+        [SerializeField] private bool IsDebug = true;
 
-        public void Shutdown()
-        {
-            GameArchitecture.Instance.GetSystem<IProcedureSystem>().ChangeProcedure<MainProcedure>();
-        }
+        private IBattleSystem _battleSystem;
 
         private void Awake()
         {
             Demo1Architecture.Launch();
-
-            var procedureSystem = Demo1Architecture.Instance.GetSystem<IProcedureSystem>();
-
-            procedureSystem.RegisterProcedure(new InitProcedure());
-            procedureSystem.RegisterProcedure(new SelectionProcedure());
-            procedureSystem.RegisterProcedure(new EncounterSceneProcedure());
-            procedureSystem.RegisterProcedure(new RewardProcedure());
-            procedureSystem.RegisterProcedure(new GameOverProcedure());
-
-            procedureSystem.Start<InitProcedure>();
+            _battleSystem = Demo1Architecture.Instance.GetSystem<IBattleSystem>();
+            Demo1Architecture.Instance.GetSystem<IUISystem>().Open<UI_Demo1PlayerPanel>();
         }
 
         private void Update()
         {
             Demo1Architecture.Instance.Update();
+
+            if (_battleSystem.IsInBattle)
+            {
+                _battleSystem.UpdateBattle(UnityEngine.Time.deltaTime);
+            }
         }
 
         private void FixedUpdate()
@@ -62,11 +55,8 @@ namespace Game.Gameplay.Demo1
             };
 
             var model = Demo1Architecture.Instance.GetModel<Demo1Model>();
-            var procedureSystem = Demo1Architecture.Instance.GetSystem<IProcedureSystem>();
 
-            GUI.Label(new Rect(x, y, width, lineHeight), $"Procedure: {procedureSystem.CurrentProcedure?.Name ?? "None"}", style);
-            y += lineHeight;
-            GUI.Label(new Rect(x, y, width, lineHeight), $"SceneMode: {model.CurrentSceneMode}", style);
+            GUI.Label(new Rect(x, y, width, lineHeight), $"GameState: {model.CurrentGameState}", style);
             y += lineHeight;
             GUI.Label(new Rect(x, y, width, lineHeight), $"Round: Day {model.Day} Round {model.Round}/6", style);
             y += lineHeight;
@@ -82,7 +72,6 @@ namespace Game.Gameplay.Demo1
             y += lineHeight;
             GUI.Label(new Rect(x, y, width, lineHeight), $"Progress: {model.Progress}/{Demo1Const.MaxProgress}", style);
             y += lineHeight;
-            GUI.Label(new Rect(x, y, width, lineHeight), $"Phase: {model.CurrentRoundPhase}", style);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Framework;
 using Framework.Utils;
 using Game.Gameplay.Demo1;
 using Game.Gameplay.Demo1.System;
@@ -14,13 +15,49 @@ namespace Game.Gameplay.Demo1.UI.Widget
     public class Widget_CardBoard : Widget_SlotZoneBase
     {
         [SerializeField] private Widget_CardView _cardPrefab;
-
         [SerializeField] private bool _draggable = true;
 
         private readonly List<CardItem> _items = new List<CardItem>();
+        private BindableList<CardModel> _boundList;
+        private IUnregister _onAddUnregister;
+        private IUnregister _onRemoveUnregister;
 
         protected override int MinCapacity => 4;
         protected override int MaxCapacity => 10;
+
+        public void BindTo(BindableList<CardModel> list)
+        {
+            Unbind();
+            if (list == null)
+                return;
+
+            _boundList = list;
+            _onAddUnregister = list.OnAdd.Register((index, card) => AddCard(card));
+            _onRemoveUnregister = list.OnRemove.Register((index, card) => RemoveCard(card));
+            Refresh();
+        }
+
+        public void Unbind()
+        {
+            _onAddUnregister?.Unregister();
+            _onRemoveUnregister?.Unregister();
+            _onAddUnregister = null;
+            _onRemoveUnregister = null;
+            _boundList = null;
+        }
+
+        public void Refresh()
+        {
+            ClearAllCards();
+            if (_boundList == null)
+                return;
+
+            foreach (var card in _boundList)
+            {
+                if (card != null)
+                    AddCard(card);
+            }
+        }
 
         public void Init(int count)
         {
@@ -89,27 +126,21 @@ namespace Game.Gameplay.Demo1.UI.Widget
         }
 
         [Button]
-        public void UpdateCapcityToMax()
-        {
-            SetCapacity(MaxCapacity);
-        }
-
-        [Button]
         public void TestAddCard()
         {
-            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 1 }));
+            AddCard(new CardModel(new Demo1CardConfig { Name = _items.Count.ToString(), Size = 1, Rank = "Bronze", Type = "Active" }));
         }
 
         [Button]
         public void TestAddCardMid()
         {
-            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 2 }));
+            AddCard(new CardModel(new Demo1CardConfig { Name = _items.Count.ToString(), Size = 2, Rank = "Bronze", Type = "Active" }));
         }
 
         [Button]
         public void TestAddCardLarge()
         {
-            AddCard(new CardModel(new CardData { Name = _items.Count.ToString(), Size = 3 }));
+            AddCard(new CardModel(new Demo1CardConfig { Name = _items.Count.ToString(), Size = 3, Rank = "Bronze", Type = "Active" }));
         }
 
         public Widget_CardView AddCard(CardModel model, int? startIndex = null)
@@ -167,6 +198,37 @@ namespace Game.Gameplay.Demo1.UI.Widget
             }
 
             return removed;
+        }
+
+        public bool RemoveCard(CardModel model)
+        {
+            if (model == null)
+                return false;
+
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                if (_items[i].View?.Model == model)
+                {
+                    var view = _items[i].View;
+                    _items.RemoveAt(i);
+                    if (view?.OwnerZone == this)
+                        view.OwnerZone = null;
+                    LayoutAll();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void ClearAllCards()
+        {
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                var view = _items[i].View;
+                if (view != null)
+                    UnityEngine.Object.Destroy(view.gameObject);
+            }
+            _items.Clear();
         }
 
         public override bool CanAccept(DragPayload payload, PointerEventData eventData)
@@ -538,19 +600,6 @@ namespace Game.Gameplay.Demo1.UI.Widget
             float desiredStartX = originX + _padding.x + desiredStart * unit;
             float desiredEndX = desiredStartX + dragWidth;
 
-            void DrawItemFill(int startIndex, int itemWidthInCells, Color fill)
-            {
-                itemWidthInCells = Mathf.Clamp(itemWidthInCells, 1, 3);
-                startIndex = Mathf.Clamp(startIndex, 0, _capacity - itemWidthInCells);
-
-                float w = itemWidthInCells * _cellWidth + (itemWidthInCells - 1) * _spacing;
-                float x0 = originX + _padding.x + startIndex * unit;
-                float cx = x0 + w * 0.5f;
-
-                Gizmos.color = fill;
-                Gizmos.DrawCube(new Vector3(cx, centerY, 0f), new Vector3(w, _cellHeight, 0.01f));
-            }
-
             Gizmos.color = new Color(0.25f, 1f, 0.35f, 0.9f);
             Gizmos.DrawLine(new Vector3(centerXPivot, centerY - _cellHeight * 0.6f, 0f), new Vector3(centerXPivot, centerY + _cellHeight * 0.6f, 0f));
 
@@ -569,93 +618,28 @@ namespace Game.Gameplay.Demo1.UI.Widget
                 }
             }
 
-            var leftFill = new Color(0.05f, 0.7f, 1f, 0.16f);
-            var rightFill = new Color(1f, 0.15f, 0.85f, 0.16f);
+            for (int i = insertIndex; i < orderedCurrent.Count; i++)
+                DrawItemFill(orderedCurrent[i].StartIndex, orderedCurrent[i].WidthInCells, new Color(1f, 0.8f, 0.2f, 0.4f));
 
-            for (int i = 0; i < orderedCurrent.Count; i++)
-            {
-                var item = orderedCurrent[i];
-                if (item == null)
-                    continue;
+            DrawItemFill(desiredStart, widthInCells, new Color(0.3f, 0.8f, 1f, 0.5f));
 
-                var fill = i < insertIndex ? leftFill : rightFill;
-                DrawItemFill(item.StartIndex, item.WidthInCells, fill);
-            }
-
-            Gizmos.color = new Color(0.7f, 0.7f, 0.7f, 0.85f);
-            Gizmos.DrawWireCube(new Vector3(desiredStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
-            Gizmos.color = new Color(0.7f, 0.7f, 0.7f, 0.6f);
-            Gizmos.DrawLine(new Vector3(desiredStartX, centerY - _cellHeight * 0.55f, 0f), new Vector3(desiredStartX, centerY + _cellHeight * 0.55f, 0f));
-            Gizmos.DrawLine(new Vector3(desiredEndX, centerY - _cellHeight * 0.55f, 0f), new Vector3(desiredEndX, centerY + _cellHeight * 0.55f, 0f));
-
-            bool hasPrediction = false;
-            int predictedStart = -1;
-            int predictedEnd = -1;
-            {
-                CardItem draggingItem = null;
-                for (int i = 0; i < _items.Count; i++)
-                {
-                    if (_items[i].View == payload.View)
-                    {
-                        draggingItem = _items[i];
-                        break;
-                    }
-                }
-
-                if (draggingItem == null)
-                    draggingItem = new CardItem(payload.View, widthInCells);
-                else
-                    draggingItem.WidthInCells = widthInCells;
-
-                if (TryApplyOrderedInsert(draggingItem, centerXLeft, desiredStart, apply: false, out _, out var starts)
-                    && starts.TryGetValue(draggingItem, out predictedStart))
-                {
-                    hasPrediction = true;
-                    predictedEnd = predictedStart + widthInCells - 1;
-
-                    float predictedStartX = originX + _padding.x + predictedStart * unit;
-                    float predictedEndX = predictedStartX + dragWidth;
-
-                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.18f);
-                    Gizmos.DrawCube(new Vector3(predictedStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
-                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.85f);
-                    Gizmos.DrawWireCube(new Vector3(predictedStartX + dragWidth * 0.5f, centerY, 0f), new Vector3(dragWidth, _cellHeight, 0.01f));
-                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.6f);
-                    Gizmos.DrawLine(new Vector3(predictedStartX, centerY - _cellHeight * 0.55f, 0f), new Vector3(predictedStartX, centerY + _cellHeight * 0.55f, 0f));
-                    Gizmos.DrawLine(new Vector3(predictedEndX, centerY - _cellHeight * 0.55f, 0f), new Vector3(predictedEndX, centerY + _cellHeight * 0.55f, 0f));
-                }
-            }
-
-            for (int c = desiredStart; c <= desiredEnd; c++)
-            {
-                float cellX = originX + _padding.x + c * unit + _cellWidth * 0.5f;
-                Gizmos.color = new Color(0.75f, 0.75f, 0.75f, 0.07f);
-                Gizmos.DrawCube(new Vector3(cellX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
-            }
-
-            if (hasPrediction)
-            {
-                for (int c = predictedStart; c <= predictedEnd; c++)
-                {
-                    float cellX = originX + _padding.x + c * unit + _cellWidth * 0.5f;
-                    Gizmos.color = new Color(0.95f, 0.75f, 0.2f, 0.10f);
-                    Gizmos.DrawCube(new Vector3(cellX, centerY, 0f), new Vector3(_cellWidth, _cellHeight, 0.01f));
-                }
-            }
-            else
-            {
-                Gizmos.color = new Color(1f, 0.25f, 0.25f, 0.9f);
-                Gizmos.DrawLine(new Vector3(desiredStartX, centerY - _cellHeight * 0.45f, 0f), new Vector3(desiredEndX, centerY + _cellHeight * 0.45f, 0f));
-                Gizmos.DrawLine(new Vector3(desiredStartX, centerY + _cellHeight * 0.45f, 0f), new Vector3(desiredEndX, centerY - _cellHeight * 0.45f, 0f));
-            }
+            for (int i = 0; i < insertIndex; i++)
+                DrawItemFill(orderedCurrent[i].StartIndex, orderedCurrent[i].WidthInCells, new Color(1f, 0.8f, 0.2f, 0.4f));
 
             Gizmos.matrix = oldMatrix;
 
-#if UNITY_EDITOR
-            var labelWorld = rt.TransformPoint(new Vector3(originX + _padding.x, centerY + _cellHeight * 0.55f, 0f));
-            var predictedText = hasPrediction ? $"{predictedStart}-{predictedEnd}" : "NONE";
-            Handles.Label(labelWorld, $"w:{widthInCells} desired:{desiredStart}-{desiredEnd} insertIndex:{insertIndex}/{orderedCurrent.Count} predicted:{predictedText}");
-#endif
+            void DrawItemFill(int startIndex, int itemWidthInCells, Color fill)
+            {
+                itemWidthInCells = Mathf.Clamp(itemWidthInCells, 1, 3);
+                startIndex = Mathf.Clamp(startIndex, 0, _capacity - itemWidthInCells);
+
+                float w = itemWidthInCells * _cellWidth + (itemWidthInCells - 1) * _spacing;
+                float x0 = originX + _padding.x + startIndex * unit;
+                float cx = x0 + w * 0.5f;
+
+                Gizmos.color = fill;
+                Gizmos.DrawCube(new Vector3(cx, centerY, 0f), new Vector3(w, _cellHeight, 0.01f));
+            }
         }
 
         private static void MarkRegion(bool[] occ, int start, int width, bool value)
@@ -676,17 +660,6 @@ namespace Game.Gameplay.Demo1.UI.Widget
                     return false;
             }
             return true;
-        }
-
-        private static bool IsRegionFreeWithForbidden(bool[] occ, int start, int width, int forbiddenStart, int forbiddenWidth)
-        {
-            if (!IsRegionFree(occ, start, width))
-                return false;
-
-            int end = start + width - 1;
-            int forbiddenEnd = forbiddenStart + forbiddenWidth - 1;
-            bool overlapsForbidden = start <= forbiddenEnd && end >= forbiddenStart;
-            return !overlapsForbidden;
         }
 
         private class CardItem

@@ -2,12 +2,13 @@ using UnityEngine;
 using Framework.Modules.UI;
 using DG.Tweening;
 using Framework;
+using Game.Gameplay.Demo1;
 using Game.Gameplay.Demo1.System;
 using UnityEngine.UI;
 using System;
-using Game.Gameplay.Demo1.Event;
 using Game.Gameplay.Demo1.Command;
 
+[GameState(GameState.Selection)]
 public partial class UI_SelectScenePanel : UIPanel
 {
     private Button[] btns;
@@ -46,11 +47,11 @@ public partial class UI_SelectScenePanel : UIPanel
         {
             if(i < options.Length)
             {
-                var mode = options[i].Mode;
+                var option = options[i];
 
-                SetButtonText(btns[i], options[i].Name, () =>
+                SetButtonText(btns[i], option.Name, () =>
                 {
-                    this.SendCommand(new SelectSceneCommand() { Mode = mode });
+                    this.SendCommand(new ChangeGameStateCommand { State = option.State, Data = option.Data });
                 });
             }
             else
@@ -67,6 +68,7 @@ public partial class UI_SelectScenePanel : UIPanel
             btn.gameObject.SetActive(false);
         else
             btn.gameObject.SetActive(true);
+        btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => onClick?.Invoke());
     }
 }

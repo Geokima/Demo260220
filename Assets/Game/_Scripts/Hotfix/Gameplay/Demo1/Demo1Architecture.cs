@@ -1,5 +1,5 @@
 using Framework;
-using Framework.Modules.Procedure;
+using Framework.Modules.Config;
 using Framework.Modules.Res;
 using Framework.Modules.Timer;
 using Framework.Modules.UI;
@@ -11,16 +11,19 @@ namespace Game.Gameplay.Demo1
     {
         protected override void RegisterModule()
         {
-            // 注册模型
-            RegisterModel(new Demo1Model());
-            // 注册系统
-            RegisterSystem<IResSystem>(new ResSystem());
+            RegisterSystem(GameArchitecture.Instance.GetSystem<IConfigSystem>());
+            RegisterSystem(GameArchitecture.Instance.GetSystem<IResSystem>());
+
             RegisterSystem<ITimerSystem>(new TimerSystem());
-            RegisterSystem<IProcedureSystem>(new ProcedureSystem());
             RegisterSystem<IUISystem>(new UISystem());
-            RegisterSystem<ISceneModeSystem>(new SceneModeSystem());
+            RegisterSystem<IGameStateSystem>(new GameStateSystem());
             RegisterSystem<IDragSystem>(new DragSystem());
             RegisterSystem<ISelectionOptionSystem>(new SelectionOptionSystem());
+            RegisterSystem<IShopPurchaseSystem>(new ShopPurchaseSystem());
+            RegisterSystem<IGameRoundSystem>(new GameRoundSystem());
+            RegisterSystem<IBattleSystem>(new BattleSystem());
+
+            RegisterModel(new Demo1Model());
         }
     }
 }

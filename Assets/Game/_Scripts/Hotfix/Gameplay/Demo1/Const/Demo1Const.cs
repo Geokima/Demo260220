@@ -21,10 +21,7 @@ namespace Game.Gameplay.Demo1
         Passive
     }
 
-    /// <summary>
-    /// 上方（对称区域）的业务模式场景切换
-    /// </summary>
-    public enum SceneMode
+    public enum GameState
     {
         None,
         Selection,

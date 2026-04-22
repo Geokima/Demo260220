@@ -2,6 +2,18 @@ using Framework;
 
 namespace Game.Gameplay.Demo1.System
 {
+    public interface ISelectionOptionSystem : ISystem
+    {
+        RoundOption[] GetOptions();
+    }
+
+    public struct RoundOption
+    {
+        public GameState State;
+        public string Name;
+        public int Data;
+    }
+
     public class SelectionOptionSystem : AbstractSystem, ISelectionOptionSystem
     {
         public RoundOption[] GetOptions()
@@ -13,15 +25,15 @@ namespace Game.Gameplay.Demo1.System
             {
                 return new[]
                 {
-                    new RoundOption { Mode = SceneMode.Battle, Name = "战斗" }
+                    new RoundOption { State = GameState.Battle, Name = "战斗", Data = 1 }
                 };
             }
 
             return new[]
             {
-                new RoundOption { Mode = SceneMode.Shop, Name = "商店" },
-                new RoundOption { Mode = SceneMode.Work, Name = "打工" },
-                new RoundOption { Mode = SceneMode.Treasure, Name = "宝箱" }
+                new RoundOption { State = GameState.Shop, Name = "商店", Data = 0 },
+                new RoundOption { State = GameState.Work, Name = "打工", Data = 0 },
+                new RoundOption { State = GameState.Treasure, Name = "宝箱", Data = 0 }
             };
         }
     }

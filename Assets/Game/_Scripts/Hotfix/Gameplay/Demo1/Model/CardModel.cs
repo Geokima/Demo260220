@@ -1,21 +1,18 @@
+using System;
 using System.Collections.Generic;
 using Framework;
 
 namespace Game.Gameplay.Demo1
 {
-    /// <summary>
-    /// 卡牌数据（运行时）
-    /// 包含战斗中的动态数值，使用 BindableProperty 响应式更新 UI
-    /// </summary>
     public class CardModel : AbstractModel
     {
-        private CardData _config;
+        private Demo1CardConfig _config;
 
-        public string Id => _config?.Id;
+        public int Id => _config?.Id ?? 0;
         public string Name => _config?.Name;
         public int Size => _config?.Size ?? 1;
         public List<string> Tags => _config?.Tags ?? new List<string>();
-        public CardType Type => _config?.Type ?? CardType.Active;
+        public CardType Type => _config != null && Enum.TryParse<CardType>(_config.Type, out var t) ? t : CardType.Active;
 
         public BindableProperty<int> Price { get; } = new BindableProperty<int>();
         public BindableProperty<int> Damage { get; } = new BindableProperty<int>();
@@ -29,18 +26,18 @@ namespace Game.Gameplay.Demo1
 
         public BindableProperty<CardRank> Rank { get; } = new BindableProperty<CardRank>();
 
-        public CardData Config => _config;
+        public Demo1CardConfig Config => _config;
 
         public CardModel()
         {
         }
 
-        public CardModel(CardData config)
+        public CardModel(Demo1CardConfig config)
         {
             Bind(config);
         }
 
-        public void Bind(CardData config)
+        public void Bind(Demo1CardConfig config)
         {
             _config = config;
             if (config == null) return;
@@ -60,7 +57,7 @@ namespace Game.Gameplay.Demo1
             BulletCount.Value = _config.BulletCount;
             MaxCD.Value = _config.MaxCD;
             CurrentCD.Value = _config.MaxCD;
-            Rank.Value = _config.Rank;
+            Rank.Value = _config.Rank != null && Enum.TryParse<CardRank>(_config.Rank, out var r) ? r : CardRank.Bronze;
         }
 
         public void ResetCD()
