@@ -10,16 +10,6 @@ namespace Framework.Modules.UI
     public interface IUISystem : ISystem
     {
         /// <summary>
-        /// UI 根画布
-        /// </summary>
-        Canvas CanvasRoot { get; }
-
-        /// <summary>
-        /// UI 根节点 RectTransform
-        /// </summary>
-        RectTransform CanvasRootRect { get; }
-
-        /// <summary>
         /// 当前导航栈中的面板数量
         /// </summary>
         int NavigationStackCount { get; }

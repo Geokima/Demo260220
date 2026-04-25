@@ -18,6 +18,7 @@ namespace Game.Gameplay.Demo1.System
     {
         private Demo1Model _model;
         private float _accumulator = 0;
+        private float _poisonAccumulator = 0;
         private const float TickInterval = 0.1f;
 
         public bool IsInBattle { get; private set; }
@@ -59,6 +60,7 @@ namespace Game.Gameplay.Demo1.System
 
             IsInBattle = true;
             _accumulator = 0;
+            _poisonAccumulator = 0;
         }
 
         public void StopBattle()
@@ -113,7 +115,12 @@ namespace Game.Gameplay.Demo1.System
             TickCD(_model.EnemyCards);
             TickCD(_model.ActiveSlots);
 
-            ApplyPoison();
+            _poisonAccumulator += TickInterval;
+            while (_poisonAccumulator >= Demo1Const.PoisonTickInterval)
+            {
+                _poisonAccumulator -= Demo1Const.PoisonTickInterval;
+                ApplyPoison();
+            }
 
             ExecuteCards(_model.ActiveSlots, true);
             ExecuteCards(_model.EnemyCards, false);
@@ -158,7 +165,7 @@ namespace Game.Gameplay.Demo1.System
                 if (isPlayer)
                 {
                     if (damage > 0)
-                        DealDamageToEnemy(damage);
+                        DealDamage(_model.EnemyShield, _model.EnemyHP, damage);
                     if (shield > 0)
                         _model.PlayerShield.Value += shield;
                     if (poison > 0)
@@ -169,7 +176,7 @@ namespace Game.Gameplay.Demo1.System
                 else
                 {
                     if (damage > 0)
-                        DealDamageToPlayer(damage);
+                        DealDamage(_model.PlayerShield, _model.CurrentHP, damage);
                     if (shield > 0)
                         _model.EnemyShield.Value += shield;
                     if (poison > 0)
@@ -182,34 +189,19 @@ namespace Game.Gameplay.Demo1.System
             }
         }
 
-        private void DealDamageToEnemy(int damage)
+        private void DealDamage(BindableProperty<int> shield, BindableProperty<int> hp, int damage)
         {
-            if (_model.EnemyShield.Value > 0)
+            if (shield.Value > 0)
             {
-                if (_model.EnemyShield.Value >= damage)
+                if (shield.Value >= damage)
                 {
-                    _model.EnemyShield.Value -= damage;
+                    shield.Value -= damage;
                     return;
                 }
-                damage -= _model.EnemyShield.Value;
-                _model.EnemyShield.Value = 0;
+                damage -= shield.Value;
+                shield.Value = 0;
             }
-            _model.EnemyHP.Value = Mathf.Max(0, _model.EnemyHP.Value - damage);
-        }
-
-        private void DealDamageToPlayer(int damage)
-        {
-            if (_model.PlayerShield.Value > 0)
-            {
-                if (_model.PlayerShield.Value >= damage)
-                {
-                    _model.PlayerShield.Value -= damage;
-                    return;
-                }
-                damage -= _model.PlayerShield.Value;
-                _model.PlayerShield.Value = 0;
-            }
-            _model.CurrentHP.Value = Mathf.Max(0, _model.CurrentHP.Value - damage);
+            hp.Value = Mathf.Max(0, hp.Value - damage);
         }
     }
 }

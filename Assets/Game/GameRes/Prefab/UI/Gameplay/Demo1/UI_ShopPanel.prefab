@@ -111,7 +111,7 @@ MonoBehaviour:
   _layer: 1000
   _isSingleton: 1
   _fixedOrder: 0
-  widget_ShopZone: {fileID: 4275421502818987599}
+  ShopZone: {fileID: 0}
   TxtLabel: {fileID: 0}
   BtnQuit: {fileID: 0}
   BtnRefresh: {fileID: 0}

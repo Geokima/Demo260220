@@ -1,5 +1,6 @@
 using Framework;
 using Framework.Modules.UI;
+using Game.Gameplay.Demo1.Event;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +43,8 @@ namespace Game.Gameplay.Demo1.System
 
             if (_panelTypes.TryGetValue(state, out var newType))
                 OpenPanel(newType, data);
+
+            this.SendEvent(new GameStateChangedEvent { State = state });
         }
 
         private void OpenPanel(Type panelType, int data)

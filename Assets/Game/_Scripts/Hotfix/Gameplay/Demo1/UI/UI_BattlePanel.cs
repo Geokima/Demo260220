@@ -12,19 +12,22 @@ public partial class UI_BattlePanel : UIPanel
 {
     private IUnregister _enemyHpUnregister;
     private IUnregister _enemyMaxHpUnregister;
+    private IUnregister _enemyShieldUnregister;
+    private IUnregister _enemyPoisonUnregister;
     private IUnregister _battleEndedUnregister;
 
     partial void InitComponents()
     {
-        CardBoard.SetDraggable(false);BtnQuit.onClick.AddListener(() =>
+        BenchZone.SetDraggable(false);BtnQuit.onClick.AddListener(() =>
         {
             this.SendCommand(new QuitEncounterCommand());
         });
-        BtnQuit.gameObject.SetActive(false);
     }
 
     override public void OnOpen(object data = null)
     {
+        TxtLabel.text = "战斗";
+        BtnQuit.gameObject.SetActive(false);
         CanvasGroup.interactable = true;
         CanvasGroup.blocksRaycasts = true;
         CanvasGroup.alpha = 0;
@@ -35,10 +38,12 @@ public partial class UI_BattlePanel : UIPanel
         battleSystem.StartBattle(enemyId);
 
         var model = this.GetModel<Demo1Model>();
-        CardBoard.BindTo(model.EnemyCards);
+        BenchZone.BindTo(model.EnemyCards);
 
         _enemyHpUnregister = model.EnemyHP.RegisterWithInitValue(_ => UpdateEnemyHp());
         _enemyMaxHpUnregister = model.EnemyMaxHP.RegisterWithInitValue(_ => UpdateEnemyHp());
+        _enemyShieldUnregister = model.EnemyShield.RegisterWithInitValue(_ => UpdateEnemyShield());
+        _enemyPoisonUnregister = model.EnemyPoison.RegisterWithInitValue(_ => UpdateEnemyPoison());
         _battleEndedUnregister = this.RegisterEvent<BattleEndedEvent>(OnBattleEnded);
     }
 
@@ -48,14 +53,17 @@ public partial class UI_BattlePanel : UIPanel
         CanvasGroup.blocksRaycasts = false;
         DOTween.To(() => CanvasGroup.alpha, x => CanvasGroup.alpha = x, 0, .5f);
 
-        CardBoard.Unbind();
+        BenchZone.Unbind();
         _enemyHpUnregister?.Unregister();
         _enemyMaxHpUnregister?.Unregister();
+        _enemyShieldUnregister?.Unregister();
+        _enemyPoisonUnregister?.Unregister();
         _battleEndedUnregister?.Unregister();
     }
 
     private void OnBattleEnded(BattleEndedEvent e)
     {
+        TxtLabel.text = e.PlayerWon ? "战斗胜利" : "战斗失败";
         BtnQuit.gameObject.SetActive(true);
     }
 
@@ -64,5 +72,19 @@ public partial class UI_BattlePanel : UIPanel
         var model = this.GetModel<Demo1Model>();
         if (HpBar != null)
             HpBar.SetHp(model.EnemyHP.Value, model.EnemyMaxHP.Value);
+    }
+
+    private void UpdateEnemyShield()
+    {
+        var model = this.GetModel<Demo1Model>();
+        if (HpBar != null)
+            HpBar.SetSheild(model.EnemyShield.Value);
+    }
+
+    private void UpdateEnemyPoison()
+    {
+        var model = this.GetModel<Demo1Model>();
+        if (HpBar != null)
+            HpBar.SetPoison(model.EnemyPoison.Value);
     }
 }

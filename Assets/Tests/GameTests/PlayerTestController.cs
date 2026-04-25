@@ -50,6 +50,14 @@ namespace Game.Tests
         {
         }
 
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F1))
+            {
+                _showPanel = !_showPanel;
+            }
+        }
+
         #region Resource Buttons
 
         [Button("增加金币(+1000)", "GM")]
@@ -101,6 +109,7 @@ namespace Game.Tests
         private bool _isDirty = true;
         private Rect _panelRect = new Rect(20, 100, 320, 480);
         private Vector2 _scrollPosition;
+        private bool _showPanel = true;
 
         private int _cachedLevel, _cachedExp, _cachedEnergy, _cachedDiamond, _cachedGold, _cachedItemCount;
         private bool _isDataPanelBound = false;
@@ -123,15 +132,15 @@ namespace Game.Tests
 
         private void OnGUI()
         {
-            SetupStyles();
+            if (!_showPanel) return;
+
             var accountModel = this.GetModel<AccountModel>();
-            if (accountModel == null || !accountModel.IsLoggedIn) {
-                DrawLoginBox();
-                return;
-            }
+            if (accountModel == null || !accountModel.IsLoggedIn) return;
+
+            SetupStyles();
 
             if (_isDirty) RefreshCachedStats();
-            _panelRect = GUI.Window(1, _panelRect, DrawStatsWindow, "玩家调试面板 (F1查看/隐藏)", _windowStyle);
+            _panelRect = GUI.Window(1, _panelRect, DrawStatsWindow, "玩家调试面板 (F1开关)", _windowStyle);
         }
 
         private void RefreshCachedStats()
@@ -158,12 +167,12 @@ namespace Game.Tests
             var (curExp, maxExp) = playerModel.GetLevelExpProgress(_cachedExp);
             float expPct = (float)curExp / maxExp;
 
-            Label("等级", _cachedLevel.ToString(), "#FFD700");
-            Label("经验", $"{curExp}/{maxExp} ({expPct:P1})", "#00CED1");
-            Label("体力", $"{_cachedEnergy}/{playerModel.GetMaxEnergy()}", "#FF6347");
-            Label("钻石", _cachedDiamond.ToString(), "#00BFFF");
-            Label("金币", _cachedGold.ToString(), "#FFD700");
-            Label("背包", $"{_cachedItemCount} Items", "#32CD32");
+            Label("等级", _cachedLevel.ToString());
+            Label("经验", $"{curExp}/{maxExp} ({expPct:P1})");
+            Label("体力", $"{_cachedEnergy}/{playerModel.GetMaxEnergy()}");
+            Label("钻石", _cachedDiamond.ToString());
+            Label("金币", _cachedGold.ToString());
+            Label("背包", $"{_cachedItemCount} Items");
 
             GUILayout.Space(10);
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(200));
@@ -178,43 +187,68 @@ namespace Game.Tests
                 // 只有类型为消耗品时才显示使用按钮
                 if (cfg != null && cfg.Type == "Consumable")
                 {
-                    if (GUILayout.Button("使用", GUILayout.Width(50))) this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
+                    if (GUILayout.Button("使用", _buttonStyle, GUILayout.Width(50))) this.SendCommand(new UseItemCommand { Uid = item.Uid, Amount = 1 });
                 }
                 
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndScrollView();
 
-            if (GUILayout.Button("退出登录", GUILayout.Height(30))) this.SendCommand(new LogoutCommand());
+            if (GUILayout.Button("退出登录", _buttonStyle, GUILayout.Height(30))) this.SendCommand(new LogoutCommand());
 
             GUILayout.EndVertical();
             GUI.DragWindow();
         }
 
-        private void Label(string key, string val, string color)
+        private void Label(string key, string val)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(key, GUILayout.Width(60));
-            GUILayout.Label($"<color={color}>{val}</color>");
+            GUILayout.Label(key, _labelStyle, GUILayout.Width(60));
+            GUILayout.Label(val, _labelStyle);
             GUILayout.EndHorizontal();
         }
 
-        private string _u = "test", _p = "123";
-        private void DrawLoginBox()
-        {
-            Rect r = new Rect((Screen.width-200)/2, (Screen.height-150)/2, 200, 150);
-            GUI.Box(r, "测试登录", _windowStyle);
-            _u = GUI.TextField(new Rect(r.x+20, r.y+40, 160, 25), _u);
-            _p = GUI.PasswordField(new Rect(r.x+20, r.y+75, 160, 25), _p, '*');
-            if (GUI.Button(new Rect(r.x+20, r.y+110, 160, 25), "登 录")) this.SendCommand(new LoginCommand { Username = _u, Password = _p });
-        }
-
         private GUIStyle _windowStyle;
+        private GUIStyle _labelStyle;
+        private GUIStyle _buttonStyle;
+        private GUIStyle _boxStyle;
+        private Texture2D _grayTex;
+
         private void SetupStyles()
         {
             if (_windowStyle != null) return;
-            _windowStyle = new GUIStyle(GUI.skin.window);
-            _windowStyle.richText = true;
+
+            _grayTex = MakeTex(new Color(0.2f, 0.2f, 0.2f, 1f));
+
+            _windowStyle = new GUIStyle(GUI.skin.window)
+            {
+                richText = true,
+                fontSize = 12,
+                normal = { background = _grayTex }
+            };
+
+            _labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                richText = true,
+                fontSize = 12
+            };
+
+            _buttonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 12,
+                normal = { background = MakeTex(new Color(0.35f, 0.35f, 0.35f, 1f)) },
+                hover = { background = MakeTex(new Color(0.45f, 0.45f, 0.45f, 1f)) }
+            };
+
+            _boxStyle = new GUIStyle(GUI.skin.box);
+        }
+
+        private Texture2D MakeTex(Color color)
+        {
+            var tex = new Texture2D(1, 1);
+            tex.SetPixel(0, 0, color);
+            tex.Apply();
+            return tex;
         }
 
         #endregion

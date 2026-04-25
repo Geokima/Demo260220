@@ -29,7 +29,6 @@ namespace Framework.Modules.Config
         /// <inheritdoc />
         public override void Deinit()
         {
-            _sheets.Clear();
         }
 
         #endregion

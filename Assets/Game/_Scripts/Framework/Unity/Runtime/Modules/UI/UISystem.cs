@@ -14,22 +14,21 @@ namespace Framework.Modules.UI
     {
         #region Fields
 
-        private readonly Dictionary<string, UIPanel> _openedPanels = new();
+        private readonly Dictionary<string, UIPanel> _loadedPanels = new();
+        private readonly HashSet<string> _activePanels = new();
         private readonly Dictionary<UILayer, RectTransform> _layerRoots = new();
         private readonly Dictionary<UILayer, int> _layerCounters = new();
         private readonly List<UIPanel> _navigationStack = new();
-        private Canvas _canvasRoot;
-        private RectTransform _canvasRootRect;
+        private static Canvas _canvasRoot;
+        private static RectTransform _canvasRootRect;
 
         #endregion
 
         #region Properties
 
-        /// <inheritdoc />
-        public Canvas CanvasRoot => _canvasRoot;
+        public static Canvas CanvasRoot => _canvasRoot;
 
-        /// <inheritdoc />
-        public RectTransform CanvasRootRect => _canvasRootRect;
+        public static RectTransform CanvasRootRect => _canvasRootRect;
 
         /// <inheritdoc />
         public int NavigationStackCount => _navigationStack.Count;
@@ -52,7 +51,8 @@ namespace Framework.Modules.UI
         public override void Deinit()
         {
             CloseAll(Enum.GetValues(typeof(UILayer)) as UILayer[]);
-            _openedPanels.Clear();
+            _loadedPanels.Clear();
+            _activePanels.Clear();
             _navigationStack.Clear();
             _layerCounters.Clear();
         }
@@ -64,14 +64,14 @@ namespace Framework.Modules.UI
         /// <inheritdoc />
         public T GetPanel<T>() where T : UIPanel
         {
-            _openedPanels.TryGetValue(typeof(T).Name, out var panel);
+            _loadedPanels.TryGetValue(typeof(T).Name, out var panel);
             return panel as T;
         }
 
         /// <inheritdoc />
         public bool IsOpen<T>() where T : UIPanel
         {
-            return _openedPanels.ContainsKey(typeof(T).Name);
+            return _activePanels.Contains(typeof(T).Name);
         }
 
         /// <inheritdoc />
@@ -80,7 +80,7 @@ namespace Framework.Modules.UI
             Log($"[UI] Open panel: {typeof(T).Name}");
             var name = typeof(T).Name;
 
-            if (_openedPanels.TryGetValue(name, out var panel))
+            if (_loadedPanels.TryGetValue(name, out var panel))
             {
                 Reopen(panel, data);
                 return;
@@ -89,7 +89,8 @@ namespace Framework.Modules.UI
             panel = LoadPanel<T>();
             if (panel == null) return;
 
-            _openedPanels[panel.GetType().Name] = panel;
+            _loadedPanels[panel.GetType().Name] = panel;
+            _activePanels.Add(panel.GetType().Name);
 
             if (panel.Layer == UILayer.Navigation)
             {
@@ -112,7 +113,9 @@ namespace Framework.Modules.UI
         {
             Log($"[UI] Close panel: {typeof(T).Name}");
             var name = typeof(T).Name;
-            if (!_openedPanels.TryGetValue(name, out var panel)) return;
+            if (!_loadedPanels.TryGetValue(name, out var panel)) return;
+
+            _activePanels.Remove(name);
 
             if (panel.Layer == UILayer.Navigation)
             {
@@ -139,7 +142,7 @@ namespace Framework.Modules.UI
             var layerSet = new HashSet<UILayer>(layers);
             var panelsToClose = new List<UIPanel>();
 
-            foreach (var pair in _openedPanels)
+            foreach (var pair in _loadedPanels)
             {
                 if (layerSet.Contains(pair.Value.Layer))
                     panelsToClose.Add(pair.Value);
@@ -154,6 +157,7 @@ namespace Framework.Modules.UI
                     hasNavigation = true;
                 }
 
+                _activePanels.Remove(panel.GetType().Name);
                 panel.OnClose();
             }
 
@@ -183,6 +187,7 @@ namespace Framework.Modules.UI
                         {
                             var toClose = _navigationStack[i];
                             _navigationStack.RemoveAt(i);
+                            _activePanels.Remove(toClose.GetType().Name);
                             toClose.OnClose();
                         }
                         LogWarning($"[UI] Singleton panel {panel.GetType().Name} reopened, closed {_navigationStack.Count - index - 1} panels above");
@@ -204,6 +209,7 @@ namespace Framework.Modules.UI
                     panel.Canvas.sortingOrder = (int)panel.Layer + _layerCounters[panel.Layer] * 10;
                 }
 
+                _activePanels.Add(panel.GetType().Name);
                 panel.OnOpen(data);
             }
             else
@@ -213,6 +219,7 @@ namespace Framework.Modules.UI
                     _layerCounters[panel.Layer]++;
                     panel.Canvas.sortingOrder = (int)panel.Layer + _layerCounters[panel.Layer] * 10;
                 }
+                _activePanels.Add(panel.GetType().Name);
                 panel.OnOpen(data);
             }
         }
@@ -268,6 +275,8 @@ namespace Framework.Modules.UI
 
         private void CreateCanvasRoot()
         {
+            if (_canvasRoot != null) return;
+
             var obj = new GameObject("RootCanvas");
             _canvasRoot = obj.AddComponent<Canvas>();
             _canvasRootRect = obj.GetComponent<RectTransform>();
@@ -284,6 +293,8 @@ namespace Framework.Modules.UI
 
         private void CreateLayerRoots()
         {
+            if (_layerRoots.Count > 0) return;
+
             foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
             {
                 var obj = new GameObject($"Layer_{layer}");

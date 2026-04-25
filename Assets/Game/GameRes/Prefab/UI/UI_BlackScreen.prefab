@@ -54,7 +54,7 @@ Canvas:
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
-  m_OverrideSorting: 0
+  m_OverrideSorting: 1
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
@@ -106,7 +106,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _layer: 5000
   _isSingleton: 1
-  _fixedOrder: 0
+  _fixedOrder: 1
 --- !u!1 &6464018009628596650
 GameObject:
   m_ObjectHideFlags: 0

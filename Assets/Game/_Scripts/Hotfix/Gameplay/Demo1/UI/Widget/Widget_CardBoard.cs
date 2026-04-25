@@ -19,6 +19,7 @@ namespace Game.Gameplay.Demo1.UI.Widget
 
         private readonly List<CardItem> _items = new List<CardItem>();
         private BindableList<CardModel> _boundList;
+        private bool _isSyncing;
         private IUnregister _onAddUnregister;
         private IUnregister _onRemoveUnregister;
 
@@ -32,8 +33,18 @@ namespace Game.Gameplay.Demo1.UI.Widget
                 return;
 
             _boundList = list;
-            _onAddUnregister = list.OnAdd.Register((index, card) => AddCard(card));
-            _onRemoveUnregister = list.OnRemove.Register((index, card) => RemoveCard(card));
+            _onAddUnregister = list.OnAdd.Register((index, card) =>
+            {
+                if (_isSyncing)
+                    return;
+                AddCard(card);
+            });
+            _onRemoveUnregister = list.OnRemove.Register((index, card) =>
+            {
+                if (_isSyncing)
+                    return;
+                RemoveCard(card);
+            });
             Refresh();
         }
 
@@ -231,6 +242,30 @@ namespace Game.Gameplay.Demo1.UI.Widget
             _items.Clear();
         }
 
+        private void SyncBoundList()
+        {
+            if (_boundList == null)
+                return;
+
+            var orderedModels = _items
+                .Where(i => i?.View?.Model != null)
+                .OrderBy(i => i.StartIndex)
+                .Select(i => i.View.Model)
+                .ToList();
+
+            _isSyncing = true;
+            try
+            {
+                _boundList.Clear();
+                for (int i = 0; i < orderedModels.Count; i++)
+                    _boundList.Add(orderedModels[i]);
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+        }
+
         public override bool CanAccept(DragPayload payload, PointerEventData eventData)
         {
             if (!_draggable)
@@ -299,7 +334,8 @@ namespace Game.Gameplay.Demo1.UI.Widget
             if (!TryApplyOrderedInsert(item, dragCenterX, desiredStart, apply: true, out _, out _))
                 return false;
 
-            if (view.OwnerZone is Widget_CardBoard oldBoard && oldBoard != this)
+            var oldBoard = view.OwnerZone as Widget_CardBoard;
+            if (oldBoard != null && oldBoard != this)
                 oldBoard.RemoveCard(view);
 
             view.RectTransform.SetParent(transform, false);
@@ -307,6 +343,9 @@ namespace Game.Gameplay.Demo1.UI.Widget
             view.OwnerZone = this;
 
             LayoutAll();
+            SyncBoundList();
+            if (oldBoard != null && oldBoard != this)
+                oldBoard.SyncBoundList();
             return true;
         }
 

@@ -371,7 +371,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1287399437}
         m_TargetAssemblyTypeName: Game.Gameplay.Demo1.Demo1ArchitectureRunner, Hotfix
-        m_MethodName: Shutdown
+        m_MethodName: Quit
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

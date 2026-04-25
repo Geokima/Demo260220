@@ -1,6 +1,8 @@
 using Framework;
+using Framework.Modules.Procedure;
 using Framework.Modules.UI;
 using Game.Gameplay.Demo1.System;
+using Game.Procedures;
 using UnityEngine;
 
 namespace Game.Gameplay.Demo1
@@ -10,6 +12,11 @@ namespace Game.Gameplay.Demo1
         [SerializeField] private bool IsDebug = true;
 
         private IBattleSystem _battleSystem;
+
+        public void Quit()
+        {
+            GameArchitecture.Instance.GetSystem<IProcedureSystem>().ChangeProcedure<MainProcedure>();
+        }
 
         private void Awake()
         {

@@ -1,6 +1,7 @@
 using Framework.Modules.Http;
 using Framework.Modules.Network;
 using Framework.Modules.Procedure;
+using Framework.Modules.UI;
 using Game.Auth;
 using Game.Player;
 using Game.Inventory;
@@ -11,7 +12,6 @@ using Game.Gateways;
 using Game.Effect;
 using Game.Mission;
 using UnityEngine;
-using Framework.Modules.UI;
 
 namespace Game
 {
@@ -84,9 +84,8 @@ namespace Game
             procedureSystem.RegisterProcedure(new Demo1Procedure());
 
             // UI 渲染模式
-            var uiSystem = GameArchitecture.Instance.GetSystem<IUISystem>();
-            uiSystem.CanvasRoot.renderMode = RenderMode.ScreenSpaceCamera;
-            uiSystem.CanvasRoot.worldCamera = Camera.main;
+            UISystem.CanvasRoot.renderMode = RenderMode.ScreenSpaceCamera;
+            UISystem.CanvasRoot.worldCamera = Camera.main;
 
             // 启动流程
             var procedure = GameArchitecture.Instance.GetSystem<IProcedureSystem>();

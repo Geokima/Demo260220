@@ -10,12 +10,16 @@ namespace Game.Gateways
 {
     public static class MailController
     {
+        private const int MAX_MAIL_COUNT = 100;
+
         private static readonly string[] _testTitles = { "欢迎礼包", "每日签到", "活动奖励", "系统通知", "新手礼包", "升级奖励", "节日活动", "神秘奖励" };
         private static readonly string[] _testSenders = { "系统", "管理员", "活动中心", "新手导师", "礼包发放" };
         private static readonly int[] _testItemIds = { 1001, 1002, 1003, 1004 };
 
         public static void GenerateAndAddTestMail(ServerContext ctx)
         {
+            var deletedIds = TrimMailsIfOverflow(ctx);
+
             var rand = new System.Random();
             var title = _testTitles[rand.Next(_testTitles.Length)];
             var sender = _testSenders[rand.Next(_testSenders.Length)];
@@ -39,10 +43,10 @@ namespace Game.Gateways
 
             ctx.Db.AddMail(ctx.UserId, mail);
 
-            // 专属推送
             ctx.DirectPushAction?.Invoke(ctx.UserId, NetworkMsgType.MailUpdate, new MailSyncData
             {
                 ChangedMails = new List<MailData> { mail },
+                RemovedIds = deletedIds,
                 Revision = ctx.Db.GetMails(ctx.UserId).Revision
             });
 
@@ -51,6 +55,7 @@ namespace Game.Gateways
 
         public static MailListResponse HandleGetMailList(ServerContext ctx, BaseRequest req)
         {
+            TrimMailsIfOverflow(ctx);
             return new MailListResponse
             {
                 Code = 0,
@@ -144,6 +149,25 @@ namespace Game.Gateways
 
             ctx.Db.DeleteMail(ctx.UserId, req.MailId, out var syncData);
             return new MailSyncResponse { Code = 0, Data = syncData };
+        }
+
+        private static List<string> TrimMailsIfOverflow(ServerContext ctx)
+        {
+            var mails = ctx.Db.GetMails(ctx.UserId);
+            if (mails.Mails == null || mails.Mails.Count < MAX_MAIL_COUNT)
+                return null;
+
+            var overflowCount = mails.Mails.Count - MAX_MAIL_COUNT + 1;
+            var oldestIds = mails.Mails
+                .OrderBy(m => m.CreateTime)
+                .Take(overflowCount)
+                .Select(m => m.MailId)
+                .ToList();
+            foreach (var id in oldestIds)
+            {
+                ctx.Db.DeleteMail(ctx.UserId, id, out _);
+            }
+            return oldestIds;
         }
     }
 }

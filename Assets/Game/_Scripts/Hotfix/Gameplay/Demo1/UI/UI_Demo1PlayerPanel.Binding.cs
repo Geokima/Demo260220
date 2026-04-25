@@ -8,6 +8,7 @@ public partial class UI_Demo1PlayerPanel : UIPanel
     private Widget_PlayerStatusBar w_PlayerStatusBar;
     private Widget_HpBar w_HpBar;
     private Widget_CardBoard w_CardBoard;
+    private Button btnBench;
 
     partial void InitComponents();
 
@@ -16,6 +17,7 @@ public partial class UI_Demo1PlayerPanel : UIPanel
         w_PlayerStatusBar = transform.Find("PlayerStateBar").GetComponent<Widget_PlayerStatusBar>();
         w_HpBar = transform.Find("HPBar").GetComponent<Widget_HpBar>();
         w_CardBoard = transform.Find("CardBoard").GetComponent<Widget_CardBoard>();
+        btnBench = transform.Find("Btn_Bench").GetComponent<Button>();
         InitComponents();
     }
 }

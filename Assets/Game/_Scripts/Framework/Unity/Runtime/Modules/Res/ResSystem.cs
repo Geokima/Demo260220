@@ -26,7 +26,6 @@ namespace Framework.Modules.Res
         public override void Deinit()
         {
             _loader?.UnloadUnusedAssets();
-            _loader = null;
         }
 
         #endregion

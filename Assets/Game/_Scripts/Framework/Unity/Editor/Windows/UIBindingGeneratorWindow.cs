@@ -220,8 +220,7 @@ namespace Framework.Editor
             var btn = transform.GetComponent<Button>();
             if (btn != null)
             {
-                string newName = MakeObjectName("Btn", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent("Button", MakeFieldName("Btn", name), path, transform, depth);
             }
 
@@ -236,15 +235,13 @@ namespace Framework.Editor
             var rawImg = transform.GetComponent<RawImage>();
             if (rawImg != null)
             {
-                string newName = MakeObjectName("RawImg", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent("RawImage", MakeFieldName("Raw", name), path, transform, depth);
             }
 
             if (_hasTMP && TryGetTMPText(transform, out string tmpTextType))
             {
-                string newName = MakeObjectName("Txt", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent(tmpTextType, MakeFieldName("Txt", name), path, transform, depth);
             }
             else
@@ -260,8 +257,7 @@ namespace Framework.Editor
 
             if (_hasTMP && TryGetTMPInputField(transform, out string tmpInputType))
             {
-                string newName = MakeObjectName("Input", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent(tmpInputType, MakeFieldName("Input", name), path, transform, depth);
             }
             else
@@ -269,8 +265,7 @@ namespace Framework.Editor
                 var input = transform.GetComponent<InputField>();
                 if (input != null)
                 {
-                    string newName = MakeObjectName("Input", name);
-                    string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                    string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                     AddComponent("InputField", MakeFieldName("Input", name), path, transform, depth);
                 }
             }
@@ -286,8 +281,7 @@ namespace Framework.Editor
                 var dropdown = transform.GetComponent<Dropdown>();
                 if (dropdown != null)
                 {
-                    string newName = MakeObjectName("Drop", name);
-                    string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                    string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                     AddComponent("Dropdown", MakeFieldName("Drop", name), path, transform, depth);
                 }
             }
@@ -319,8 +313,7 @@ namespace Framework.Editor
             var scrollbar = transform.GetComponent<Scrollbar>();
             if (scrollbar != null)
             {
-                string newName = MakeObjectName("ScrollBar", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent("Scrollbar", MakeFieldName("ScrollBar", name), path, transform, depth);
             }
 
@@ -338,8 +331,7 @@ namespace Framework.Editor
                 transform.GetComponent<Scrollbar>() == null &&
                 !(_hasTMP && HasTMPComponent(transform)))
             {
-                string newName = MakeObjectName("Rect", name);
-                string path = string.IsNullOrEmpty(parentPath) ? newName : $"{parentPath}/{newName}";
+                string path = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
                 AddComponent("RectTransform", MakeFieldName("Rect", name), path, transform, depth);
             }
 

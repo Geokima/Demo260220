@@ -11,10 +11,11 @@ namespace Game.Tests
     {
         public IArchitecture Architecture { get; set; } = GameArchitecture.Instance;
 
-        private Rect _panelRect = new Rect(600, 100, 400, 500);
+        private Rect _panelRect = new Rect(700, 100, 400, 500);
+        private bool _showPanel = true;
         private GUIStyle _panelStyle;
-        private GUIStyle _titleStyle;
-        private GUIStyle _flatBtnStyle;
+        private GUIStyle _labelStyle;
+        private GUIStyle _buttonStyle;
         private bool _initialized;
         private Vector2 _scrollPosition;
 
@@ -29,11 +30,19 @@ namespace Game.Tests
 
         private void OnMailSync(MailSyncEvent e) { /* 自动响应 */ }
 
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F2))
+            {
+                _showPanel = !_showPanel;
+            }
+        }
+
         private void InitGUIStyles()
         {
-            _panelStyle = new GUIStyle(GUI.skin.window) { normal = { background = CreateTex(400, 500, new Color(0.12f, 0.12f, 0.15f, 0.95f)) } };
-            _titleStyle = new GUIStyle(GUI.skin.label) { fontSize = 16, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            _flatBtnStyle = new GUIStyle(GUI.skin.button) { fontSize = 12, normal = { background = CreateTex(2, 2, new Color(0.25f, 0.4f, 0.55f, 1f)) } };
+            _panelStyle = new GUIStyle(GUI.skin.window) { fontSize = 12, normal = { background = CreateTex(400, 500, new Color(0.2f, 0.2f, 0.2f, 1f)) } };
+            _labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, richText = true };
+            _buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = 12, normal = { background = CreateTex(2, 2, new Color(0.35f, 0.35f, 0.35f, 1f)) }, hover = { background = CreateTex(2, 2, new Color(0.45f, 0.45f, 0.45f, 1f)) } };
             _initialized = true;
         }
 
@@ -46,10 +55,12 @@ namespace Game.Tests
 
         private void OnGUI()
         {
+            if (!_showPanel) return;
+
             if (!_initialized) InitGUIStyles();
             var accountModel = this.GetModel<AccountModel>();
             if (accountModel == null || !accountModel.IsLoggedIn) return;
-            _panelRect = GUI.Window(2, _panelRect, DrawMailWindow, "", _panelStyle);
+            _panelRect = GUI.Window(2, _panelRect, DrawMailWindow, "邮件系统 (F2开关)", _panelStyle);
         }
 
         private void DrawMailWindow(int windowId)
@@ -58,10 +69,9 @@ namespace Game.Tests
             if (mailModel == null) return;
 
             GUILayout.BeginVertical();
-            GUILayout.Label("邮件系统", _titleStyle);
+            GUILayout.Label("邮件系统", _labelStyle);
             
-            // 这里的 Value 是 BindableProperty，不需要遍历计算
-            GUILayout.Label($"<color=#FFD700>未读:</color> {mailModel.UnreadCount.Value}");
+            GUILayout.Label($"未读: {mailModel.UnreadCount.Value}", _labelStyle);
 
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
             
@@ -71,20 +81,18 @@ namespace Game.Tests
             foreach (var mail in allMails)
             {
                 GUILayout.BeginVertical("box");
-                var titleColor = mail.IsRead ? "white" : "yellow";
-                GUILayout.Label($"<color={titleColor}>[{mail.MailId}] {mail.Title}</color>");
+                GUILayout.Label($"[{mail.MailId}] {mail.Title}", _labelStyle);
                 
-                // 确保 MailData 里有 Content 字段
-                GUILayout.Label(mail.Content); 
+                GUILayout.Label(mail.Content, _labelStyle); 
 
                 GUILayout.BeginHorizontal();
-                if (!mail.IsRead && GUILayout.Button("读取", _flatBtnStyle, GUILayout.Width(60)))
+                if (!mail.IsRead && GUILayout.Button("读取", _buttonStyle, GUILayout.Width(60)))
                     this.SendCommand(new ReadMailCommand { MailId = mail.MailId });
 
-                if (mail.Attachments?.Count > 0 && !mail.IsReceived && GUILayout.Button("领取", _flatBtnStyle, GUILayout.Width(60)))
+                if (mail.Attachments?.Count > 0 && !mail.IsReceived && GUILayout.Button("领取", _buttonStyle, GUILayout.Width(60)))
                     this.SendCommand(new ReceiveAttachmentCommand { MailId = mail.MailId });
 
-                if (GUILayout.Button("删除", _flatBtnStyle, GUILayout.Width(60)))
+                if (GUILayout.Button("删除", _buttonStyle, GUILayout.Width(60)))
                     this.SendCommand(new DeleteMailCommand { MailId = mail.MailId });
                 
                 GUILayout.EndHorizontal();
@@ -92,7 +100,7 @@ namespace Game.Tests
             }
             GUILayout.EndScrollView();
 
-            if (GUILayout.Button("手动刷新", _flatBtnStyle)) this.SendCommand(new GetMailListCommand());
+            if (GUILayout.Button("手动刷新", _buttonStyle)) this.SendCommand(new GetMailListCommand());
             GUILayout.EndVertical();
             GUI.DragWindow(new Rect(0, 0, _panelRect.width, 25));
         }

@@ -6,4 +6,9 @@ namespace Game.Gameplay.Demo1.Event
     {
         public bool PlayerWon;
     }
+
+    public struct GameStateChangedEvent
+    {
+        public GameState State;
+    }
 }
