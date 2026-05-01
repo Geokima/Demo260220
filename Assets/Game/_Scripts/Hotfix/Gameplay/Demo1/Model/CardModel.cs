@@ -25,6 +25,7 @@ namespace Game.Gameplay.Demo1
         public BindableProperty<float> CurrentCD { get; } = new BindableProperty<float>();
 
         public BindableProperty<CardRank> Rank { get; } = new BindableProperty<CardRank>();
+        public BindableProperty<int> StartIndex { get; } = new BindableProperty<int>(0);
 
         public Demo1CardConfig Config => _config;
 

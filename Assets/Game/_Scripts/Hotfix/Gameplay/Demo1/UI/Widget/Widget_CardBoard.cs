@@ -66,7 +66,7 @@ namespace Game.Gameplay.Demo1.UI.Widget
             foreach (var card in _boundList)
             {
                 if (card != null)
-                    AddCard(card);
+                    AddCard(card, card.StartIndex.Value);
             }
         }
 
@@ -247,18 +247,20 @@ namespace Game.Gameplay.Demo1.UI.Widget
             if (_boundList == null)
                 return;
 
-            var orderedModels = _items
+            var orderedItems = _items
                 .Where(i => i?.View?.Model != null)
                 .OrderBy(i => i.StartIndex)
-                .Select(i => i.View.Model)
                 .ToList();
+
+            foreach (var item in orderedItems)
+                item.View.Model.StartIndex.Value = item.StartIndex;
 
             _isSyncing = true;
             try
             {
                 _boundList.Clear();
-                for (int i = 0; i < orderedModels.Count; i++)
-                    _boundList.Add(orderedModels[i]);
+                for (int i = 0; i < orderedItems.Count; i++)
+                    _boundList.Add(orderedItems[i].View.Model);
             }
             finally
             {
