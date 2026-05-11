@@ -53,6 +53,7 @@ namespace Game.Gameplay.Demo1.System
                 if (cardDict.TryGetValue(cardId, out var config))
                 {
                     var card = new CardModel(config);
+                    card.ApplyPriceRule(isInShop: false);
                     card.CurrentCD.Value = config.MaxCD;
                     _model.EnemyCards.Add(card);
                 }

@@ -18,7 +18,8 @@ public partial class UI_BattlePanel : UIPanel
 
     partial void InitComponents()
     {
-        BenchZone.SetDraggable(false);BtnQuit.onClick.AddListener(() =>
+        BenchZone.SetDraggable(false);
+        BtnQuit.onClick.AddListener(() =>
         {
             this.SendCommand(new QuitEncounterCommand());
         });

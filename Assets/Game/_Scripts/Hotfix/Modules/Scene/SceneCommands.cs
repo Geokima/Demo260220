@@ -20,7 +20,7 @@ namespace Game.Scene
         public override async void Execute(object sender)
         {
             this.GetSystem<IUISystem>().Open<UI_BlackScreen>();
-            await UniTask.Delay(500);
+            await UniTask.Delay((int)(UI_BlackScreen.DefaultFadeDuration * 1000));
             var configSystem = this.GetSystem<IConfigSystem>();
             var sceneSystem = this.GetSystem<ISceneSystem>();
             

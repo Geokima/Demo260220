@@ -1,3 +1,4 @@
+using Framework;
 using Game.Gameplay.Demo1.System;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -34,6 +35,11 @@ namespace Game.Gameplay.Demo1.UI.Widget
             var view = payload.View;
             if (view == null)
                 return false;
+
+            var model = Demo1Architecture.Instance.GetModel<Demo1Model>();
+            var sellPrice = view.Model?.Price?.Value ?? 0;
+            if (sellPrice > 0)
+                model.Gold.Value += sellPrice;
 
             if (view.OwnerZone is Widget_CardBoard oldBoard)
                 oldBoard.RemoveCard(view);

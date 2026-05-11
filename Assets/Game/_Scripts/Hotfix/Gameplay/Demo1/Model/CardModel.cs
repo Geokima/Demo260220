@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Framework;
+using UnityEngine;
 
 namespace Game.Gameplay.Demo1
 {
@@ -59,6 +60,20 @@ namespace Game.Gameplay.Demo1
             MaxCD.Value = _config.MaxCD;
             CurrentCD.Value = _config.MaxCD;
             Rank.Value = _config.Rank != null && Enum.TryParse<CardRank>(_config.Rank, out var r) ? r : CardRank.Bronze;
+        }
+
+        public void ApplyPriceRule(bool isInShop)
+        {
+            if (_config == null)
+                return;
+
+            if (isInShop)
+            {
+                Price.Value = _config.Price;
+                return;
+            }
+
+            Price.Value = Mathf.FloorToInt(_config.Price * 0.5f);
         }
 
         public void ResetCD()

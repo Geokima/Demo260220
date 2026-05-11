@@ -20,7 +20,6 @@ namespace Game.Gameplay.Demo1.Command
         {
             var model = this.GetModel<Demo1Model>();
             this.GetSystem<IGameRoundSystem>().NextRound();
-            this.GetSystem<IGameStateSystem>().SwitchTo(GameState.Selection);
         }
     }
 }

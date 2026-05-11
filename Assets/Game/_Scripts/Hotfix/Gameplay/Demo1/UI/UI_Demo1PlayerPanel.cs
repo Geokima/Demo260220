@@ -13,6 +13,7 @@ public partial class UI_Demo1PlayerPanel : UIPanel
     private IUnregister _stateUnregister;
     private IUnregister _shieldUnregister;
     private IUnregister _poisonUnregister;
+    private IUnregister _slotCountUnregister;
 
     partial void InitComponents()
     {
@@ -37,6 +38,7 @@ public partial class UI_Demo1PlayerPanel : UIPanel
         _maxHpUnregister = model.MaxHP.RegisterWithInitValue(_ => UpdateHp());
         _shieldUnregister = model.PlayerShield.RegisterWithInitValue(_ => UpdateShield());
         _poisonUnregister = model.PlayerPoison.RegisterWithInitValue(_ => UpdatePoison());
+        _slotCountUnregister = model.MaxSlotCount.RegisterWithInitValue(v => w_CardBoard.SetCapacity(v));
         _stateUnregister = this.RegisterEvent<GameStateChangedEvent>(e =>{ 
             w_CardBoard.SetDraggable(e.State != GameState.Battle);
             btnBench.gameObject.SetActive(e.State != GameState.Battle);
@@ -53,6 +55,7 @@ public partial class UI_Demo1PlayerPanel : UIPanel
         _maxHpUnregister?.Unregister();
         _shieldUnregister?.Unregister();
         _poisonUnregister?.Unregister();
+        _slotCountUnregister?.Unregister();
         _stateUnregister?.Unregister();
     }
 

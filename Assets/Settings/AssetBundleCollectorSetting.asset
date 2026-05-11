@@ -40,11 +40,24 @@ MonoBehaviour:
         UserData: 
     - GroupName: Config
       GroupDesc: 
-      AssetTags: Config
+      AssetTags: 
       ActiveRuleName: EnableGroup
       Collectors:
       - CollectPath: Assets/Game/GameRes/Config
         CollectorGUID: d6e12d0cb0fd444afb9473de85bfe552
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+    - GroupName: Hotfix
+      GroupDesc: 
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/Game/GameRes/Hotfix
+        CollectorGUID: 328e0f5612f9ccd488f530ef48482f72
         CollectorType: 0
         AddressRuleName: AddressByFileName
         PackRuleName: PackDirectory

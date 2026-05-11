@@ -54,6 +54,7 @@ namespace Game.Gameplay.Demo1.System
             {
                 model.Gold.Value -= cost;
                 UpgradeRankOnce(mergedCard);
+                mergedCard.ApplyPriceRule(isInShop: false);
                 outcome = ShopPurchaseOutcome.MergedInActive;
                 return ShopPurchaseResult.Success;
             }
@@ -62,6 +63,7 @@ namespace Game.Gameplay.Demo1.System
             {
                 model.Gold.Value -= cost;
                 UpgradeRankOnce(mergedCard);
+                mergedCard.ApplyPriceRule(isInShop: false);
                 outcome = ShopPurchaseOutcome.MergedInBench;
                 return ShopPurchaseResult.Success;
             }
@@ -71,6 +73,7 @@ namespace Game.Gameplay.Demo1.System
             if (CanFit(model.ActiveSlots, activeCapacity, card))
             {
                 model.Gold.Value -= cost;
+                card.ApplyPriceRule(isInShop: false);
                 model.ActiveSlots.Add(card);
                 outcome = ShopPurchaseOutcome.AddedToActive;
                 return ShopPurchaseResult.Success;
@@ -79,6 +82,7 @@ namespace Game.Gameplay.Demo1.System
             if (CanFit(model.BenchCards, Demo1Const.BenchMaxSlots, card))
             {
                 model.Gold.Value -= cost;
+                card.ApplyPriceRule(isInShop: false);
                 model.BenchCards.Add(card);
                 outcome = ShopPurchaseOutcome.AddedToBench;
                 return ShopPurchaseResult.Success;
@@ -152,9 +156,21 @@ namespace Game.Gameplay.Demo1.System
             if (card == null)
                 return;
 
-            var r = card.Rank.Value;
-            if (r < CardRank.Diamond)
-                card.Rank.Value = (CardRank)((int)r + 1);
+            var currentRank = card.Rank.Value;
+            if (currentRank >= CardRank.Diamond)
+                return;
+
+            var configSystem = Demo1Architecture.Instance.GetSystem<IConfigSystem>();
+            var sheet = configSystem.GetSheet<Demo1CardConfig>();
+
+            var nextRank = (CardRank)((int)currentRank + 1);
+            var nextConfig = sheet.All().FirstOrDefault(c => c.Name == card.Name && GetCardRank(c.Rank) == nextRank);
+            if (nextConfig == null)
+                return;
+
+            card.Bind(nextConfig);
+            card.ApplyPriceRule(isInShop: false);
+            card.CurrentCD.Value = card.MaxCD.Value;
         }
 
         private static int Clamp(int value, int min, int max)
@@ -236,7 +252,12 @@ namespace Game.Gameplay.Demo1.System
                 }
             }
 
-            _currentCards = selectedConfigs.Select(config => new CardModel(config)).ToArray();
+            _currentCards = selectedConfigs.Select(config =>
+            {
+                var card = new CardModel(config);
+                card.ApplyPriceRule(isInShop: true);
+                return card;
+            }).ToArray();
         }
 
         private static readonly Dictionary<int, Dictionary<CardRank, int>> ShopRankProbabilityByLevel = new Dictionary<int, Dictionary<CardRank, int>>
