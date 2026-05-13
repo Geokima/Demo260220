@@ -11,10 +11,12 @@ public partial class UI_MainPanel : UIPanel
     {
         BtnQuit.onClick.AddListener(() =>
         {
-            if(Application.isEditor)
+#if UNITY_EDITOR
+            if (Application.isEditor)
                 UnityEditor.EditorApplication.isPlaying = false;
-            else
-                Application.Quit();
+            return;
+#endif
+            Application.Quit();
         });
 
         BtnTest01.onClick.AddListener(() =>

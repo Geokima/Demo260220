@@ -5,6 +5,7 @@ using Framework.Modules.Res;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
+using YooAsset;
 using static Framework.Logger;
 
 namespace Framework.Modules.Scene
@@ -20,7 +21,8 @@ namespace Framework.Modules.Scene
         public List<string> CurrentScenes { get; private set; } = new();
 
         private List<string> _pendingScenes = new();
-        private List<AsyncOperation> _loadingScenes = new();
+        private List<SceneHandle> _loadingSceneHandles = new();
+        private List<SceneHandle> _loadedSceneHandles = new();
         private bool _isLoading;
 
         #endregion
@@ -42,7 +44,8 @@ namespace Framework.Modules.Scene
 
             CurrentScenes.Clear();
             _pendingScenes.Clear();
-            _loadingScenes.Clear();
+            _loadingSceneHandles.Clear();
+            _loadedSceneHandles.Clear();
             _isLoading = false;
         }
 
@@ -57,7 +60,7 @@ namespace Framework.Modules.Scene
                     {
                         Log($"[Scene] Scene loading completed: {string.Join(", ", CurrentScenes)}");
                         _isLoading = false;
-                        _loadingScenes.Clear();
+                        _loadingSceneHandles.Clear();
                         this.SendEvent(new SceneLoadCompleteEvent { SceneNames = CurrentScenes.ToArray() });
                     }
                 }
@@ -98,8 +101,11 @@ namespace Framework.Modules.Scene
 
             if (CurrentScenes.Count > 0)
             {
-                foreach (var scene in CurrentScenes)
-                    UnitySceneManager.UnloadSceneAsync(scene);
+                foreach (var handle in _loadedSceneHandles)
+                {
+                    if (handle != null && handle.IsValid)
+                        handle.UnloadAsync();
+                }
             }
             else
             {
@@ -131,8 +137,11 @@ namespace Framework.Modules.Scene
 
             if (CurrentScenes.Count > 0)
             {
-                foreach (var scene in CurrentScenes)
-                    UnitySceneManager.UnloadSceneAsync(scene);
+                foreach (var handle in _loadedSceneHandles)
+                {
+                    if (handle != null && handle.IsValid)
+                        handle.UnloadAsync();
+                }
             }
             else
             {
@@ -143,12 +152,12 @@ namespace Framework.Modules.Scene
         /// <inheritdoc />
         public float GetSceneLoadProgress()
         {
-            if (_loadingScenes.Count == 0) return 0f;
+            if (_loadingSceneHandles.Count == 0) return 0f;
 
             float progress = 0f;
-            foreach (var operation in _loadingScenes)
-                progress += operation.progress;
-            return progress / _loadingScenes.Count;
+            foreach (var handle in _loadingSceneHandles)
+                progress += handle.Progress;
+            return progress / _loadingSceneHandles.Count;
         }
 
         #endregion
@@ -157,9 +166,14 @@ namespace Framework.Modules.Scene
 
         private bool CheckAllLoaded()
         {
-            foreach (var op in _loadingScenes)
+            foreach (var handle in _loadingSceneHandles)
             {
-                if (!op.isDone) return false;
+                if (!handle.IsDone) return false;
+                if (handle.Status != EOperationStatus.Succeed)
+                {
+                    LogError($"[Scene] Scene loading failed: {handle.GetAssetInfo().AssetPath}, error: {handle.LastError}");
+                    this.SendEvent(new SceneErrorEvent { SceneName = handle.GetAssetInfo().AssetPath, Error = handle.LastError });
+                }
             }
             return true;
         }
@@ -167,7 +181,7 @@ namespace Framework.Modules.Scene
         private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode sceneMode)
         {
             if (CurrentScenes.Count == 0) return;
-            if (CurrentScenes.Find(x => x == scene.name) == null) return;
+            if (CurrentScenes.Find(x => x == scene.path) == null) return;
 
             if (scene.path == CurrentScenes[0])
             {
@@ -183,6 +197,7 @@ namespace Framework.Modules.Scene
             CurrentScenes.Remove(scene.path);
             if (CurrentScenes.Count == 0)
             {
+                _loadedSceneHandles.Clear();
                 var res = this.GetSystem<IResSystem>();
                 res.UnloadUnusedAssets();
                 LoadPendingScene();
@@ -192,13 +207,15 @@ namespace Framework.Modules.Scene
         private void LoadPendingScene()
         {
             CurrentScenes.Clear();
+            _loadedSceneHandles.Clear();
             foreach (var scenePath in _pendingScenes)
             {
-                AsyncOperation operation = UnitySceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Additive);
-                if (operation != null)
+                var handle = YooAssets.LoadSceneAsync(scenePath, LoadSceneMode.Additive);
+                if (handle != null)
                 {
                     CurrentScenes.Add(scenePath);
-                    _loadingScenes.Add(operation);
+                    _loadingSceneHandles.Add(handle);
+                    _loadedSceneHandles.Add(handle);
                 }
                 else
                 {

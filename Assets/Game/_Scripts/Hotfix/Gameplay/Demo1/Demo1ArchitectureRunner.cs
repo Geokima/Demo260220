@@ -20,6 +20,7 @@ namespace Game.Gameplay.Demo1
 
         private void Awake()
         {
+            Debug.Log("[Demo1ArchitectureRunner] Launch Demo1Architecture...");
             Demo1Architecture.Launch();
             _battleSystem = Demo1Architecture.Instance.GetSystem<IBattleSystem>();
             Demo1Architecture.Instance.GetSystem<IUISystem>().Open<UI_Demo1PlayerPanel>();

@@ -1,6 +1,11 @@
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Framework.Modules.Procedure;
+using Framework.Modules.Res;
 using Framework.Modules.Scene;
 using Game.Scene;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Procedures
 {
@@ -11,11 +16,14 @@ namespace Game.Procedures
             Architecture.SendCommand(this, new ChangeSceneCommand() { SceneGroup = "Demo1" });
             Architecture.RegisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
         }
-
-        private void OnSceneLoadComplete(SceneLoadCompleteEvent e)
+        
+        private async void OnSceneLoadComplete(SceneLoadCompleteEvent e)
         {
-            // TODO ?
             Architecture.UnregisterEvent<SceneLoadCompleteEvent>(OnSceneLoadComplete);
+            await UniTask.DelayFrame(1);
+            var entry = Owner.Architecture.GetSystem<IResSystem>().Load<GameObject>("Demo1Entry");
+            if (entry)
+                Object.Instantiate(entry);
         }
         
         public override void OnExit()

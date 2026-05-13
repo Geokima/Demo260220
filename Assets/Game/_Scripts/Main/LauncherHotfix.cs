@@ -10,16 +10,25 @@ namespace Game.Main
     {
         private static readonly List<string> AotMetaAssemblyFiles = new()
         {
-            "mscorlib",
-            "System",
-            "System.Core",
-            "UniTask",
-            "UnityEngine.CoreModule",
+            "DOTween",
+		    "Newtonsoft.Json",
+		    "System.Core",
+		    "UniTask",
+		    "UnityEngine.CoreModule",
+		    "mscorlib",
+        };
+
+        private static readonly List<string> HotfixAssemblyFiles = new()
+        {
+            "Framework.Common",
+            "Framework.Unity",
+            "Hotfix",
+            "Game.Tests",
         };
 
         public static async UniTask LoadAsync(Action<float, string> onProgress)
         {
-#if UNITY_EDITOR
+#if false
             Debug.Log("[LauncherHotfix] 编辑器模式，跳过 DLL 热更新");
             onProgress?.Invoke(0.95f, "编辑器模式：跳过 DLL 热更新...");
             await UniTask.Delay(100);
@@ -40,9 +49,11 @@ namespace Game.Main
             Debug.Log("[LauncherHotfix] 开始加载 AOT 元数据...");
             foreach (var aotDllName in AotMetaAssemblyFiles)
             {
-                var op = LauncherAssets.DefaultPackage.LoadAssetAsync<TextAsset>($"Assets/Game/Download/Hotfix/{aotDllName}.dll.bytes");
+                var op = LauncherAssets.DefaultPackage.LoadAssetAsync<TextAsset>($"Assets/Game/GameRes/Hotfix/{aotDllName}.dll.bytes");
                 await op;
-                Debug.Log($"[LauncherHotfix] 已加载 AOT 元数据: {aotDllName}");
+    
+                var err = HybridCLR.RuntimeApi.LoadMetadataForAOTAssembly((op.AssetObject as TextAsset).bytes, HybridCLR.HomologousImageMode.SuperSet);
+                Debug.Log($"[LauncherHotfix] 已加载 AOT 元数据: {aotDllName}. ret:{err}");
             }
             Debug.Log("[LauncherHotfix] AOT 元数据加载完成");
         }
@@ -50,10 +61,13 @@ namespace Game.Main
         private static async UniTask LoadHotfixAssembly()
         {
             Debug.Log("[LauncherHotfix] 开始加载热更新 DLL...");
-            var op = LauncherAssets.DefaultPackage.LoadAssetAsync<TextAsset>("Assets/Game/Download/Hotfix/Hotfix.dll.bytes");
-            await op;
-            System.Reflection.Assembly.Load((op.AssetObject as TextAsset).bytes);
-            Debug.Log("[LauncherHotfix] 热更新 DLL 加载完成并注入内存");
+            foreach (var hotfixDllName in HotfixAssemblyFiles)
+            {
+                var op = LauncherAssets.DefaultPackage.LoadAssetAsync<TextAsset>($"Assets/Game/GameRes/Hotfix/{hotfixDllName}.dll.bytes");
+                await op;
+                System.Reflection.Assembly.Load((op.AssetObject as TextAsset).bytes);
+                Debug.Log($"[LauncherHotfix] 热更新 DLL 加载完成并注入内存: {hotfixDllName}");
+            }
         }
     }
 }

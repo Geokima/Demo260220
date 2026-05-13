@@ -1,0 +1,18 @@
+{
+    "name": "ExInspector.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:03ac8c1cc8e1d274aa03b2b09a705611"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -23,11 +23,12 @@ namespace Game.Procedures
             var resSystem = this.GetSystem<IResSystem>();
 
             var configRowTypes = configSystem.ScanConfigRowTypes();
-            var tasks = new List<UniTask>();
+            var tasks = new UniTask[configRowTypes.Count];
 
-            foreach (var type in configRowTypes)
+            for (int i = 0; i < configRowTypes.Count; i++)
             {
-                tasks.Add(LoadSingleConfig(configSystem, resSystem, type));
+                var type = configRowTypes[i];
+                tasks[i] = LoadSingleConfig(configSystem, resSystem, type);
             }
 
             await UniTask.WhenAll(tasks);

@@ -84,7 +84,6 @@ crashlytics-build.properties
 .db/
 
 # YooAsset
-/Bundles
 
 # Python
 __pycache__/
@@ -93,3 +92,5 @@ __pycache__/
 *.so
 
 CLAUDE.md
+/HybridCLRData
+/Bundles
