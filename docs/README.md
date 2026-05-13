@@ -44,7 +44,7 @@ Tools/                     # 外部工具链
 - **Launch.unity**：框架点火场景，负责初始化 YooAsset 环境并引导后续流程。
 - **GameRes**：分模块管理的动态资源仓库，支持资源热更与按需下载。
 
-### \[\_Scripts] 
+### \[\_Scripts]
 
 #### 1. Main
 
@@ -64,7 +64,7 @@ Tools/                     # 外部工具链
   6. **对象池 (Pool)**：针对 GameObject 与内存对象的通用复用池。
   7. **计时器 (Timer)**：支持高精度延时触发与循环任务。
 
-##### 	Unity/Editor (依赖UnityEngine)
+##### Unity/Editor (依赖UnityEngine)
 
 1. **UI 绑定生成器**：一键将 Prefab 节点映射为 C# 变量，省去手写引用。
 2. **UI 性能分析 Overlay**：在场景视图直接监测 Raycast 命中点与 Overdraw。
@@ -74,7 +74,7 @@ Tools/                     # 外部工具链
 
 ##### App & Procedures (流程控制)
 
-- **职责**：利用状态机维护从启动、预加载到登录、主城的游戏全局生命周期。
+- **职责**：利用状态机维护从启动、预加载到登录、主页的游戏全局生命周期。
 
 ##### Gateways (通讯网关实现)
 
@@ -116,5 +116,4 @@ Tools/                     # 外部工具链
 
 ![引用丢失检查](引用丢失检查.png)
 
-<video src="联网业务.mp4"></video>
-<video src="demo演示.mp4"></video>
+<video src="联网业务.mp4"></video> <video src="demo演示.mp4"></video>

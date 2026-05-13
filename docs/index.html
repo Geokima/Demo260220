@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unity 工业级架构演示工程</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #0f172a;
+      --text: #e5e7eb;
+      --muted: #a1a1aa;
+      --link: #60a5fa;
+      --border: rgba(255, 255, 255, 0.10);
+      --code-bg: rgba(255, 255, 255, 0.06);
+      --accent: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+
+    header {
+      padding: 22px 22px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+    }
+
+    main {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    section {
+      padding: 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    section:first-child { border-top: none; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    h3 {
+      margin: 16px 0 8px;
+      font-size: 15px;
+      color: #f3f4f6;
+    }
+
+    p { margin: 0 0 10px; color: var(--text); }
+
+    ul { margin: 0; padding-left: 18px; }
+
+    li { margin: 6px 0; color: var(--text); }
+
+    .codeblock {
+      margin-top: 10px;
+      padding: 14px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--code-bg);
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      white-space: pre;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      padding: 14px;
+    }
+
+    .card-title {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: #f9fafb;
+    }
+
+    .card-desc {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .media {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    @media (min-width: 900px) {
+      .media { grid-template-columns: 1fr 1fr; }
+    }
+
+    img, video {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .hr {
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Unity 工业级架构演示工程</h1>
+      <div class="subtitle">
+        用于求职展示的 Unity 综合案例，重点展示工业级代码分层、模块化架构设计（QFramework 思想）、双端全量热更新流以及生产力工具链实现。
+      </div>
+      
+    </header>
+
+    <main>
+      <section>
+        <h2>项目结构概览</h2>
+        <div class="codeblock">Assets/Game
+├── Launch.unity           # 引导底座场景 (YooAsset初始化)
+├── GameRes/               # 动态资源树 (受热更管理)
+└── _Scripts/              # 逻辑核心
+    ├── Main/              # [AOT层] 启动引导、HybridCLR热更驱动
+    ├── Framework/         # [内核层] Framework核心与通用中间件
+    │   ├── Common/        # 跨平台核心逻辑 (Core, Utils)
+    │   │   ├── Core/      # Architecture, IOC, BindableProperty
+    │   │   └── Modules/   # 通用组件 (Config, Http, Res, UI, Pool, Timer)
+    │   └── Unity/         # Unity深度集成驱动
+    │       └── Editor/    # 工业化工具集 (UI绑定生成、分析器Overlay、引用检查)
+    └── Hotfix/            # [热更层] 核心业务逻辑实现 (C# DLL)
+        ├── App/           # 全局架构驱动 (GameArchitecture, GameManager)
+        ├── Procedures/    # 流程控制 FSM (Launch, Preload, Login, Main)
+        ├── Shared/        # 业务共享定义 (Configs, DTOs, Consts, Utils)
+        ├── Gateways/      # [通讯网关层] IServerGateway 抽象
+        │   ├── LocalServerGateway.cs    # 离线模拟服务器驱动
+        │   ├── Controllers/             # [本地服务端逻辑] 模拟后端控制器
+        │   └── NetworkServerGateway.cs  # 真实网络服务器 (HTTP/WebSocket)
+        ├── Modules/       # 典型业务模块 (统一五层架构)
+        │   ├── Inventory/ # 背包系统 (增量同步/响应式字典)
+        │   ├── Shop/      # 商店系统 (限购逻辑/服务端同步)
+        │   └── ...        # 其他系统模块
+        └── Gameplay/      # 核心玩法 space (独立子架构隔离)
+            └── Demo1/     # 卡牌自走棋演示
+
+Tools/                     # 外部工具链
+└── ExcelExporter/         # 基于NPOI的自动化导表流水线</div>
+      </section>
+
+      <div class="hr"></div>
+
+      <section>
+        <h2>架构职责详述</h2>
+
+        <h3>[Assets/Game] 启动环境</h3>
+        <ul>
+          <li><b>Launch.unity</b>：框架点火场景，负责初始化 YooAsset 环境并引导后续流程。</li>
+          <li><b>GameRes</b>：分模块管理的动态资源仓库，支持资源热更与按需下载。</li>
+        </ul>
+
+        <h3>[_Scripts] / Main</h3>
+        <p>负责热更 DLL 的加载注入以及 AOT 元数据的补充，是整个热更机制的起点。</p>
+
+        <h3>[_Scripts] / Framework</h3>
+        <h3>Common (通用模块)</h3>
+        <ul>
+          <li><b>Core</b>：提供基于 QFramework 思想的基类及响应式数据绑定核心，实现数据驱动 UI。</li>
+          <li><b>Modules (标准化组件)</b>：UI、Res、Procedure/FSM、Network/Http、Config、Pool、Timer 等通用组件。</li>
+        </ul>
+
+        <h3>Unity/Editor (依赖UnityEngine)</h3>
+        <ul>
+          <li><b>UI 绑定生成器</b>：一键将 Prefab 节点映射为 C# 变量，省去手写引用。</li>
+          <li><b>UI 性能分析 Overlay</b>：在场景视图直接监测 Raycast 命中点与 Overdraw。</li>
+          <li><b>资源引用检查器</b>：自动化扫描项目中的预制体丢失引用或异常。</li>
+        </ul>
+
+        <h3>[_Scripts] / Hotfix（动态业务区）</h3>
+        <p>利用状态机维护从启动、预加载到登录、主页的游戏全局生命周期，并按模块组织业务逻辑。</p>
+
+        <h3>Gateways（通讯网关实现）</h3>
+        <ul>
+          <li><b>IServerGateway</b>：屏蔽底层协议差异的统一调用入口。</li>
+          <li><b>LocalServerGateway</b>：内含本地数据库与控制器的离线模拟服务器。</li>
+          <li><b>NetworkServerGateway</b>：用于线上环境的生产级别网络请求网关。</li>
+        </ul>
+
+        <h3>Modules（典型业务模块）</h3>
+        <p>按 Model-Service-Syncer 分层：Model 数据驱动 UI，Service 提供操作，Syncer 对接后端增量更新。</p>
+        <ul>
+          <li><b>Auth</b>：登录、注册与 Token Session 维护。</li>
+          <li><b>Inventory</b>：支持增量同步、响应式字典与道具操作。</li>
+          <li><b>Shop</b>：限购逻辑、货币核销与商品刷新策略。</li>
+          <li><b>Player</b>：体力、等级等基础属性的数据同步。</li>
+          <li><b>Mail</b>：完整业务闭环（含领取附件）。</li>
+        </ul>
+
+        <h3>Gameplay（玩法空间）</h3>
+        <ul>
+          <li><b>Demo1</b>：模仿《大巴扎》的卡牌自走棋原型演示。</li>
+        </ul>
+      </section>
+
+      <div class="hr"></div>
+
+      <section>
+        <h2>生产力工具集</h2>
+        <ul>
+          <li><b>ExcelExporter</b>：导表工具，支持 JSON 导出与全量结构验证。</li>
+        </ul>
+      </section>
+
+      <div class="hr"></div>
+
+      <section>
+        <h2>总结</h2>
+        <p>
+          本框架参考 QFramework 的核心分层与 BindableProperty，Main（AOT）负责系统设置与资源更新后加载 Framework/Hotfix（业务），
+          基于 YooAsset 与 HybridCLR 实现资源与代码热更新，适用于商业中小型游戏开发。
+        </p>
+      </section>
+
+      <div class="hr"></div>
+
+      <section>
+        <h2>附录</h2>
+        <div class="media">
+          <div>
+            <h3>UI 绑定</h3>
+            <img src="UI绑定.png" alt="UI绑定" />
+          </div>
+          <div>
+            <h3>引用丢失检查</h3>
+            <img src="引用丢失检查.png" alt="引用丢失检查" />
+          </div>
+          <div>
+            <h3>联网业务</h3>
+            <video src="联网业务.mp4" controls></video>
+          </div>
+          <div>
+            <h3>Demo 演示</h3>
+            <video src="demo演示.mp4" controls></video>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    
+  </div>
+</body>
+</html>
