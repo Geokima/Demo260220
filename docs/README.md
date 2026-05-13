@@ -44,15 +44,15 @@ Tools/                     # 外部工具链
 - **Launch.unity**：框架点火场景，负责初始化 YooAsset 环境并引导后续流程。
 - **GameRes**：分模块管理的动态资源仓库，支持资源热更与按需下载。
 
-### \[\_Scripts] 逻辑大脑区
+### \[\_Scripts] 
 
-#### Main (不动底座)
+#### 1. Main
 
 - **职责**：负责热更 DLL 的加载注入以及 AOT 元数据的补充，是整个热更机制的起点。
 
-#### Framework (通用工具箱)
+#### 2. Framework
 
-##### Common (核心架构)
+##### Common (通用模块)
 
 - **Core**：提供基于 QFramework 思想的基类及响应式数据绑定核心，实现数据驱动 UI。
 - **Modules (标准化组件)**：
@@ -64,13 +64,13 @@ Tools/                     # 外部工具链
   6. **对象池 (Pool)**：针对 GameObject 与内存对象的通用复用池。
   7. **计时器 (Timer)**：支持高精度延时触发与循环任务。
 
-##### Unity/Editor (工业化插件)
+##### 	Unity/Editor (依赖UnityEngine)
 
 1. **UI 绑定生成器**：一键将 Prefab 节点映射为 C# 变量，省去手写引用。
 2. **UI 性能分析 Overlay**：在场景视图直接监测 Raycast 命中点与 Overdraw。
 3. **资源引用检查器**：自动化扫描项目中的预制体丢失引用或异常。
 
-#### Hotfix (动态业务区)
+#### 3. Hotfix (动态业务区)
 
 ##### App & Procedures (流程控制)
 
@@ -82,9 +82,9 @@ Tools/                     # 外部工具链
 2. **LocalServerGateway**：内含本地数据库与控制器的离线模拟服务器。
 3. **NetworkServerGateway**：用于线上环境的生产级别网络请求网关。
 
-##### Modules (业务系统)
+##### Modules
 
-每个业务模块均按 Model-Service-Syncer 标准三层结构开发：
+每个业务模块均按 Model-Service-Syncer 标准三层结构开发，Model数据驱动UI，Service提供操作，UI执行Command调用Service，通知后端后，后端确认通过后下发 ws 带数据版本的局部更新和 Http 响应结束Loading，Syncer 接收后端更改 Model：
 
 1. **Auth (认证)**：处理登录、注册与 Token Session 维护。
 2. **Inventory (背包)**：支持增量同步、响应式字典与道具操作。
@@ -96,16 +96,25 @@ Tools/                     # 外部工具链
 
 采用独立子架构隔离模式，逻辑与外界完全解耦：
 
-1. **Demo1**：卡牌自走棋原型演示
+1. **Demo1**：模仿《大巴扎》的卡牌自走棋原型演示
 
 ***
 
 ## 生产力工具集
 
-- **ExcelExporter**：基于 NPOI 实现的自动化导表流水线，支持 JSON 导出与全量结构验证。
+- **ExcelExporter**：导表工具，支持 JSON 导出与全量结构验证。
 
 ***
 
 ## 总结
 
 本框架参考了参考了QFramework的核心分层，以及BindableProperty，综合开发经验中所必需的工具集编写，Main（AOT）包含了基础的系统设置和资源更新后，再加载的Framework和Hotfix（业务），基于YooAsset和HybridCLR实现的资源和代码热更新，完全适用于商业中小型游戏开发。
+
+## 附录
+
+![UI绑定](UI绑定.png)
+
+![引用丢失检查](引用丢失检查.png)
+
+<video src="联网业务.mp4"></video>
+<video src="demo演示.mp4"></video>

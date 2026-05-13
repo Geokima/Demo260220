@@ -14,9 +14,9 @@ public partial class UI_MainPanel : UIPanel
 #if UNITY_EDITOR
             if (Application.isEditor)
                 UnityEditor.EditorApplication.isPlaying = false;
-            return;
-#endif
+#else
             Application.Quit();
+#endif
         });
 
         BtnTest01.onClick.AddListener(() =>

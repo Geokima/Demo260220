@@ -28,7 +28,7 @@ namespace Game.Main
 
         public static async UniTask LoadAsync(Action<float, string> onProgress)
         {
-#if false
+#if UNITY_EDITOR
             Debug.Log("[LauncherHotfix] 编辑器模式，跳过 DLL 热更新");
             onProgress?.Invoke(0.95f, "编辑器模式：跳过 DLL 热更新...");
             await UniTask.Delay(100);

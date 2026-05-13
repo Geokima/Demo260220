@@ -22,6 +22,7 @@ namespace Framework.Editor
         private Color _overdrawColor = new Color(1, 1, 1, 0.1f);
 
         private Dictionary<Canvas, DrawCallInfo> _canvasInfo = new Dictionary<Canvas, DrawCallInfo>();
+        private bool _sceneGuiHooked;
         #endregion
 
         #region Overlay
@@ -53,13 +54,21 @@ namespace Framework.Editor
             });
             root.Add(overdrawToggle);
 
-            SceneView.duringSceneGui += OnSceneGUI;
+            if (!_sceneGuiHooked)
+            {
+                SceneView.duringSceneGui += OnSceneGUI;
+                _sceneGuiHooked = true;
+            }
             return root;
         }
 
         public override void OnWillBeDestroyed()
         {
-            SceneView.duringSceneGui -= OnSceneGUI;
+            if (_sceneGuiHooked)
+            {
+                SceneView.duringSceneGui -= OnSceneGUI;
+                _sceneGuiHooked = false;
+            }
             base.OnWillBeDestroyed();
         }
         #endregion
@@ -70,14 +79,14 @@ namespace Framework.Editor
             if (_showDrawCallInfo || _showOverdraw)
                 AnalyzeDrawCalls();
 
-            if (_showRaycastTargets)
-                DrawRaycastTargets();
-
             if (_showDrawCallInfo)
                 DrawDrawCallInfo(sceneView);
 
             if (_showOverdraw)
                 DrawOverdraw();
+
+            if (_showRaycastTargets)
+                DrawRaycastTargets();
         }
 
         private void DrawRaycastTargets()
@@ -85,7 +94,12 @@ namespace Framework.Editor
             var graphics = Object.FindObjectsOfType<Graphic>();
             foreach (var graphic in graphics)
             {
-                if (graphic == null || !graphic.gameObject.activeInHierarchy) continue;
+                if (graphic == null || !graphic.isActiveAndEnabled) continue;
+                if (graphic.canvas == null || !graphic.canvas.isActiveAndEnabled) continue;
+                if (graphic.canvasRenderer != null && graphic.canvasRenderer.cull) continue;
+
+                var canvasGroup = graphic.GetComponentInParent<CanvasGroup>();
+                if (canvasGroup != null && !canvasGroup.blocksRaycasts) continue;
 
                 var rectTransform = graphic.rectTransform;
                 if (rectTransform == null) continue;
